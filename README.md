@@ -30,8 +30,15 @@ DEBUG=false
 ## Authors
 
 Daniel Stelljes | [GitHub](https://github.com/Zytronium)  
-John Wilson | [GitHub](https://github.com/Paintballskaguy)  
-Tristan Davis | [GitHub](https://github.com/TebariousBag)
+John Wilson     | [GitHub](https://github.com/Paintballskaguy)  
+Tristan Davis   | [GitHub](https://github.com/TebariousBag)
+
+----
+
+## Data Sources:
+
+- [STAPI](https://stapi.co/)
+- [Our imagination](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
 
 ----
 
@@ -58,4 +65,5 @@ Tristan Davis | [GitHub](https://github.com/TebariousBag)
 <em style="color: gray">Monday: 65% (task x)</em>  
 <em style="color: gray">Tuesday: 90-100% (task x)</em>  
 <em style="color: gray">Wednesday: 100% (task x)</em>  
+> 
 ---
