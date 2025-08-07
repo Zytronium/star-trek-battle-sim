@@ -29,9 +29,9 @@ DEBUG=false
 ----
 ## Authors
 
-Daniel Stelljes | [GitHub](https://github.com/Zytronium)
-John Wilson | [GitHub](https://github.com/Paintballskaguy)
-Tristan Davis [GitHub](https://github.com/TebariousBag)
+Daniel Stelljes | [GitHub](https://github.com/Zytronium)  
+John Wilson | [GitHub](https://github.com/Paintballskaguy)  
+Tristan Davis | [GitHub](https://github.com/TebariousBag)
 
 ----
 
