@@ -5,14 +5,19 @@ require('dotenv').config({ quiet: true });
 
 // use env variables or default
 // I added a 3rd user option, I was having trouble connecting on mac
-const pool = new Pool({
+const pool_setup_local = { // For local use
   user: process.env.DB_USER || process.env.USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'star_trek_db',
   password: process.env.DB_PASSWORD || '',
   port: process.env.DB_PORT || 5432,
+};
+const pool_setup_render = { // For hosted API on Render.com
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
-});
+};
+
+const pool = new Pool( process.env.NODE_ENV === 'production' ? pool_setup_render : pool_setup_local );
 
 
 // testing connections
