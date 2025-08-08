@@ -17,24 +17,11 @@ DB_PASSWORD=           # Database password; leave blank if no password
 DB_HOST=localhost      # Database host IP
 DB_PORT=5432           # Database port
 DB_NAME=star_trek_db   # Database name
-DATABASE_URL=          # Database URL if using an external database**
-NODE_ENV=              # Set to 'production' if you need to use DATABASE_URL
+DB_SSL=true            # Database connection ignores SSL if false
 
 # *: Add debug code in src/middleware/debugLogs.js, or where ever else
 #    needed inside `if (process.env.DEBUG?.toLowerCase() === 'true') {}`
-# **: Leave DATABASE_URL blank if you're able to connect by changing DB_HOST.
-#     SSL is ignored if DATABASE_URL is set and NODE_ENV is 'production'.
-#     This is for compatibility with Render.com. It may still be possible to
-#     connect externally by changing DB_HOST, depending on the host.
 ```
-Note: `DATABASE_URL` and `NODE_ENV` are used if you need a specific URL to
-connect to the Postgres database. For example, this project is being hosted
-with Render.com and has a Postgres database set up on Render. In order to
-connect to that database, which runs on the same network Render uses to
-host our API, SSL must be ignored and a special URL is required. Render sets
-`NODE_ENV` to 'production' automatically, which tells our API to ignore SSL
-and use `DATABASE_URL` instead of `DB_USER`, `DB_PASSWORD`, `DB_HOST`,
-`DB_PORT`, and `DB_NAME`.
 
 ----
 
