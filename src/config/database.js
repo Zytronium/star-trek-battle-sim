@@ -3,6 +3,8 @@
 const { Pool } = require('pg');
 require('dotenv').config({ quiet: true });
 
+console.log('NODE_ENV:', process.env.NODE_ENV);
+
 // use env variables or default
 // I added a 3rd user option, I was having trouble connecting on mac
 const pool_setup_local = { // For local use
@@ -17,7 +19,7 @@ const pool_setup_render = { // For hosted API on Render.com
   ssl: { rejectUnauthorized: false },
 };
 
-const pool = new Pool( process.env.NODE_ENV === 'production' ? pool_setup_render : pool_setup_local );
+const pool = new Pool(process.env.NODE_ENV === 'production' ? pool_setup_render : pool_setup_local);
 
 
 // testing connections
