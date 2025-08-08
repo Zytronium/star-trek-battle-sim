@@ -27,11 +27,52 @@ DEBUG=false
 ```
 
 ----
+## Running the Database:
+## Environment Variables
+Below are all the environment variables you can use and their defaults.
+```dotenv
+DB_USER=your_username
+DB_PASSWORD=   # leave blank if no password
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=star_trek_db
+```
+
+Create the db
+```bash
+createdb star_trek_db
+```
+If that doesn't work try this
+```bash
+psql postgres -c "CREATE DATABASE star_trek_db;"
+```
+
+Then this script is in package, it creates the empty tables
+```bash
+npm run create-db
+```
+
+After db is created you can access it
+```bash
+psql star_trek_db
+```
+ And it should have our two empty tables
+
+ star_trek_db=# \dt
+              List of relations
+ Schema |    Name     | Type  |    Owner     
+--------+-------------+-------+--------------
+ public | spacecrafts | table | tebariousbag
+ public | weapons     | table | tebariousbag
+(2 rows)
+
+
+----
 ## Authors
 
 Daniel Stelljes | [GitHub](https://github.com/Zytronium)  
 John Wilson     | [GitHub](https://github.com/Paintballskaguy)  
-Tristan Davis   | [GitHub](https://github.com/TebariousBag)
+Tristian Davis   | [GitHub](https://github.com/TebariousBag)
 
 ----
 

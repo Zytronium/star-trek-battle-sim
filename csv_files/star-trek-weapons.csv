@@ -1,0 +1,29 @@
+Spacecraft,Weapon Type,Weapon Name,Description,Affiliation,Era
+USS Enterprise (NCC-1701),Phaser banks,Type II and later Type III Phaser banks,Standard armament for 23rd-century Federation vessels,United Federation of Planets,23rd century
+USS Enterprise (NCC-1701),Torpedoes,Photon torpedoes,Standard armament for 23rd-century Federation vessels,United Federation of Planets,23rd century
+USS Enterprise-A (NCC-1701-A),Phaser banks,Upgraded phaser banks,"Essentially a refit version, similar armament but with improved targeting and power systems",United Federation of Planets,23rd century
+USS Enterprise-A (NCC-1701-A),Torpedoes,Photon torpedoes,"Essentially a refit version, similar armament but with improved targeting and power systems",United Federation of Planets,23rd century
+USS Enterprise-D (NCC-1701-D),Phaser arrays,Type X Phaser arrays,"Very powerful phaser arrays. Large and powerful, though designed for diplomacy and exploration",United Federation of Planets,24th century
+USS Enterprise-D (NCC-1701-D),Torpedoes,Photon torpedoes (standard and quantum in some episodes),"Large and powerful, though designed for diplomacy and exploration",United Federation of Planets,24th century
+USS Enterprise-E (NCC-1701-E),Phaser arrays,Type XII Phaser arrays,"Even more advanced phaser arrays. More combat-oriented due to increased threats (e.g., Borg, Dominion)",United Federation of Planets,24th century
+USS Enterprise-E (NCC-1701-E),Torpedoes,Photon and Quantum torpedoes,"More combat-oriented due to increased threats (e.g., Borg, Dominion)",United Federation of Planets,24th century
+USS Voyager (NCC-74656),Phaser arrays,Type IX Phaser arrays,Smaller but advanced; got experimental weapons later on,United Federation of Planets,24th century
+USS Voyager (NCC-74656),Torpedoes,Photon torpedoes,Smaller but advanced; got experimental weapons later on,United Federation of Planets,24th century
+USS Voyager (NCC-74656),Torpedoes,Transphasic torpedoes,Later upgraded with transphasic torpedoes (against the Borg),United Federation of Planets,24th century
+USS Defiant (NX-74205),Phaser cannons,Pulse phaser cannons,"Unique to this class. Specifically designed for combat, particularly against the Borg and Dominion",United Federation of Planets,24th century
+USS Defiant (NX-74205),Phaser arrays,Phaser arrays,"Specifically designed for combat, particularly against the Borg and Dominion",United Federation of Planets,24th century
+USS Defiant (NX-74205),Torpedoes,Quantum torpedoes,"Specifically designed for combat, particularly against the Borg and Dominion",United Federation of Planets,24th century
+USS Defiant (NX-74205),Defensive,Ablative armor,"Defensive tech. Specifically designed for combat, particularly against the Borg and Dominion",United Federation of Planets,24th century
+USS Discovery (NCC-1031),Phaser banks,Phaser banks,"Originally a science vessel but later adapted for combat. Also notable for its spore drive, not a weapon, but a tactical advantage",United Federation of Planets,23rd century
+USS Discovery (NCC-1031),Torpedoes,Photon torpedoes,"Originally a science vessel but later adapted for combat. Also notable for its spore drive, not a weapon, but a tactical advantage",United Federation of Planets,23rd century
+Klingon Bird of Prey,Disruptors,Disruptor cannons,Agile and often used for ambush or raiding missions,Klingon Empire,23rd-24th century
+Klingon Bird of Prey,Torpedoes,Photon torpedoes,Agile and often used for ambush or raiding missions,Klingon Empire,23rd-24th century
+Klingon Bird of Prey,Special,Cloaking device,Tactical stealth advantage. Agile and often used for ambush or raiding missions,Klingon Empire,23rd-24th century
+Romulan Warbird,Torpedoes,Plasma torpedoes,"Large and powerful, used for intimidation as well as combat",Romulan Star Empire,24th century
+Romulan Warbird,Disruptors,Disruptor banks,"Large and powerful, used for intimidation as well as combat",Romulan Star Empire,24th century
+Romulan Warbird,Special,Cloaking device,"Large and powerful, used for intimidation as well as combat",Romulan Star Empire,24th century
+Borg Cube,Energy weapons,Cutting beams,"The Cube is more a force of nature than a traditional ship—designed to assimilate, not just destroy",Borg Collective,24th century
+Borg Cube,Energy weapons,Tractor beams,"For holding ships in place. The Cube is more a force of nature than a traditional ship—designed to assimilate, not just destroy",Borg Collective,24th century
+Borg Cube,Energy weapons,Energy weapons of various unknown types,"The Cube is more a force of nature than a traditional ship—designed to assimilate, not just destroy",Borg Collective,24th century
+Borg Cube,Special,Adaptive shielding,"Resistant to repeated attacks. The Cube is more a force of nature than a traditional ship—designed to assimilate, not just destroy",Borg Collective,24th century
+Borg Cube,Special,Self-repairing hull,"The Cube is more a force of nature than a traditional ship—designed to assimilate, not just destroy",Borg Collective,24th century
