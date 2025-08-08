@@ -3,6 +3,7 @@ const express = require('express');
 const dotenv = require('dotenv').config({ quiet: true }); // Inject .env variables silently
 const morgan = require("morgan");
 const router = require("./routes");
+const {  pool } = require("./config/database");
 const PORT = process.env.PORT || 5005;
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 
@@ -23,4 +24,5 @@ app.use(router);
 // Run the server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}${debugMode ? " in debug mode" : ""}`);
+  pool.connect();
 });

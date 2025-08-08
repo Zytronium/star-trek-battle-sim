@@ -1,7 +1,7 @@
 // this is the database file
 
 const { Pool } = require('pg');
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 
 // use env variables or default
 // I added a 3rd user option, I was having trouble connecting on mac
