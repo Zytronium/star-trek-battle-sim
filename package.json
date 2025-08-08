@@ -6,12 +6,17 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start-server": "node src/app.js",
-    "debug-server": "DEBUG=true nodemon src/app.js"
+    "debug-server": "DEBUG=true nodemon src/app.js",
+    "create-db": "node src/scripts/create_db.js"
   },
   "private": true,
   "dependencies": {
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
-    "morgan": "^1.10.1"
+    "morgan": "^1.10.1",
+    "axios": "^1.11.0",
+    "csv-parser": "^1.0.0",
+    "csv-writer": "^1.6.0",
+    "pg": "^8.16.3"
   }
 }
