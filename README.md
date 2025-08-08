@@ -3,6 +3,8 @@ Name not final
 
 WIP readme
 
+**Visit online here: https://startrekbattlesim.zytronium.dev/**
+
 ----
 
 ## Environment Variables
@@ -37,7 +39,7 @@ This runs the server normally with node.
 ```bash
 npm run debug-server
 ```
-This injects the environment variable `DEBUG=true` and runs the serve with `nodemon`.
+This injects the environment variable `DEBUG=true` and runs the server with `nodemon`.
 Nodemon must be installed for this to work.
 
 ----
