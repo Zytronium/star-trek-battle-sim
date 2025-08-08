@@ -66,6 +66,17 @@ psql star_trek_db
  public | weapons     | table | tebariousbag
 (2 rows)
 
+And their respective columns
+
+star_trek_db=# SELECT * FROM spacecrafts;
+ id | name | class | affiliation | registry | status | description | created_at | updated_at 
+----+------+-------+-------------+----------+--------+-------------+------------+------------
+(0 rows)
+
+star_trek_db=# SELECT * FROM weapons;
+ id | spacecraft_id | weapon_type | weapon_name | description | affiliation | era | created_at | updated_at 
+----+---------------+-------------+-------------+-------------+-------------+-----+------------+------------
+(0 rows)
 
 ----
 ## Authors
