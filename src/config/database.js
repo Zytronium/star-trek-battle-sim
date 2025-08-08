@@ -1,9 +1,9 @@
 // this is the database file
 
 const { Pool } = require('pg');
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 
-// use env variables or default
+// Use env variables or default
 // I added a 3rd user option, I was having trouble connecting on mac
 const pool = new Pool({
   user: process.env.DB_USER || process.env.USER || 'postgres',
@@ -11,8 +11,8 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'star_trek_db',
   password: process.env.DB_PASSWORD || '',
   port: process.env.DB_PORT || 5432,
+  ssl: process.env.DB_SSL === 'false' ? { rejectUnauthorized: false } : false, // needed for hosting db and API with Render
 });
-
 
 // testing connections
 pool.on('connect', () => {

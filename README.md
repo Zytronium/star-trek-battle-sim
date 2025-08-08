@@ -3,6 +3,8 @@ Name not final
 
 WIP readme
 
+**Visit online here: https://startrekbattlesim.zytronium.dev/**
+
 ----
 
 ## Environment Variables
@@ -17,6 +19,7 @@ DB_PASSWORD=           # Database password; leave blank if no password
 DB_HOST=localhost      # Database host IP
 DB_PORT=5432           # Database port
 DB_NAME=star_trek_db   # Database name
+DB_SSL=true            # Database connection ignores SSL if false
 
 # *: Add debug code in src/middleware/debugLogs.js, or where ever else
 #    needed inside `if (process.env.DEBUG?.toLowerCase() === 'true') {}`
@@ -36,7 +39,7 @@ This runs the server normally with node.
 ```bash
 npm run debug-server
 ```
-This injects the environment variable `DEBUG=true` and runs the serve with `nodemon`.
+This injects the environment variable `DEBUG=true` and runs the server with `nodemon`.
 Nodemon must be installed for this to work.
 
 ----
@@ -64,7 +67,7 @@ psql star_trek_db
 
 And it should have our two empty tables
 
-star_trek_db=# \dt
+`star_trek_db=# \dt`
 
 ### List of relations
 | Schema | Name        | Type  | Owner        |
@@ -74,12 +77,12 @@ star_trek_db=# \dt
 
 And their respective columns
 
-star_trek_db=# SELECT * FROM spacecrafts;
+`star_trek_db=# SELECT * FROM spacecrafts;`
 
 | id | name | class | affiliation | registry | status | description | created_at | updated_at |
 |----|------|-------|-------------|----------|--------|-------------|------------|------------|
 
-star_trek_db=# SELECT * FROM weapons;
+`star_trek_db=# SELECT * FROM weapons;`
 
 | id | spacecraft_id | weapon_type | weapon_name | description | affiliation | era | created_at | updated_at |
 |----|---------------|-------------|-------------|-------------|-------------|-----|------------|------------|
@@ -98,31 +101,5 @@ Tristian Davis  | [GitHub](https://github.com/TebariousBag)
 
 - [STAPI](https://stapi.co/)
 - [Our imagination](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
-
-----
-
-### ✅ Tasks checklist:
-- [ ] ​0. task name (0/__ pts)
-- [ ] ​1. task name (0/__ pts)
-- [ ] ​2. task name (0/__ pts)
-- [ ] ​3. task name (0/__ pts)
-- [ ] ​4. task name (0/__ pts)
-- [ ] ​5. task name (0/__ pts)
-- [ ] ​6. task name (0/__ pts)
-- [ ] ​7. task name (0/__ pts)
-- [ ] ​8. task name (0/__ pts)
-- [ ] ​9. task name (0/__ pts)
-- [ ] ​10. task name (0/__ pts)
-
-
-- [ ] Readme
-- [ ] **Everything Done ✓** (0/__ pts) - __%
-
->### Progress Goals:  (todo; this is a template)  
-><strong style="color: white">Friday: 20% (task x)</strong>  
-<em style="color: gray">Saturday/Sunday: 40% (task x)</em>  
-<em style="color: gray">Monday: 65% (task x)</em>  
-<em style="color: gray">Tuesday: 90-100% (task x)</em>  
-<em style="color: gray">Wednesday: 100% (task x)</em>  
 
 ----
