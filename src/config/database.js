@@ -4,6 +4,7 @@ const { Pool } = require('pg');
 require('dotenv').config({ quiet: true });
 
 console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('DATABASE_URL:', process.env.DATABASE_URL);
 
 // use env variables or default
 // I added a 3rd user option, I was having trouble connecting on mac
