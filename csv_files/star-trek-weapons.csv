@@ -1,4 +1,4 @@
-Spacecraft,Weapon Type,Weapon Name,Description,Affiliation,Era
+Spacecraft,WeaponType,WeaponName,Description,Affiliation,Era
 USS Enterprise (NCC-1701),Phaser banks,Type II and later Type III Phaser banks,Standard armament for 23rd-century Federation vessels,United Federation of Planets,23rd century
 USS Enterprise (NCC-1701),Torpedoes,Photon torpedoes,Standard armament for 23rd-century Federation vessels,United Federation of Planets,23rd century
 USS Enterprise-A (NCC-1701-A),Phaser banks,Upgraded phaser banks,"Essentially a refit version, similar armament but with improved targeting and power systems",United Federation of Planets,23rd century

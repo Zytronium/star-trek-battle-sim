@@ -89,6 +89,47 @@ And their respective columns
 
 ----
 
+### Adding Data from the csv files
+To import the CSV data:
+```bash
+npm run import-csv
+```
+You should see something like this
+
+```bash
+Importing spacecrafts...
+
+CONNECTED TO DB
+----------------------------
+imported 10 spacecrafts
+total 10 spacecrafts
+Importing weapons...
+imported 28 weapons
+total 28 weapons
+```
+
+Now if you acces the database
+```bash
+psql star_trek_db
+```
+And select all from spacecrafts table
+```sql
+star_trek_db=# SELECT * FROM spacecrafts;
+```
+You should see all the spacecrafts. You can do the same for weapons.
+
+### To Reset the Database (in case something messes up)
+Run this script that is in package.json
+```bash
+npm run reset-db
+```
+and it will prompt you to populate again with
+```bash
+npm run import-csv
+```
+Now you should have a freshly restored database.
+
+
 ## Authors
 
 Daniel Stelljes | [GitHub](https://github.com/Zytronium)  

@@ -3,10 +3,11 @@
 const { pool } = require('../config/database');
 
 async function createDatabase() {
-  console.log('creating database');
+  console.log('\nCREATING DB');
+  console.log('----------------------------')
 
   try {
-	// create the spacecrafts table
+	  // create the spacecrafts table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS spacecrafts (
         id SERIAL PRIMARY KEY,
@@ -23,7 +24,7 @@ async function createDatabase() {
     console.log('created table spacecrafts');
 
     // create the weapons table
-	// linked to spacecraft through spacecrafts(id)
+	  // linked to spacecraft through spacecrafts(id)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS weapons (
         id SERIAL PRIMARY KEY,
@@ -33,20 +34,22 @@ async function createDatabase() {
         description TEXT,
         affiliation VARCHAR(255),
         era VARCHAR(255),
+		    UNIQUE(spacecraft_id, weapon_type, weapon_name),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
     console.log('created table weapons');
 
-	// logs for what was created
+	  // logs for what was created
     console.log('database created \n');
-    console.log('the tables created...');
+    console.log('THE TABLES CREATED...');
+    console.log('----------------------------')
     console.log('spacecrafts (id, name, class, affiliation, registry, status, description)');
     console.log('weapons (id, spacecraft_id, weapon_type, weapon_name, description, affiliation, era)');
 
   } catch (error) {
-    console.error('error creating database', error.message);
+    console.error('error creating db', error.message);
     throw error;
   }
 }
@@ -56,7 +59,7 @@ async function createDatabase() {
 if (require.main === module) {
   createDatabase()
     .then(() => {
-      console.log('closing database');
+      console.log('closing db');
       return pool.end();
     })
     .catch(console.error);
