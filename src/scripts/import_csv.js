@@ -9,7 +9,7 @@ const path = require('path');
 
 // function adds all the spacecrafts to spacecraft table
 async function addSpacecrafts() {
-  console.log('Importing spacecrafts...');
+  console.log('\nImporting spacecrafts...');
   
   const results = [];
   
@@ -125,17 +125,17 @@ async function importAllData() {
 
 	// call addSpacecrafts
 	await addSpacecrafts();
-	// count query for how many spacecrafts were added
+	// count query for how many spacecrafts were total
 	const spacecraftCount = await pool.query('SELECT COUNT(*) FROM spacecrafts');
-	// log how many spacecrafts added
-	console.log(`added ${spacecraftCount.rows[0].count} spacecrafts`)
+	// log how many spacecrafts total
+	console.log(`total ${spacecraftCount.rows[0].count} spacecrafts`)
 
   // call addWeapons
 	await addWeapons();
-	// count query for how many weapons were added
+	// count query for how many weapons were total
 	const weaponsCount = await pool.query('SELECT COUNT(*) FROM weapons');
-	// log how many weapons added
-	console.log(`added ${weaponsCount.rows[0].count} weapons`)
+	// log how many weapons total
+	console.log(`total ${weaponsCount.rows[0].count} weapons`)
 	
   } catch (error) {
     console.error('error trying to import all', error);

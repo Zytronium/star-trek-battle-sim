@@ -4,7 +4,7 @@ const { pool } = require('../config/database');
 
 async function createDatabase() {
   console.log('\nCREATING DB');
-  console.log('!----------------------------!')
+  console.log('----------------------------')
 
   try {
 	  // create the spacecrafts table
@@ -44,7 +44,7 @@ async function createDatabase() {
 	  // logs for what was created
     console.log('database created \n');
     console.log('THE TABLES CREATED...');
-    console.log('!----------------------------!')
+    console.log('----------------------------')
     console.log('spacecrafts (id, name, class, affiliation, registry, status, description)');
     console.log('weapons (id, spacecraft_id, weapon_type, weapon_name, description, affiliation, era)');
 
