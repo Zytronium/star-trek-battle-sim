@@ -67,7 +67,7 @@ async function importAllData() {
 	// count query for how many spacecrafts were added
 	const spacecraftCount = await pool.query('SELECT COUNT(*) FROM spacecrafts');
 	// log how many spacecrafts added
-	console.log(`added ${spacecraftCount} spacecrafts`)
+	console.log(`added ${spacecraftCount.rows[0].count} spacecrafts`)
 	
   } catch (error) {
     console.error('error trying to import all', error);
