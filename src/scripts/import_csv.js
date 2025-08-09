@@ -99,10 +99,7 @@ async function addWeapons() {
               await pool.query(`
                 INSERT INTO weapons (spacecraft_id, weapon_type, weapon_name, description, affiliation, era)
                 VALUES ($1, $2, $3, $4, $5, $6)
-                ON CONFLICT (spacecraft_id, weapon_type, weapon_name) DO UPDATE SET
-                  description = EXCLUDED.description,
-                  affiliation = EXCLUDED.affiliation,
-                  era = EXCLUDED.era
+                ON CONFLICT DO NOTHING
               `, [spacecraft_id, weapon.weapon_type, weapon.weapon_name, weapon.description, weapon.affiliation, weapon.era]);
             } else {
               console.log(`error not found "${weapon.spacecraft_name}" skip`);
