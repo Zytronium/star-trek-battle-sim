@@ -18,7 +18,11 @@ app.use(morgan("dev")); // "dev" for simpler, cleaner logs; "combined" for more 
 // Allow json requests
 app.use(express.json());
 
-app.use(router);
+// Serve static files from src/public
+app.use(express.static(__dirname + '/public'));
+
+// Serve API endpoints
+app.use("/api", router);
 
 // Run the server
 app.listen(PORT, () => {
