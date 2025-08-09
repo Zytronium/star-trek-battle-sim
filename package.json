@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start-server": "node src/app.js",
     "debug-server": "DEBUG=true nodemon src/app.js",
-    "create-db": "node src/scripts/create_db.js"
+    "create-db": "node src/scripts/create_db.js",
+    "import-csv": "node src/scripts/import_csv.js"
   },
   "private": true,
   "dependencies": {
