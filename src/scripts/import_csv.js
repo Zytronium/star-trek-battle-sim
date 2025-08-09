@@ -95,9 +95,14 @@ async function addWeapons() {
               const spacecraft_id = spacecraftResult.rows[0].id;
               
               // query just adds all data into table
+              // needed to add ON CONFLICT to this also, was creating duplicates
               await pool.query(`
                 INSERT INTO weapons (spacecraft_id, weapon_type, weapon_name, description, affiliation, era)
                 VALUES ($1, $2, $3, $4, $5, $6)
+                ON CONFLICT (spacecraft_id, weapon_type, weapon_name) DO UPDATE SET
+                  description = EXCLUDED.description,
+                  affiliation = EXCLUDED.affiliation,
+                  era = EXCLUDED.era
               `, [spacecraft_id, weapon.weapon_type, weapon.weapon_name, weapon.description, weapon.affiliation, weapon.era]);
             } else {
               console.log(`error not found "${weapon.spacecraft_name}" skip`);
