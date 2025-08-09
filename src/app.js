@@ -19,6 +19,9 @@ app.use(morgan("dev")); // "dev" for simpler, cleaner logs; "combined" for more 
 // Allow json requests
 app.use(express.json());
 
+// Pretty print JSON
+app.set('json spaces', 2);
+
 // Serve static files from src/public
 app.use(express.static(__dirname + '/public'));
 
