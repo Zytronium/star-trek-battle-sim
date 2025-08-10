@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>DATABASE</ID>
+  <OriginalElement>dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac</OriginalElement>
+  <nodes>
+    <node x="280.76263399693715" y="65.14318529862175">dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.weapons</node>
+    <node x="-101.37565084226648" y="65.14318529862175">dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.spacecrafts</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.weapons" target="dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.spacecrafts" relationship="REFERENCES">
+      <point x="0.0" y="-155.5" />
+      <point x="414.76263399693715" y="200.0" />
+      <point x="14.12434915773352" y="200.0" />
+      <point x="0.0" y="155.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Compact" zoom="1.1150956284153006" showDependencies="false" x="287.5629402756508" y="234.79999999999995" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Columns</Category>
+    <Category>Comments</Category>
+    <Category>Key columns</Category>
+    <Category>Virtual foreign keys</Category>
+  </Categories>
+</Diagram>
+

@@ -1,0 +1,3 @@
+id,name,type,description,affiliation,effectiveness,special_effects
+0,Deflector Shields,Shields,Standard shield technology for Federation ships,United Federation of Planets,0.95,["shielding"]
+1,Romulan Cloaking Device,Cloak,Allows ship to appear invisible, but shields must be down while the cloak is activated,Romulan Star Empire,0.99,["invisibility"]
