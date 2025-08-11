@@ -18,7 +18,7 @@ async function loadData() {
         await client.query('BEGIN');
         
         // Load weapons
-        await loadCsvData(client, 'weapons_2.csv', 'weapons', [
+        await loadCsvData(client, '../database/weapons_2.csv', 'weapons', [
             {csv: 'weapon_id', db: 'weapon_id'},
             {csv: 'name', db: 'name'},
             {csv: 'description', db: 'description'},
@@ -30,7 +30,7 @@ async function loadData() {
         ]);
 
         // Load defenses
-        await loadCsvData(client, 'defenses.csv', 'defenses', [
+        await loadCsvData(client, '../database/defenses.csv', 'defenses', [
             {csv: 'defense_id', db: 'defense_id'},
             {csv: 'name', db: 'name'},
             {csv: 'type', db: 'type'},
@@ -40,11 +40,11 @@ async function loadData() {
         ]);
         
         // Load ships with default values
-        const ships = await loadShipsWithDefaults('ships_2.csv');
+        const ships = await loadShipsWithDefaults('../database/ships_2.csv');
         await insertShips(client, ships);
         
         // Load ship_weapons relationships
-        await loadCsvData(client, 'ships_weapons_2.csv', 'ship_weapons', [
+        await loadCsvData(client, '../database/ships_weapons_2.csv', 'ship_weapons', [
             {csv: 'ship_id', db: 'ship_id'},
             {csv: 'weapon_id', db: 'weapon_id'},
             {csv: 'damage_multiplier', db: 'damage_multiplier'},
@@ -54,8 +54,8 @@ async function loadData() {
         ]);
         
         // Load ship_defenses relationships if file exists
-        if (fs.existsSync('ship_defenses.csv')) {
-            await loadCsvData(client, 'ship_defenses.csv', 'ship_defenses', [
+        if (fs.existsSync('../database/ship_defenses.csv')) {
+            await loadCsvData(client, '../database/ship_defenses.csv', 'ship_defenses', [
                 {csv: 'ship_id', db: 'ship_id'},
                 {csv: 'defense_id', db: 'defense_id'}
             ]);

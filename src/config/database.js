@@ -1,27 +1,48 @@
-// this is the database file
-
 const { Pool } = require('pg');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config({ quiet: true });
 
-// Use env variables or default
-// I added a 3rd user option, I was having trouble connecting on mac
 const pool = new Pool({
-  user: process.env.DB_USER || process.env.USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'star_trek_db',
-  password: process.env.DB_PASSWORD || '',
-  port: process.env.DB_PORT || 5432,
-  ssl: process.env.DB_SSL === 'false' ? { rejectUnauthorized: false } : false, // needed for hosting db and API with Render
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: parseInt(process.env.DB_PORT) || 5432,
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000
 });
 
-// testing connections
-pool.on('connect', () => {
-  console.log('\nCONNECTED TO DB');
-  console.log('----------------------------')
-});
+async function createTables() {
+  const client = await pool.connect();
+  try {
+    const sql = fs.readFileSync(
+      path.join(__dirname, '/database/sql/createtable.sql'), 
+      'utf8'
+    );
+    await client.query(sql);
+    console.log('✅ Database tables created');
+  } catch (err) {
+    console.error('❌ Table creation failed:', err.message);
+    throw err;
+  } finally {
+    client.release();
+  }
+}
 
-pool.on('error', (err) => {
-  console.error('error connecting to db', err);
-});
+async function verifyConnection() {
+  try {
+    await pool.query('SELECT 1');
+    return true;
+  } catch (err) {
+    console.error('Database connection failed:', err.message);
+    return false;
+  }
+}
 
-module.exports = { pool };
+module.exports = { 
+  pool,
+  verifyConnection,
+  createTables
+};
