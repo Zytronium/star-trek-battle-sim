@@ -1,0 +1,2 @@
+id,name,registry,class,owner,description,weapons,defenses,shield_strength,hull_strength,image
+0,USS Defiant,NX-74205,Defiant class,United Federation of Planets,"Defiant, commanded by Captain Benjamin Sisko (Data enriched from STAPI)","[""Phaser Cannons"", ""Phaser Emitters"", ""Photon Torpedoes"", ""Quantum Torpedoes""]","[""Deflector Shields"", ""Ablative Armor"", ""Romulan Cloaking Device""]",1000,800,"https://static.wikia.nocookie.net/memoryalpha/images/2/28/USS_Defiant_%28NX-74205%29%2C_quarter_view.jpg/revision/latest?cb=20080809195940&path-prefix=en"

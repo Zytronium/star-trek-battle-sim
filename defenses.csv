@@ -1,0 +1,7 @@
+defense_id,name,type,description,effectiveness,special_effects
+0,Deflector Shields,Shield,Standard shield technology for Federation ships,0.95,"[""shielding""]"
+1,Romulan Cloaking Device,Cloak,"Allows ship to appear invisible, but shields must be down while the cloak is activated",0.99,"[""invisibility""]"
+2,Phasing Cloaking Device,Cloak,Experimental Federation cloaking device that phases the ship out of normal space-time,0.98,"[""invisibility"",""phasing""]"
+3,Ablative Armor,Armor,Advanced armor that ablates when hit,0.85,"[""damage_reduction""]"
+4,Cloaking Device,Cloak,Standard cloaking technology,0.97,"[""invisibility""]"
+5,Energy Dissipator,Shield,Breen energy-draining shield technology,0.9,"[""power_drain""]"
