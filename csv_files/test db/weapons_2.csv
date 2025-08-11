@@ -1,0 +1,15 @@
+weapon_id,name,description,damage,shields_multiplier,hull_multiplier,special_effects,usage_limit
+0,Photon Torpedoes,Standard matter/antimatter torpedoes of the 23rd–24th century; solid against both shields and hull.,75,1,1.75,,80
+1,Quantum Torpedoes,Advanced torpedo with zero-point energy warhead; more effective against hull than shields.,175,1,2,,15
+2,Torpedoes (standard),General-purpose projectile used by multiple factions; balanced performance.,50,1,1.5,,200
+3,Phaser Array,"Long-range beam weapon; good sustained damage against shields, less on hull.",30,1.25,1,,99999
+4,Phaser Cannons,High-intensity phasers for close-range combat; fast recharge but short range.,75,1.25,1,,99999
+5,Disruptor Arrays,Romulan and Klingon beam weapons; very effective against shields but weaker on hull.,70,1.5,0.875,,
+6,Disruptor Cannons,"Rapid-fire, high-energy disruptors; brutal against shields but hull penetration is limited.",85,1.5,0.875,,
+7,Disruptors,"Generic disruptor emitters; faction staple, shield-shredding.",65,1.5,0.875,,
+8,Large Disruptor,"Heavy disruptor cannons; devastating alpha strike against shields, moderate on hull.",125,1.5,0.875,,
+9,Phased Polaron Beams,Dominion beam weapon; ignores a percentage of shield capacity before dealing damage.,100,0.875,1.125,Partial Shield Bypass,99999
+10,Spatial Charges,"Experimental Federation ordnance; massive area effect, huge shield impact but fragile casing.",150,1.75,0.75,Area Damage,4
+11,Tricobalt Warheads,Extremely destructive; banned in the Federation; massive explosive yield against structures and ships.,300,0.75,2.25,,2
+12,Energy Dissipater,"Special Breen weapon; disables power systems, reducing shield regeneration and weapon recharge.",0,1,1,Power Drain,1
+13,Unknown,Invalid Weapon,0,1,1,,0
