@@ -2,9 +2,9 @@
 import csv
 import os
 
-ships_file = "ships_2.csv"
-weapons_file = "weapons_2.csv"
-output_file = "ships_weapons_2.csv"
+ships_file = "ships.csv"
+weapons_file = "weapons.csv"
+output_file = "ships_weapons.csv"
 
 # Defaults
 DEFAULTS = {
@@ -30,7 +30,7 @@ with open(weapons_file, newline="", encoding="utf-8") as f:
 if unknown_weapon_id is None:
     unknown_weapon_id = max(w["weapon_id"] for w in weapons.values()) + 1
     weapons["unknown"] = {"weapon_id": unknown_weapon_id, "usage_limit": 0}
-    print(f"⚠ No 'Unknown' weapon in weapons_2.csv. Added as id={unknown_weapon_id}.")
+    print(f"⚠ No 'Unknown' weapon in weapons.csv. Added as id={unknown_weapon_id}.")
 
 # Load ships
 ships = []

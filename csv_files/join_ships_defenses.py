@@ -1,9 +1,9 @@
 #!/bin/env python3
 import csv
 
-ships_file = "ships_2.csv"
-defenses_file = "defenses_2.csv"
-join_file = "ships_defenses_2.csv"
+ships_file = "ships.csv"
+defenses_file = "defenses.csv"
+join_file = "ships_defenses.csv"
 
 # Load defenses data into a dictionary
 defenses = {}
@@ -12,7 +12,7 @@ with open(defenses_file, newline='', encoding='utf-8') as df:
     for row in reader:
         defenses[row["name"].strip()] = row
     if "Unknown" not in defenses:
-        print("Warning: 'Unknown' defense not found in defenses_2.csv")
+        print("Warning: 'Unknown' defense not found in defenses.csv")
 
 # Prepare new join table data
 join_rows = []

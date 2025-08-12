@@ -1,5 +1,7 @@
 # DB Revision Notes
 
+Note: This file is somewhat outdated, but some of the info here still may be useful.
+
 These are my notes for `defenses.csv`, `ships.csv`, and `weapons.csv`. I made
 these notes before creating `defenses_2.csv`, `ships_2.csv`, `weapons_2.csv`,
 `ships_weapons_2.csv`, and `ships_defenses_2.csv`.
