@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// Load environment variables FIRST
 require('dotenv').config({ quiet: true });
 const express = require('express');
 const morgan = require('morgan');
@@ -84,7 +83,7 @@ async function startServer() {
         router.stack.forEach(layer => {
           if (layer.route) {
             const methods = Object.keys(layer.route.methods).join(', ').toUpperCase();
-            console.log(`- ${methods} ${layer.route.path}`);
+            console.log(`- ${methods} api${layer.route.path}`);
           }
         });
       }
