@@ -3,6 +3,7 @@ const express = require('express');
 require('dotenv').config({ quiet: true }); // Inject .env variables silently
 const morgan = require("morgan");
 const router = require("./routes");
+const pyRouter = require("./routes/pythonRoutes");
 const {  pool } = require("./config/database");
 const PORT = process.env.PORT || 5005;
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
@@ -27,6 +28,8 @@ app.use(express.static(__dirname + '/public'));
 
 // Serve API endpoints
 app.use("/api", router);
+
+app.use("/engine", pyRouter);
 
 // Run the server
 app.listen(PORT, () => {
