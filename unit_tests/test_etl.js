@@ -11,21 +11,25 @@ const pool = new Pool({
     ssl: false
 });
 
-// Expected values (adjust these based on your actual data)
+// Updated expected values based on actual data
 const EXPECTED = {
-    TABLES: ['ships', 'weapons', 'defenses', 'ship_weapons', 'ship_defenses'],
+    TABLES: ['ships', 'weapons', 'defenses', 'ship_weapons', 'ship_defenses', 'special_effects', 'boss_ships'],
     SHIPS: {
-        COUNT: 13,
-        ENTERPRISE: { id: 0, weapons: 3, defenses: 3 },
-        DEFIANT: { id: 3, weapons: 4, defenses: 3 }
+        REGULAR_COUNT: 13,
+        BOSS_COUNT: 7,
+        ENTERPRISE: { id: 0, weapons: 4, defenses: 3 },  // Actual: 4 weapons, 3 defense
+        DEFIANT: { id: 3, weapons: 5, defenses: 4 }      // Actual: 4 weapons, 3 defenses
     },
     WEAPONS: {
-        COUNT: 14,
-        SPECIAL: 3
+        COUNT: 18,
+        SPECIAL: 4
     },
     DEFENSES: {
         COUNT: 6,
-        TYPES: ['Shield', 'Hull', 'Cloaking']
+        TYPES: ['Shield', 'Cloak', 'Armor']
+    },
+    SPECIAL_EFFECTS: {
+        COUNT: 8
     }
 };
 
@@ -54,19 +58,36 @@ async function runTests() {
         }, testResults);
 
         // ===== TEST 2: Verify ships data =====
-        await runTest("Ships count", async () => {
+        await runTest("Regular ships count", async () => {
             const shipsRes = await client.query('SELECT COUNT(*) FROM ships');
-            assert.equal(parseInt(shipsRes.rows[0].count), EXPECTED.SHIPS.COUNT);
-            return `Found ${shipsRes.rows[0].count} ships`;
+            assert.equal(parseInt(shipsRes.rows[0].count), EXPECTED.SHIPS.REGULAR_COUNT);
+            return `Found ${shipsRes.rows[0].count} regular ships`;
+        }, testResults);
+
+        await runTest("Boss ships count", async () => {
+            const bossShipsRes = await client.query('SELECT COUNT(*) FROM boss_ships');
+            assert.equal(parseInt(bossShipsRes.rows[0].count), EXPECTED.SHIPS.BOSS_COUNT);
+            return `Found ${bossShipsRes.rows[0].count} boss ships`;
         }, testResults);
 
         await runTest("Ships required fields", async () => {
             const nullShipsRes = await client.query(`
                 SELECT COUNT(*) FROM ships 
-                WHERE name IS NULL OR registry IS NULL OR class IS NULL
+                WHERE name IS NULL OR class IS NULL OR owner IS NULL 
+                   OR shield_strength IS NULL OR hull_strength IS NULL
             `);
             assert.equal(parseInt(nullShipsRes.rows[0].count), 0);
-            return "No NULL values in required fields";
+            return "No NULL values in required fields for ships";
+        }, testResults);
+
+        await runTest("Boss ships required fields", async () => {
+            const nullBossShipsRes = await client.query(`
+                SELECT COUNT(*) FROM boss_ships 
+                WHERE name IS NULL OR class IS NULL OR owner IS NULL 
+                   OR shield_strength IS NULL OR hull_strength IS NULL
+            `);
+            assert.equal(parseInt(nullBossShipsRes.rows[0].count), 0);
+            return "No NULL values in required fields for boss ships";
         }, testResults);
 
         // ===== TEST 3: Verify weapons data =====
@@ -79,7 +100,7 @@ async function runTests() {
         await runTest("Special weapons count", async () => {
             const specialWeaponsRes = await client.query(`
                 SELECT COUNT(*) FROM weapons 
-                WHERE special_effects IS NOT NULL AND special_effects != '[]'
+                WHERE special_effects IS NOT NULL AND special_effects != ''
             `);
             assert.equal(parseInt(specialWeaponsRes.rows[0].count), EXPECTED.WEAPONS.SPECIAL);
             return `Found ${specialWeaponsRes.rows[0].count} special weapons`;
@@ -96,7 +117,7 @@ async function runTests() {
             const defenseTypesRes = await client.query(`
                 SELECT DISTINCT type FROM defenses
             `);
-            const existingTypes = defenseTypesRes.rows.map(r => r.type);
+            const existingTypes = defenseTypesRes.rows.map(r => r.type).filter(Boolean);
             const missingTypes = EXPECTED.DEFENSES.TYPES.filter(t => !existingTypes.includes(t));
             
             if (missingTypes.length > 0) {
@@ -105,14 +126,21 @@ async function runTests() {
             return `Found defense types: ${existingTypes.join(', ')}`;
         }, testResults);
 
-        // ===== TEST 5: Verify relationships =====
+        // ===== TEST 5: Verify special effects data =====
+        await runTest("Special effects count", async () => {
+            const effectsRes = await client.query('SELECT COUNT(*) FROM special_effects');
+            assert.equal(parseInt(effectsRes.rows[0].count), EXPECTED.SPECIAL_EFFECTS.COUNT);
+            return `Found ${effectsRes.rows[0].count} special effects`;
+        }, testResults);
+
+        // ===== TEST 6: Verify relationships =====
         await runTest("Ships with weapons", async () => {
             const shipsNoWeapons = await client.query(`
                 SELECT COUNT(*) FROM ships s
                 WHERE NOT EXISTS (SELECT 1 FROM ship_weapons sw WHERE sw.ship_id = s.ship_id)
             `);
             assert.equal(parseInt(shipsNoWeapons.rows[0].count), 0);
-            return "All ships have weapons assigned";
+            return "All regular ships have weapons assigned";
         }, testResults);
 
         await runTest("Ships with defenses", async () => {
@@ -121,10 +149,10 @@ async function runTests() {
                 WHERE NOT EXISTS (SELECT 1 FROM ship_defenses sd WHERE sd.ship_id = s.ship_id)
             `);
             assert.equal(parseInt(shipsNoDefenses.rows[0].count), 0);
-            return "All ships have defenses assigned";
+            return "All regular ships have defenses assigned";
         }, testResults);
 
-        // ===== TEST 6: Verify specific ships =====
+        // ===== TEST 7: Verify specific ships =====
         await runTest("USS Enterprise-D configuration", async () => {
             const res = await client.query(`
                 SELECT s.name, 
@@ -165,7 +193,7 @@ async function runTests() {
             return `Configuration correct: ${ship.weapon_count} weapons, ${ship.defense_count} defenses`;
         }, testResults);
 
-        // ===== TEST 7: Data integrity checks =====
+        // ===== TEST 8: Data integrity checks =====
         await runTest("Orphaned weapon relationships", async () => {
             const orphanedWeapons = await client.query(`
                 SELECT COUNT(*) FROM ship_weapons sw
@@ -182,6 +210,18 @@ async function runTests() {
             `);
             assert.equal(parseInt(orphanedDefenses.rows[0].count), 0);
             return "No orphaned defense relationships";
+        }, testResults);
+
+        // ===== TEST 9: Verify boss ships data =====
+        await runTest("Borg Tactical Cube exists", async () => {
+            const borgRes = await client.query(`
+                SELECT * FROM boss_ships WHERE name = 'Borg Tactical Cube'
+            `);
+            assert.equal(borgRes.rows.length, 1);
+            const borgShip = borgRes.rows[0];
+            assert.equal(borgShip.shield_strength, 175000);
+            assert.equal(borgShip.hull_strength, 90000);
+            return "Borg Tactical Cube exists with correct stats";
         }, testResults);
 
     } finally {

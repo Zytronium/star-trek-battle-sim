@@ -17,8 +17,16 @@ async function loadData() {
     try {
         await client.query('BEGIN');
         
+        // Load special effects first since weapons reference them
+        await loadCsvData(client, '../csv_files/special_effects.csv', 'special_effects', [
+            {csv: 'effect_id', db: 'effect_id'},
+            {csv: 'name', db: 'name'},
+            {csv: 'type', db: 'type'},
+            {csv: 'description', db: 'description'}
+        ]);
+
         // Load weapons
-        await loadCsvData(client, '../database/weapons_2.csv', 'weapons', [
+        await loadCsvData(client, '../csv_files/weapons.csv', 'weapons', [
             {csv: 'weapon_id', db: 'weapon_id'},
             {csv: 'name', db: 'name'},
             {csv: 'description', db: 'description'},
@@ -30,21 +38,26 @@ async function loadData() {
         ]);
 
         // Load defenses
-        await loadCsvData(client, '../database/defenses.csv', 'defenses', [
+        await loadCsvData(client, '../csv_files/defenses.csv', 'defenses', [
             {csv: 'defense_id', db: 'defense_id'},
             {csv: 'name', db: 'name'},
             {csv: 'type', db: 'type'},
             {csv: 'description', db: 'description'},
+            {csv: 'hit_points', db: 'hit_points'},
             {csv: 'effectiveness', db: 'effectiveness'},
             {csv: 'special_effects', db: 'special_effects'}
         ]);
         
-        // Load ships with default values
-        const ships = await loadShipsWithDefaults('../database/ships_2.csv');
+        // Load regular ships
+        const ships = await loadCsvDataToMemory('../csv_files/ships.csv');
         await insertShips(client, ships);
         
+        // Load boss ships
+        const bossShips = await loadCsvDataToMemory('../csv_files/boss_ships.csv');
+        await insertBossShips(client, bossShips);
+        
         // Load ship_weapons relationships
-        await loadCsvData(client, '../database/ships_weapons_2.csv', 'ship_weapons', [
+        await loadCsvData(client, '../csv_files/ships_weapons.csv', 'ship_weapons', [
             {csv: 'ship_id', db: 'ship_id'},
             {csv: 'weapon_id', db: 'weapon_id'},
             {csv: 'damage_multiplier', db: 'damage_multiplier'},
@@ -53,15 +66,11 @@ async function loadData() {
             {csv: 'max_usage', db: 'max_usage'}
         ]);
         
-        // Load ship_defenses relationships if file exists
-        if (fs.existsSync('../database/ship_defenses.csv')) {
-            await loadCsvData(client, '../database/ship_defenses.csv', 'ship_defenses', [
-                {csv: 'ship_id', db: 'ship_id'},
-                {csv: 'defense_id', db: 'defense_id'}
-            ]);
-        } else {
-            console.log('ship_defenses.csv not found - skipping defenses loading');
-        }
+        // Load ship_defenses relationships
+        await loadCsvData(client, '../csv_files/ships_defenses.csv', 'ship_defenses', [
+            {csv: 'ship_id', db: 'ship_id'},
+            {csv: 'defense_id', db: 'defense_id'}
+        ]);
         
         await client.query('COMMIT');
         console.log('All data loaded successfully');
@@ -115,55 +124,14 @@ async function loadCsvData(client, csvFile, tableName, columnMappings) {
     });
 }
 
-async function loadShipsWithDefaults(csvFile) {
-    const ships = await new Promise((resolve, reject) => {
+async function loadCsvDataToMemory(csvFile) {
+    return new Promise((resolve, reject) => {
         const results = [];
         fs.createReadStream(csvFile)
             .pipe(csv())
             .on('data', (row) => results.push(row))
             .on('end', () => resolve(results))
             .on('error', reject);
-    });
-    
-    return setDefaultStats(ships);
-}
-
-function setDefaultStats(ships) {
-    const classDefaults = {
-        // Federation
-        'Galaxy': { shield: 1500, hull: 1200 },
-        'Intrepid': { shield: 1000, hull: 800 },
-        'Defiant': { shield: 1100, hull: 900 },
-        'Oberth': { shield: 400, hull: 300 },
-        
-        // Klingon
-        'Negh\'Var': { shield: 1800, hull: 1600 },
-        'Bird of Prey': { shield: 800, hull: 700 },
-        
-        // Romulan
-        'D\'deridex-class Warbird': { shield: 1600, hull: 1400 },
-        
-        // Cardassian
-        'Galor': { shield: 950, hull: 850 },
-        'Keldon': { shield: 1100, hull: 950 },
-        
-        // Dominion
-        'Attack Fighter': { shield: 600, hull: 500 },
-        
-        // Mirror Universe
-        'Charon': { shield: 2000, hull: 1800 }
-    };
-
-    return ships.map(ship => {
-        const defaults = classDefaults[ship.class] || { shield: 800, hull: 600 };
-        const shield = ship.shield_strength ? parseInt(ship.shield_strength) : defaults.shield;
-        const hull = ship.hull_strength ? parseInt(ship.hull_strength) : defaults.hull;
-        
-        return {
-            ...ship,
-            shield_strength: shield.toString(),
-            hull_strength: hull.toString()
-        };
     });
 }
 
@@ -184,13 +152,59 @@ async function insertShips(client, ships) {
                 hull_strength = EXCLUDED.hull_strength,
                 image_src = EXCLUDED.image_src`,
             [
-                ship.ship_id, ship.name, ship.registry, ship.class, ship.owner,
-                ship.description, ship.shield_strength, ship.hull_strength,
+                ship.ship_id, 
+                ship.name, 
+                ship.registry, 
+                ship.class, 
+                ship.owner,
+                ship.description, 
+                ship.shield_strength, 
+                ship.hull_strength,
                 ship.image_src
             ]
         );
     }
-    console.log(`Loaded ${ships.length} ships with default values where needed`);
+    console.log(`Loaded ${ships.length} regular ships`);
+}
+
+// Update the insertBossShips function
+async function insertBossShips(client, bossShips) {
+    for (const ship of bossShips) {
+        await client.query(
+            `INSERT INTO boss_ships (
+                ship_id, name, class, owner, description, 
+                ultimate_weapon, weapons, defenses, special,
+                shield_strength, hull_strength, image_src
+             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+             ON CONFLICT (ship_id) DO UPDATE SET
+                name = EXCLUDED.name,
+                class = EXCLUDED.class,
+                owner = EXCLUDED.owner,
+                description = EXCLUDED.description,
+                ultimate_weapon = EXCLUDED.ultimate_weapon,
+                weapons = EXCLUDED.weapons,
+                defenses = EXCLUDED.defenses,
+                special = EXCLUDED.special,
+                shield_strength = EXCLUDED.shield_strength,
+                hull_strength = EXCLUDED.hull_strength,
+                image_src = EXCLUDED.image_src`,
+            [
+                ship.ship_id, 
+                ship.name, 
+                ship.class, 
+                ship.owner,
+                ship.description, 
+                ship.ultimate_weapon, 
+                ship.weapons, 
+                ship.defenses, 
+                ship.special, 
+                ship.shield_strength, 
+                ship.hull_strength, 
+                ship.image_src
+            ]
+        );
+    }
+    console.log(`Loaded ${bossShips.length} boss ships`);
 }
 
 // Execute the ETL process

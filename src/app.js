@@ -1,13 +1,15 @@
 #!/usr/bin/env node
+// Load environment variables FIRST
+require('dotenv').config({ quiet: true });
 const express = require('express');
-const dotenv = require('dotenv').config({ quiet: true });
 const morgan = require('morgan');
 const cors = require('cors');
 const router = require('./routes');
-const { pool } = require('./config/database');
+const { pool, verifyConnection } = require('./config/database'); // Updated import
 
 const PORT = process.env.PORT || 5005;
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
+
 
 // Express app
 const app = express();
@@ -65,8 +67,11 @@ app.use((err, req, res, next) => {
 
 async function startServer() {
   try {
-    // Simple connection test
-    await pool.query('SELECT 1');
+    // Enhanced connection test with verification
+    const isConnected = await verifyConnection();
+    if (!isConnected) {
+      throw new Error('Could not establish database connection');
+    }
     console.log('🔌 Database connection verified');
 
     // Start server
@@ -91,6 +96,7 @@ async function startServer() {
     console.error('1. Database server is running');
     console.error('2. Database and user exist (check .env settings)');
     console.error('3. Connection parameters are correct');
+    console.error(`4. DB_PASSWORD is properly set: ${process.env.DB_PASSWORD ? 'Exists' : 'MISSING'}`);
     process.exit(1);
   }
 }
