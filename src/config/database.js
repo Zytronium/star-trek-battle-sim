@@ -18,7 +18,7 @@ async function createTables() {
   const client = await pool.connect();
   try {
     const sql = fs.readFileSync(
-      path.join(__dirname, '/database/sql/createtable.sql'), 
+      path.join(__dirname, '../sql/createtable.sql'), 
       'utf8'
     );
     await client.query(sql);

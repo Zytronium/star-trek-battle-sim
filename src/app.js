@@ -4,8 +4,7 @@ const dotenv = require('dotenv').config({ quiet: true });
 const morgan = require('morgan');
 const cors = require('cors');
 const router = require('./routes');
-const { pool, verifyConnection } = require('./config/database');
-const { initializeDatabase: initializeETLData } = require('../etl/etlscript'); // Renamed import
+const { pool } = require('./config/database');
 
 const PORT = process.env.PORT || 5005;
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
@@ -27,9 +26,6 @@ async function checkDatabase(req, res, next) {
   }
 }
 
-// Trust proxy to allow logging IP addresses
-app.set('trust proxy', true);
-
 // Middleware
 app.use(cors());
 app.use(morgan(debugMode ? 'dev' : 'combined'));
@@ -41,13 +37,12 @@ app.use(checkDatabase);
 // API routes
 app.use('/api', router);
 
-// Health check endpoint
+// Basic health check endpoint
 app.get('/health', async (req, res) => {
   try {
-    const dbResult = await pool.query('SELECT COUNT(*) FROM ships');
+    await pool.query('SELECT 1');
     res.json({
       status: 'healthy',
-      ships: dbResult.rows[0].count,
       debugMode,
       timestamp: new Date().toISOString()
     });
@@ -68,33 +63,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-async function setupDatabase() {  // Renamed this function
-  const { createTables } = require('./config/database');
-  
-  try {
-    console.log('🛠️ Creating database tables...');
-    await createTables();
-    
-    console.log('📦 Loading initial data...');
-    await initializeETLData();  // Using the renamed import
-    
-    console.log('✅ Database initialization complete');
-  } catch (err) {
-    console.error('❌ Database initialization failed:', err);
-    throw err;
-  }
-}
-
 async function startServer() {
   try {
-    // Verify database connection
+    // Simple connection test
     await pool.query('SELECT 1');
-    console.log('🔌 Database connection established');
-
-    // Initialize database if requested
-    if (process.env.INIT_DB === 'true') {
-      await setupDatabase();  // Using the renamed function
-    }
+    console.log('🔌 Database connection verified');
 
     // Start server
     app.listen(PORT, () => {
@@ -111,8 +84,13 @@ async function startServer() {
         });
       }
     });
+
   } catch (err) {
-    console.error('💥 Failed to start server:', err);
+    console.error('💥 Failed to start server:', err.message);
+    console.error('Please verify:');
+    console.error('1. Database server is running');
+    console.error('2. Database and user exist (check .env settings)');
+    console.error('3. Connection parameters are correct');
     process.exit(1);
   }
 }

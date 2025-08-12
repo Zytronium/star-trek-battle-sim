@@ -1,116 +1,221 @@
 const { Pool } = require('pg');
+const assert = require('assert');
+
+// Database configuration
 const pool = new Pool({
     user: 'staruser',
     host: 'localhost',
     database: 'star_trek_db',
     password: 'Password1',
     port: 5432,
-    ssl: false // Added to prevent SSL connection issues
+    ssl: false
 });
+
+// Expected values (adjust these based on your actual data)
+const EXPECTED = {
+    TABLES: ['ships', 'weapons', 'defenses', 'ship_weapons', 'ship_defenses'],
+    SHIPS: {
+        COUNT: 13,
+        ENTERPRISE: { id: 0, weapons: 3, defenses: 3 },
+        DEFIANT: { id: 3, weapons: 4, defenses: 3 }
+    },
+    WEAPONS: {
+        COUNT: 14,
+        SPECIAL: 3
+    },
+    DEFENSES: {
+        COUNT: 6,
+        TYPES: ['Shield', 'Hull', 'Cloaking']
+    }
+};
 
 async function runTests() {
     const client = await pool.connect();
+    const testResults = [];
     
     try {
-        console.log("🚀 Starting ETL validation tests...\n");
+        console.log("🚀 Starting comprehensive ETL validation tests...\n");
 
-        // Test 1: Verify all tables exist
-        const tablesRes = await client.query(`
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public'
-            AND table_name IN ('ships', 'weapons', 'defenses', 'ship_weapons', 'ship_defenses')
-        `);
-        console.log(`✅ Tables found: ${tablesRes.rows.map(r => r.table_name).join(', ')} (Expected: 5 tables)`);
+        // ===== TEST 1: Verify all tables exist =====
+        await runTest("Table structure", async () => {
+            const tablesRes = await client.query(`
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public'
+            `);
+            
+            const existingTables = tablesRes.rows.map(r => r.table_name);
+            const missingTables = EXPECTED.TABLES.filter(t => !existingTables.includes(t));
+            
+            if (missingTables.length > 0) {
+                throw new Error(`Missing tables: ${missingTables.join(', ')}`);
+            }
+            return `Found all ${EXPECTED.TABLES.length} expected tables`;
+        }, testResults);
 
-        // Test 2: Verify all ships loaded with default values
-        const shipsRes = await client.query('SELECT COUNT(*) FROM ships');
-        console.log(`\n🛸 Ships loaded: ${shipsRes.rows[0].count} (Expected: 13)`);
-        
-        const defaultStatsRes = await client.query(`
-            SELECT COUNT(*) FROM ships 
-            WHERE shield_strength IS NULL OR hull_strength IS NULL
-        `);
-        console.log(`🛡️  Ships missing stats: ${defaultStatsRes.rows[0].count} (Expected: 0)`);
+        // ===== TEST 2: Verify ships data =====
+        await runTest("Ships count", async () => {
+            const shipsRes = await client.query('SELECT COUNT(*) FROM ships');
+            assert.equal(parseInt(shipsRes.rows[0].count), EXPECTED.SHIPS.COUNT);
+            return `Found ${shipsRes.rows[0].count} ships`;
+        }, testResults);
 
-        // Test 3: Verify weapons data
-        const weaponsRes = await client.query('SELECT COUNT(*) FROM weapons');
-        console.log(`\n💥 Weapons loaded: ${weaponsRes.rows[0].count} (Expected: 14)`);
-        
-        const specialWeaponsRes = await client.query(`
-            SELECT COUNT(*) FROM weapons 
-            WHERE special_effects IS NOT NULL AND special_effects != '[]'
-        `);
-        console.log(`✨ Special weapons: ${specialWeaponsRes.rows[0].count} (Expected: 3)`);
+        await runTest("Ships required fields", async () => {
+            const nullShipsRes = await client.query(`
+                SELECT COUNT(*) FROM ships 
+                WHERE name IS NULL OR registry IS NULL OR class IS NULL
+            `);
+            assert.equal(parseInt(nullShipsRes.rows[0].count), 0);
+            return "No NULL values in required fields";
+        }, testResults);
 
-        // Test 4: Verify defenses data
-        const defensesRes = await client.query('SELECT COUNT(*) FROM defenses');
-        console.log(`\n🛡️  Defenses loaded: ${defensesRes.rows[0].count} (Expected: 6)`);
+        // ===== TEST 3: Verify weapons data =====
+        await runTest("Weapons count", async () => {
+            const weaponsRes = await client.query('SELECT COUNT(*) FROM weapons');
+            assert.equal(parseInt(weaponsRes.rows[0].count), EXPECTED.WEAPONS.COUNT);
+            return `Found ${weaponsRes.rows[0].count} weapons`;
+        }, testResults);
 
-        // Test 5: Verify relationship tables
-        const shipWeaponsRes = await client.query(`
-            SELECT COUNT(DISTINCT ship_id) as ships, COUNT(*) as weapons 
-            FROM ship_weapons
-        `);
-        console.log(`\n🔫 Ship-Weapon relationships: 
-            ${shipWeaponsRes.rows[0].weapons} weapons on ${shipWeaponsRes.rows[0].ships} ships
-            (Expected: ~35 weapons on 12 ships)`);
+        await runTest("Special weapons count", async () => {
+            const specialWeaponsRes = await client.query(`
+                SELECT COUNT(*) FROM weapons 
+                WHERE special_effects IS NOT NULL AND special_effects != '[]'
+            `);
+            assert.equal(parseInt(specialWeaponsRes.rows[0].count), EXPECTED.WEAPONS.SPECIAL);
+            return `Found ${specialWeaponsRes.rows[0].count} special weapons`;
+        }, testResults);
 
-        const shipDefensesRes = await client.query(`
-            SELECT COUNT(DISTINCT ship_id) as ships, COUNT(*) as defenses 
-            FROM ship_defenses
-        `);
-        console.log(`🛡️  Ship-Defense relationships: 
-            ${shipDefensesRes.rows[0].defenses} defenses on ${shipDefensesRes.rows[0].ships} ships
-            (Expected: ~23 defenses on 12 ships)`);
+        // ===== TEST 4: Verify defenses data =====
+        await runTest("Defenses count", async () => {
+            const defensesRes = await client.query('SELECT COUNT(*) FROM defenses');
+            assert.equal(parseInt(defensesRes.rows[0].count), EXPECTED.DEFENSES.COUNT);
+            return `Found ${defensesRes.rows[0].count} defenses`;
+        }, testResults);
 
-        // Test 6: Verify specific ship configurations
-        console.log("\n🔍 Sample ship verification:");
-        
-        // Check USS Enterprise-D (ship_id 0)
-        const enterpriseRes = await client.query(`
-            SELECT s.name, 
-                   COUNT(DISTINCT sw.weapon_id) as weapon_count,
-                   COUNT(DISTINCT sd.defense_id) as defense_count
-            FROM ships s
-            LEFT JOIN ship_weapons sw ON s.ship_id = sw.ship_id
-            LEFT JOIN ship_defenses sd ON s.ship_id = sd.ship_id
-            WHERE s.ship_id = 0
-            GROUP BY s.name
-        `);
-        console.log(`- USS Enterprise-D: ${enterpriseRes.rows[0].weapon_count} weapons, ${enterpriseRes.rows[0].defense_count} defenses (Expected: 3 weapons, 3 defenses)`);
+        await runTest("Defense types", async () => {
+            const defenseTypesRes = await client.query(`
+                SELECT DISTINCT type FROM defenses
+            `);
+            const existingTypes = defenseTypesRes.rows.map(r => r.type);
+            const missingTypes = EXPECTED.DEFENSES.TYPES.filter(t => !existingTypes.includes(t));
+            
+            if (missingTypes.length > 0) {
+                throw new Error(`Missing defense types: ${missingTypes.join(', ')}`);
+            }
+            return `Found defense types: ${existingTypes.join(', ')}`;
+        }, testResults);
 
-        // Check USS Defiant (ship_id 3)
-        const defiantRes = await client.query(`
-            SELECT s.name, 
-                   COUNT(DISTINCT sw.weapon_id) as weapon_count,
-                   COUNT(DISTINCT sd.defense_id) as defense_count
-            FROM ships s
-            LEFT JOIN ship_weapons sw ON s.ship_id = sw.ship_id
-            LEFT JOIN ship_defenses sd ON s.ship_id = sd.ship_id
-            WHERE s.ship_id = 3
-            GROUP BY s.name
-        `);
-        console.log(`- USS Defiant: ${defiantRes.rows[0].weapon_count} weapons, ${defiantRes.rows[0].defense_count} defenses (Expected: 4 weapons, 3 defenses)`);
+        // ===== TEST 5: Verify relationships =====
+        await runTest("Ships with weapons", async () => {
+            const shipsNoWeapons = await client.query(`
+                SELECT COUNT(*) FROM ships s
+                WHERE NOT EXISTS (SELECT 1 FROM ship_weapons sw WHERE sw.ship_id = s.ship_id)
+            `);
+            assert.equal(parseInt(shipsNoWeapons.rows[0].count), 0);
+            return "All ships have weapons assigned";
+        }, testResults);
 
-        // Test 7: Verify defense types distribution
-        console.log("\n🛡️ Defense type distribution:");
-        const defenseTypesRes = await client.query(`
-            SELECT type, COUNT(*) 
-            FROM defenses 
-            GROUP BY type
-        `);
-        defenseTypesRes.rows.forEach(row => {
-            console.log(`- ${row.type}: ${row.count}`);
-        });
+        await runTest("Ships with defenses", async () => {
+            const shipsNoDefenses = await client.query(`
+                SELECT COUNT(*) FROM ships s
+                WHERE NOT EXISTS (SELECT 1 FROM ship_defenses sd WHERE sd.ship_id = s.ship_id)
+            `);
+            assert.equal(parseInt(shipsNoDefenses.rows[0].count), 0);
+            return "All ships have defenses assigned";
+        }, testResults);
 
-        console.log("\n✅ All tests completed successfully!");
+        // ===== TEST 6: Verify specific ships =====
+        await runTest("USS Enterprise-D configuration", async () => {
+            const res = await client.query(`
+                SELECT s.name, 
+                       COUNT(DISTINCT sw.weapon_id) as weapon_count,
+                       COUNT(DISTINCT sd.defense_id) as defense_count
+                FROM ships s
+                LEFT JOIN ship_weapons sw ON s.ship_id = sw.ship_id
+                LEFT JOIN ship_defenses sd ON s.ship_id = sd.ship_id
+                WHERE s.ship_id = $1
+                GROUP BY s.name
+            `, [EXPECTED.SHIPS.ENTERPRISE.id]);
+            
+            const ship = res.rows[0];
+            assert.equal(ship.name, 'USS Enterprise-D');
+            assert.equal(parseInt(ship.weapon_count), EXPECTED.SHIPS.ENTERPRISE.weapons);
+            assert.equal(parseInt(ship.defense_count), EXPECTED.SHIPS.ENTERPRISE.defenses);
+            
+            return `Configuration correct: ${ship.weapon_count} weapons, ${ship.defense_count} defenses`;
+        }, testResults);
 
-    } catch (err) {
-        console.error("\n❌ Test failed:", err);
+        await runTest("USS Defiant configuration", async () => {
+            const res = await client.query(`
+                SELECT s.name, 
+                       COUNT(DISTINCT sw.weapon_id) as weapon_count,
+                       COUNT(DISTINCT sd.defense_id) as defense_count
+                FROM ships s
+                LEFT JOIN ship_weapons sw ON s.ship_id = sw.ship_id
+                LEFT JOIN ship_defenses sd ON s.ship_id = sd.ship_id
+                WHERE s.ship_id = $1
+                GROUP BY s.name
+            `, [EXPECTED.SHIPS.DEFIANT.id]);
+            
+            const ship = res.rows[0];
+            assert.equal(ship.name, 'USS Defiant');
+            assert.equal(parseInt(ship.weapon_count), EXPECTED.SHIPS.DEFIANT.weapons);
+            assert.equal(parseInt(ship.defense_count), EXPECTED.SHIPS.DEFIANT.defenses);
+            
+            return `Configuration correct: ${ship.weapon_count} weapons, ${ship.defense_count} defenses`;
+        }, testResults);
+
+        // ===== TEST 7: Data integrity checks =====
+        await runTest("Orphaned weapon relationships", async () => {
+            const orphanedWeapons = await client.query(`
+                SELECT COUNT(*) FROM ship_weapons sw
+                WHERE NOT EXISTS (SELECT 1 FROM weapons w WHERE w.weapon_id = sw.weapon_id)
+            `);
+            assert.equal(parseInt(orphanedWeapons.rows[0].count), 0);
+            return "No orphaned weapon relationships";
+        }, testResults);
+
+        await runTest("Orphaned defense relationships", async () => {
+            const orphanedDefenses = await client.query(`
+                SELECT COUNT(*) FROM ship_defenses sd
+                WHERE NOT EXISTS (SELECT 1 FROM defenses d WHERE d.defense_id = sd.defense_id)
+            `);
+            assert.equal(parseInt(orphanedDefenses.rows[0].count), 0);
+            return "No orphaned defense relationships";
+        }, testResults);
+
     } finally {
         client.release();
-        pool.end();
+        await pool.end();
+        
+        // Print comprehensive test report
+        console.log("\n=== TEST SUMMARY ===");
+        testResults.forEach((result, index) => {
+            const status = result.passed ? '✅ PASS' : '❌ FAIL';
+            console.log(`${index + 1}. ${status} - ${result.name}`);
+            if (!result.passed) {
+                console.log(`   Reason: ${result.error}`);
+            } else {
+                console.log(`   ${result.message}`);
+            }
+        });
+        
+        const passedCount = testResults.filter(r => r.passed).length;
+        const totalCount = testResults.length;
+        console.log(`\nTests passed: ${passedCount}/${totalCount}`);
+        
+        process.exit(passedCount === totalCount ? 0 : 1);
+    }
+}
+
+async function runTest(name, testFn, results) {
+    try {
+        const message = await testFn();
+        results.push({ name, passed: true, message });
+        console.log(`✅ ${name}`);
+    } catch (error) {
+        results.push({ name, passed: false, error: error.message });
+        console.log(`❌ ${name} - ${error.message}`);
     }
 }
 
