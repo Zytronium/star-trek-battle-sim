@@ -1,6 +1,6 @@
 #!/bin/node
 const express = require('express');
-const dotenv = require('dotenv').config({ quiet: true }); // Inject .env variables silently
+require('dotenv').config({ quiet: true }); // Inject .env variables silently
 const morgan = require("morgan");
 const router = require("./routes");
 const {  pool } = require("./config/database");
