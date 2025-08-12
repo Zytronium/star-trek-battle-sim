@@ -1,0 +1,9 @@
+effect_id,name,type,description
+0,Partial Shield Bypass,Weapon,40% of damage bypasses shields and directly damages the hull.
+1,Area Damage,Weapon,"IDK tbh. Might remove this. ChatGPT generated this one, but it doesn't make sense unless we calculate ship positions during battle or allow fleet battles."
+2,Power Drain,Weapon,"For 3 turns, disables enemy shields, reduces enemy energy weapon power by 80%, and doubles all enemy weapon cooldowns."
+3,Trouble with Tribbles,Weapon,"If the target ship's shields are below 10%, decreases its accuracy by 25% for 5 turns, against Klingon ships."
+4,Shielding,Defense,"100% (multiplied by this defense's effectiveness) of damage this ship takes is dealt to the shields instead, until those shields reach 10%, at which point the amount of damage they absorb is equal to their current HP percentage x10. Shields stop recharging once they hit 0%, and don't start recharging unless no damage has been taken for at least 3 turns."
+5,Invisibility,Defense,Reduce incoming attacks' accuracy by 100% (multiplied by this defense's effectiveness). Shields and weapons are deactivated while this is active.
+6,Phasing,Defense,"Prevents 100% of damage from torpedoes and 50% of damage from all other weapons, and this ship may pass through sold objects."
+7,Hull Armor,Defense,Prevent 100% (multiplied by this defense's effectiveness) of hull damage. This armor takes damage equivalent to 2/3rd of the amount of hull damage prevented. This effect stops when the associated hull armor reaches 0% HP.

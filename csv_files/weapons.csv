@@ -1,0 +1,19 @@
+weapon_id,name,description,damage,shields_multiplier,hull_multiplier,special_effects,usage_limit
+0,Photon Torpedoes,Standard matter/antimatter torpedoes of the 23rd–24th century; solid against both shields and hull.,75,1,1.75,,80
+1,Quantum Torpedoes,Advanced torpedo with zero-point energy warhead; more effective against hull than shields.,175,1,2,,15
+2,Torpedoes (standard),General-purpose projectile used by multiple factions; balanced performance.,50,1,1.5,,200
+3,Phaser Array,Long-range beam weapon; good sustained damage against shields.,45,1.25,1,,99999
+4,Phaser Cannons,High-intensity phasers for close-range combat; fast recharge but short range.,70,1.25,1,,99999
+5,Disruptor Arrays,Romulan and Klingon beam weapons; very effective against shields but weaker on hull.,55,1.5,0.875,,99999
+6,Disruptor Cannons,"Rapid-fire, high-energy disruptors; brutal against shields but hull penetration is limited.",80,1.5,0.875,,99999
+7,Disruptors,Generic shield-shredding disruptor emitters.,70,1.5,0.875,,99999
+8,Large Disruptor,"Heavy disruptor cannons; devastating alpha strike against shields, moderate on hull.",115,1.5,0.875,,99999
+9,Phased Polaron Beams,Dominion beam weapon; ignores a percentage of shield capacity before dealing damage.,100,0.875,1.125,Partial Shield Bypass,99999
+10,Spatial Charges,"Experimental Federation ordnance; massive area effect, huge shield impact but fragile casing.",150,1.75,0.75,Area Damage,4
+11,Tricobalt Warheads,Extremely destructive; banned in the Federation; massive explosive yield against structures and ships.,250,0.5,2.25,,2
+12,Energy Dissipater,"Special Breen weapon; disables enemy shields, reduces enemy energy weapon power by 80%, and doubles all enemy weapon cooldowns, all for 3 turns.",0,1,1,Power Drain,1
+13,Heavy Phaser Arrays,Advanced phaser systems capable of delivering sustained high-energy fire by drawing power from a powerful energy source.,70,1.25,1,,99999
+14,Large Phaser Cannons,"Oversied, high output pulse phaser cannons with a low firing rate, but powerful destructive force.",85,1.25,1,,99999
+15,Mycelial Energy Projector,"The Mycelial Energy Projector channels massive amounts of energy from the Mycelial Network to unleash a catastrophic beam capable of destroying a small moon. Luckily for you, it's currently not performing very well, but it's still unimaginably powerful.",550,1.125,0.875,,1
+16,Tribble,"If the target ship's shields are below 10%, beam this aboard a ship and it will be flooded with Tribbles in a few days. Decreases target ship's accuracy by 25% for 5 turns. This is twice as effective against Klingon ships.",0,0,1,Trouble with Tribbles,1
+17,Unknown,Invalid Weapon,0,1,1,,0
