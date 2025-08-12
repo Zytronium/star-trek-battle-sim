@@ -142,6 +142,11 @@ Tristian Davis  | [GitHub](https://github.com/TebariousBag)
 
 - [STAPI](https://stapi.co/)
 - [Memory Alpha](https://memory-alpha.fandom.com/wiki/Portal:Main)
+- [Memory Beta](https://memory-beta.fandom.com/wiki/Main_Page)
+- [Star Trek Online Wiki](https://stowiki.net/)
+- [Federation Space Wiki](https://wiki.fed-space.com/)
+- [Ex Astris Scientia](https://www.ex-astris-scientia.org/)
+- [Daystrom Institute Technical Library](https://www.ditl.org/)
 - [Our imagination](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
 
 \* All data that can not be found from other sources is made up. Some data is
