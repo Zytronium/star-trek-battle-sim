@@ -1,27 +1,35 @@
-// this is the database file
-
 const { Pool } = require('pg');
 require('dotenv').config({ quiet: true });
 
-// Use env variables or default
-// I added a 3rd user option, I was having trouble connecting on mac
 const pool = new Pool({
-  user: process.env.DB_USER || process.env.USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'star_trek_db',
-  password: process.env.DB_PASSWORD || '',
-  port: process.env.DB_PORT || 5432,
-  ssl: process.env.DB_SSL === 'false' ? { rejectUnauthorized: false } : false, // needed for hosting db and API with Render
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD || null, // Ensure this is always a string or null
+  port: parseInt(process.env.DB_PORT) || 5432,
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+  max: 10
 });
 
-// testing connections
-pool.on('connect', () => {
-  console.log('\nCONNECTED TO DB');
-  console.log('----------------------------')
-});
+async function verifyConnection(retries = 3, delay = 1000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await pool.query('SELECT 1');
+      return true;
+    } catch (err) {
+      if (i === retries - 1) {
+        console.error('❌ Database connection failed after retries:', err.message);
+        return false;
+      }
+      console.log(`⌛ Connection failed (attempt ${i+1}/${retries}), retrying in ${delay}ms...`);
+      await new Promise(res => setTimeout(res, delay));
+    }
+  }
+}
 
-pool.on('error', (err) => {
-  console.error('error connecting to db', err);
-});
-
-module.exports = { pool };
+module.exports = { 
+  pool,
+  verifyConnection
+};
