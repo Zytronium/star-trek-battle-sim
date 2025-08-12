@@ -141,6 +141,12 @@ Tristian Davis  | [GitHub](https://github.com/TebariousBag)
 ## Data Sources:
 
 - [STAPI](https://stapi.co/)
+- [Memory Alpha](https://memory-alpha.fandom.com/wiki/Portal:Main)
 - [Our imagination](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
+
+\* All data that can not be found from other sources is made up. Some data is
+altered either to correct for inconsistencies or balancing issues. For example,
+Voyager's extreme luck with the Borg, being able to fight off multiple Borg
+cubes on their own, is not being accounted for in this simulation.
 
 ----
