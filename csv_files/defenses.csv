@@ -1,0 +1,6 @@
+defense_id,name,type,description,hit_points,effectiveness,special_effects
+0,Deflector Shields,Shield,"Standard shield technology that absorbs most impacts, protecting the hull. It regenerates slowly over time. ",,0.95,Shielding
+1,Cloaking Device,Cloak,"Standard cloaking device that makes ships invisible to sensors, but shields and weapons must remain offline while in use. Cannot be active for more than 4 turns in a row.",200,0.99,Invisibility
+2,Phasing Cloaking Device,Cloak,"Experimental and illegal Federation cloaking device that phases the ship out of normal space-time, allowing it to not only be invisible to sensors, but pass through solid objects, including projectiles like torpedoes. Highly unstable prototype. Prevents 100% of damage from torpedoes and 50% of damage from all other weapons, but shields and weapons must remain offline while cloak is active, and it can only be active for 2 turns in a row at maximum.",150,0.95,"Invisibility, Phasing"
+3,Ablative Armor,Armor,Advanced hull armor that ablates when hit. The armor absorbs 80% of hull damage and negates 2/3rds of the remaining damage dealt to the armor itself.,350,0.80,Hull Armor
+4,Unknown,Invalid,Invalid Defense,,0,
