@@ -34,7 +34,8 @@ async function loadData() {
             {csv: 'damage', db: 'damage'},
             {csv: 'shields_multiplier', db: 'shields_multiplier'},
             {csv: 'hull_multiplier', db: 'hull_multiplier'},
-            {csv: 'special_effects', db: 'special_effects'},
+            // i changed to special_effect_id
+            {csv: 'special_effects', db: 'special_effect_id'},
             {csv: 'usage_limit', db: 'usage_limit'}
         ]);
 
@@ -46,7 +47,8 @@ async function loadData() {
             {csv: 'description', db: 'description'},
             {csv: 'hit_points', db: 'hit_points'},
             {csv: 'effectiveness', db: 'effectiveness'},
-            {csv: 'special_effects', db: 'special_effects'}
+            // i changed to special_effect_id
+            {csv: 'special_effects', db: 'special_effect_id'}
         ]);
         
         // Load regular ships
@@ -92,7 +94,16 @@ async function loadCsvData(client, csvFile, tableName, columnMappings) {
             .on('data', (row) => {
                 const dbRow = {};
                 columnMappings.forEach(mapping => {
-                    dbRow[mapping.db] = row[mapping.csv] !== '' ? row[mapping.csv] : null;
+                    // added this section - Tristian
+                    let value = row[mapping.csv] !== '' ? row[mapping.csv] : null;
+                    
+                    // Handle special effect lookup for weapons and defenses
+                    if (mapping.db === 'special_effect_id' && value) {
+                        // We'll handle this in the on('end') callback
+                        dbRow[mapping.db] = value; // Keep the name for now
+                    } else {
+                        dbRow[mapping.db] = value;
+                    }
                 });
                 rows.push(dbRow);
             })
@@ -101,6 +112,26 @@ async function loadCsvData(client, csvFile, tableName, columnMappings) {
                     if (rows.length === 0) {
                         console.log(`No data found in ${csvFile}`);
                         return resolve();
+                    }
+                    // and added this section - Tristian
+                    // Handle special effect lookups for weapons and defenses
+                    if (tableName === 'weapons' || tableName === 'defenses') {
+                        for (const row of rows) {
+                            if (row.special_effect_id) {
+                                // Look up the effect ID from the effect name
+                                const effectResult = await client.query(
+                                    'SELECT effect_id FROM special_effects WHERE name = $1',
+                                    [row.special_effect_id]
+                                );
+                                
+                                if (effectResult.rows.length > 0) {
+                                    row.special_effect_id = effectResult.rows[0].effect_id;
+                                } else {
+                                    console.log(`Warning: Effect "${row.special_effect_id}" not found, setting to null`);
+                                    row.special_effect_id = null;
+                                }
+                            }
+                        }
                     }
                     
                     const columns = Object.keys(rows[0]);

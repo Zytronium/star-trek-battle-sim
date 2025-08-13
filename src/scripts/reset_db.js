@@ -7,23 +7,23 @@ async function resetDatabase() {
   console.log('----------------------------')
   
   try {
-    // Drop all existing tables (cascade will handle dependencies)
+    // drop all existing tables
     await pool.query('DROP SCHEMA public CASCADE;');
     await pool.query('CREATE SCHEMA public;');
-    console.log('✓ Dropped all existing tables and recreated schema');
+    console.log('Dropped all existing tables and recreated schema');
     
-    // Recreate tables with the new schema
-    const { createDatabase } = require('./create_db');
+    // recreate tables with the new schema
+    const { createDatabase } = require('./create_db_new');
     await createDatabase();
     
     console.log('----------------------------');
-    console.log('✅ DATABASE RESET COMPLETE!');
+    console.log('DATABASE RESET COMPLETE!');
     console.log('All tables have been dropped and recreated with the new schema.');
     console.log('Your database is now clean and ready for development.');
     console.log('----------------------------');
 
   } catch (error) {
-    console.error('❌ Error resetting database:', error.message);
+    console.error('Error resetting database:', error.message);
     throw error;
   } finally {
     // Clean up and close out
@@ -35,11 +35,11 @@ async function resetDatabase() {
 if (require.main === module) {
   resetDatabase()
     .then(() => {
-      console.log('\n✅ Database reset completed successfully!');
+      console.log('\nDatabase reset completed successfully!');
       process.exit(0);
     })
     .catch((error) => {
-      console.error('❌ Database reset failed:', error);
+      console.error('Database reset failed:', error);
       process.exit(1);
     });
 }
