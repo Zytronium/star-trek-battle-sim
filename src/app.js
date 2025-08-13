@@ -4,7 +4,6 @@ const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 const router = require('./routes');
-const pyRouter = require("./routes/pythonRoutes");
 const { pool, verifyConnection } = require('./config/database');
 
 const PORT = process.env.PORT || 5005;
@@ -41,9 +40,6 @@ app.use(checkDatabase);
 
 // API routes
 app.use('/api', router);
-
-// Game engine routes
-app.use("/engine", pyRouter);
 
 // Basic health check endpoint
 app.get('/health', async (req, res) => {
