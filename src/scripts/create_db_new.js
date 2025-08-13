@@ -19,7 +19,7 @@ async function createDatabase() {
     `);
     console.log('Created special_effects table');
 
-    // 2. Create weapons table (references special_effects)
+    // 2. Create weapons - table no more special effects
     await pool.query(`
       CREATE TABLE IF NOT EXISTS weapons (
         weapon_id SERIAL PRIMARY KEY,
@@ -28,13 +28,13 @@ async function createDatabase() {
         damage INT NOT NULL,
         shields_multiplier DECIMAL(5,2) NOT NULL,
         hull_multiplier DECIMAL(5,2) NOT NULL,
-        special_effect_id INT REFERENCES special_effects(effect_id),
+        special_effects VARCHAR(100),
         usage_limit INT
       );
     `);
     console.log('Created weapons table');
 
-    // 3. Create defenses table (references special_effects)
+    // 3. Create defenses table - table no more special effects
     await pool.query(`
       CREATE TABLE IF NOT EXISTS defenses (
         defense_id SERIAL PRIMARY KEY,
@@ -43,7 +43,7 @@ async function createDatabase() {
         description TEXT,
         hit_points INT,
         effectiveness DECIMAL(3,2),
-        special_effect_id INT REFERENCES special_effects(effect_id)
+        special_effects VARCHAR(100)
       );
     `);
     console.log('Created defenses table');
@@ -120,8 +120,8 @@ async function createDatabase() {
     console.log('----------------------------');
     console.log('Tables created:');
     console.log('• special_effects (effect_id, name, type, description)');
-    console.log('• weapons (weapon_id, name, description, damage, shields_multiplier, hull_multiplier, special_effect_id, usage_limit)');
-    console.log('• defenses (defense_id, name, type, description, hit_points, effectiveness, special_effect_id)');
+    console.log('• weapons (weapon_id, name, description, damage, shields_multiplier, hull_multiplier, special_effects, usage_limit)');
+    console.log('• defenses (defense_id, name, type, description, hit_points, effectiveness, special_effects)');
     console.log('• ships (ship_id, name, registry, class, owner, description, shield_strength, hull_strength, image_src)');
     console.log('• boss_ships (ship_id, name, class, owner, description, ultimate_weapon, weapons, defenses, special, shield_strength, hull_strength, image_src)');
     console.log('• ship_weapons (ship_id, weapon_id, damage_multiplier, max_per_turn, cooldown_turns, max_usage)');

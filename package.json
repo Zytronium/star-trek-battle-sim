@@ -8,7 +8,8 @@
     "start-server": "node src/app.js",
     "debug-server": "DEBUG=true nodemon src/app.js",
     "create-db-new": "node src/scripts/create_db_new.js",
-    "cleanup-old": "node src/scripts/cleanup_old_schema.js"
+    "reset-db": "node src/scripts/reset_db.js",
+    "etl": "node etl/etlscript.js"
   },
   "private": true,
   "dependencies": {
