@@ -133,14 +133,23 @@ Now you should have a freshly restored database.
 
 Delete old DB tables
 
-```bash
-npm run cleanup-old
-```
-
 Add new Tables
 
 ```bash
 npm run create-db-new
+```
+
+To populate the tables with csv data
+
+```bash
+npm run etl
+```
+
+To reset DB and start with fresh empty tables.
+This runs create_db_new after resetting
+
+```bash
+npm run reset-db
 ```
 
 

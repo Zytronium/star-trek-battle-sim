@@ -19,7 +19,7 @@ async function loadData() {
         await client.query('BEGIN');
         
         // Load special effects first since weapons reference them
-        await loadCsvData(client, './csv_files/special_effects.csv', 'special_effects', [
+        await loadCsvData(client, '../csv_files/special_effects.csv', 'special_effects', [
             {csv: 'effect_id', db: 'effect_id'},
             {csv: 'name', db: 'name'},
             {csv: 'type', db: 'type'},
@@ -27,40 +27,38 @@ async function loadData() {
         ]);
 
         // Load weapons
-        await loadCsvData(client, './csv_files/weapons.csv', 'weapons', [
+        await loadCsvData(client, '../csv_files/weapons.csv', 'weapons', [
             {csv: 'weapon_id', db: 'weapon_id'},
             {csv: 'name', db: 'name'},
             {csv: 'description', db: 'description'},
             {csv: 'damage', db: 'damage'},
             {csv: 'shields_multiplier', db: 'shields_multiplier'},
             {csv: 'hull_multiplier', db: 'hull_multiplier'},
-            // i changed to special_effect_id
-            {csv: 'special_effects', db: 'special_effect_id'},
+            {csv: 'special_effects', db: 'special_effects'},
             {csv: 'usage_limit', db: 'usage_limit'}
         ]);
 
         // Load defenses
-        await loadCsvData(client, './csv_files/defenses.csv', 'defenses', [
+        await loadCsvData(client, '../csv_files/defenses.csv', 'defenses', [
             {csv: 'defense_id', db: 'defense_id'},
             {csv: 'name', db: 'name'},
             {csv: 'type', db: 'type'},
             {csv: 'description', db: 'description'},
             {csv: 'hit_points', db: 'hit_points'},
             {csv: 'effectiveness', db: 'effectiveness'},
-            // i changed to special_effect_id
-            {csv: 'special_effects', db: 'special_effect_id'}
+            {csv: 'special_effects', db: 'special_effects'}
         ]);
         
         // Load regular ships
-        const ships = await loadCsvDataToMemory('./csv_files/ships.csv');
+        const ships = await loadCsvDataToMemory('../csv_files/ships.csv');
         await insertShips(client, ships);
         
         // Load boss ships
-        const bossShips = await loadCsvDataToMemory('./csv_files/boss_ships.csv');
+        const bossShips = await loadCsvDataToMemory('../csv_files/boss_ships.csv');
         await insertBossShips(client, bossShips);
         
         // Load ship_weapons relationships
-        await loadCsvData(client, './csv_files/ships_weapons.csv', 'ship_weapons', [
+        await loadCsvData(client, '../csv_files/ships_weapons.csv', 'ship_weapons', [
             {csv: 'ship_id', db: 'ship_id'},
             {csv: 'weapon_id', db: 'weapon_id'},
             {csv: 'damage_multiplier', db: 'damage_multiplier'},
@@ -70,7 +68,7 @@ async function loadData() {
         ]);
         
         // Load ship_defenses relationships
-        await loadCsvData(client, './csv_files/ships_defenses.csv', 'ship_defenses', [
+        await loadCsvData(client, '../csv_files/ships_defenses.csv', 'ship_defenses', [
             {csv: 'ship_id', db: 'ship_id'},
             {csv: 'defense_id', db: 'defense_id'}
         ]);
@@ -94,16 +92,7 @@ async function loadCsvData(client, csvFile, tableName, columnMappings) {
             .on('data', (row) => {
                 const dbRow = {};
                 columnMappings.forEach(mapping => {
-                    // added this section - Tristian
-                    let value = row[mapping.csv] !== '' ? row[mapping.csv] : null;
-                    
-                    // Handle special effect lookup for weapons and defenses
-                    if (mapping.db === 'special_effect_id' && value) {
-                        // We'll handle this in the on('end') callback
-                        dbRow[mapping.db] = value; // Keep the name for now
-                    } else {
-                        dbRow[mapping.db] = value;
-                    }
+                    dbRow[mapping.db] = row[mapping.csv] !== '' ? row[mapping.csv] : null;
                 });
                 rows.push(dbRow);
             })
@@ -112,26 +101,6 @@ async function loadCsvData(client, csvFile, tableName, columnMappings) {
                     if (rows.length === 0) {
                         console.log(`No data found in ${csvFile}`);
                         return resolve();
-                    }
-                    // and added this section - Tristian
-                    // Handle special effect lookups for weapons and defenses
-                    if (tableName === 'weapons' || tableName === 'defenses') {
-                        for (const row of rows) {
-                            if (row.special_effect_id) {
-                                // Look up the effect ID from the effect name
-                                const effectResult = await client.query(
-                                    'SELECT effect_id FROM special_effects WHERE name = $1',
-                                    [row.special_effect_id]
-                                );
-                                
-                                if (effectResult.rows.length > 0) {
-                                    row.special_effect_id = effectResult.rows[0].effect_id;
-                                } else {
-                                    console.log(`Warning: Effect "${row.special_effect_id}" not found, setting to null`);
-                                    row.special_effect_id = null;
-                                }
-                            }
-                        }
                     }
                     
                     const columns = Object.keys(rows[0]);
