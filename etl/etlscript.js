@@ -1,14 +1,15 @@
 const fs = require('fs');
 const { Pool } = require('pg');
 const csv = require('csv-parser');
+require('dotenv').config({ path: './.env' });
 
-// Database configuration
+// Database configuration use environment variables
 const pool = new Pool({
-    user: 'staruser',
-    host: 'localhost',
-    database: 'star_trek_db',
-    password: 'Password1',
-    port: 5432,
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASSWORD,
+    port: parseInt(process.env.DB_PORT) || 5432,
 });
 
 async function loadData() {
@@ -18,7 +19,7 @@ async function loadData() {
         await client.query('BEGIN');
         
         // Load special effects first since weapons reference them
-        await loadCsvData(client, '../csv_files/special_effects.csv', 'special_effects', [
+        await loadCsvData(client, './csv_files/special_effects.csv', 'special_effects', [
             {csv: 'effect_id', db: 'effect_id'},
             {csv: 'name', db: 'name'},
             {csv: 'type', db: 'type'},
@@ -26,7 +27,7 @@ async function loadData() {
         ]);
 
         // Load weapons
-        await loadCsvData(client, '../csv_files/weapons.csv', 'weapons', [
+        await loadCsvData(client, './csv_files/weapons.csv', 'weapons', [
             {csv: 'weapon_id', db: 'weapon_id'},
             {csv: 'name', db: 'name'},
             {csv: 'description', db: 'description'},
@@ -38,7 +39,7 @@ async function loadData() {
         ]);
 
         // Load defenses
-        await loadCsvData(client, '../csv_files/defenses.csv', 'defenses', [
+        await loadCsvData(client, './csv_files/defenses.csv', 'defenses', [
             {csv: 'defense_id', db: 'defense_id'},
             {csv: 'name', db: 'name'},
             {csv: 'type', db: 'type'},
@@ -49,15 +50,15 @@ async function loadData() {
         ]);
         
         // Load regular ships
-        const ships = await loadCsvDataToMemory('../csv_files/ships.csv');
+        const ships = await loadCsvDataToMemory('./csv_files/ships.csv');
         await insertShips(client, ships);
         
         // Load boss ships
-        const bossShips = await loadCsvDataToMemory('../csv_files/boss_ships.csv');
+        const bossShips = await loadCsvDataToMemory('./csv_files/boss_ships.csv');
         await insertBossShips(client, bossShips);
         
         // Load ship_weapons relationships
-        await loadCsvData(client, '../csv_files/ships_weapons.csv', 'ship_weapons', [
+        await loadCsvData(client, './csv_files/ships_weapons.csv', 'ship_weapons', [
             {csv: 'ship_id', db: 'ship_id'},
             {csv: 'weapon_id', db: 'weapon_id'},
             {csv: 'damage_multiplier', db: 'damage_multiplier'},
@@ -67,7 +68,7 @@ async function loadData() {
         ]);
         
         // Load ship_defenses relationships
-        await loadCsvData(client, '../csv_files/ships_defenses.csv', 'ship_defenses', [
+        await loadCsvData(client, './csv_files/ships_defenses.csv', 'ship_defenses', [
             {csv: 'ship_id', db: 'ship_id'},
             {csv: 'defense_id', db: 'defense_id'}
         ]);
