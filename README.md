@@ -129,6 +129,21 @@ npm run import-csv
 ```
 Now you should have a freshly restored database.
 
+## NEW DB
+
+Delete old DB tables
+
+```bash
+npm run cleanup-old
+```
+
+Add new Tables
+
+```bash
+npm run create-db-new
+```
+
+
 
 ## Authors
 
