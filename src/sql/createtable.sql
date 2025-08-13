@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS weapons (
     damage INT NOT NULL,
     shields_multiplier DECIMAL(5,2) NOT NULL,
     hull_multiplier DECIMAL(5,2) NOT NULL,
-    special_effects VARCHAR(100) REFERENCES special_effects(name),
+    special_effects VARCHAR(100),
     usage_limit INT
 );
 
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS defenses (
     description TEXT,
     hit_points INT,
     effectiveness DECIMAL(3,2),
-    special_effects VARCHAR(100) REFERENCES special_effects(name)
+    special_effects VARCHAR(100)
 );
 
 CREATE TABLE IF NOT EXISTS ships (
