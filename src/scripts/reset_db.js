@@ -13,7 +13,7 @@ async function resetDatabase() {
     console.log('Dropped all existing tables and recreated schema');
     
     // recreate tables with the new schema
-    const { createDatabase } = require('./create_db_new');
+    const { createDatabase } = require('./create_db_new.js');
     await createDatabase();
     
     console.log('----------------------------');
