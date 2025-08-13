@@ -4,7 +4,8 @@ const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 const router = require('./routes');
-const { pool, verifyConnection } = require('./config/database'); // Updated import
+const pyRouter = require("./routes/pythonRoutes");
+const { pool, verifyConnection } = require('./config/database');
 
 const PORT = process.env.PORT || 5005;
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
@@ -13,6 +14,9 @@ const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 // Express app
 const app = express();
 
+// Trust proxy to allow logging IP addresses
+app.set('trust proxy', true);
+
 // Database health check middleware
 async function checkDatabase(req, res, next) {
   try {
@@ -20,7 +24,7 @@ async function checkDatabase(req, res, next) {
     next();
   } catch (err) {
     console.error('Database connection error:', err);
-    res.status(503).json({ 
+    res.status(503).json({
       error: 'Database unavailable',
       details: debugMode ? err.message : undefined
     });
@@ -29,14 +33,17 @@ async function checkDatabase(req, res, next) {
 
 // Middleware
 app.use(cors());
-app.use(morgan(debugMode ? 'dev' : 'combined'));
-app.use(express.json());
-app.set('json spaces', 2);
-app.use(express.static(__dirname + '/public'));
+app.use(morgan(debugMode ? 'dev' : 'combined')); // Log requests to console
+app.use(express.json()); // Allow json requests
+app.set('json spaces', 2); // Pretty print JSON
+app.use(express.static(__dirname + '/public')); // Serve static files
 app.use(checkDatabase);
 
 // API routes
 app.use('/api', router);
+
+// Game engine routes
+app.use("/engine", pyRouter);
 
 // Basic health check endpoint
 app.get('/health', async (req, res) => {
@@ -77,7 +84,7 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}${debugMode ? ' in debug mode' : ''}`);
       console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-      
+
       if (debugMode) {
         console.log('🛣️ Available API routes:');
         router.stack.forEach(layer => {
