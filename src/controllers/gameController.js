@@ -329,9 +329,11 @@ class GameController {
     // Validate every ship
     const shipsCheck = validateShips(ships);
 
-    if (shipsCheck.error === true) { // Error handling
+    // Error handling
+    if (shipsCheck.error === true) {
       return res.status(500).send({ error: shipsCheck.reason });
     }
+    // Validation check
     if (!shipsCheck.valid) {
       return res.status(400).send(`Param 'ships' is invalid: ${shipsCheck.reason}`);
     }
@@ -340,8 +342,6 @@ class GameController {
 
     // Todo: Set up game in database
     // Todo: generate player tokens and player/ai IDs
-    // Todo: maybe do some auth checking
-    // Todo: maybe generate player auth token
     // Todo: generate a sharable spectate token
     // Todo: return only the data the client needs
     // Note: the client on all players' ends will likely be listening for a
