@@ -1,16 +1,7 @@
 const fs = require('fs');
-const { Pool } = require('pg');
+const { pool } = require('../src/config/database');
 const csv = require('csv-parser');
 require('dotenv').config({ path: './.env' });
-
-// Database configuration use environment variables
-const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: parseInt(process.env.DB_PORT) || 5432,
-});
 
 async function loadData() {
     const client = await pool.connect();
