@@ -36,7 +36,11 @@ CREATE TABLE IF NOT EXISTS ships (
     description TEXT,
     shield_strength INT NOT NULL,
     hull_strength INT NOT NULL,
-    image_src TEXT
+    attack_power INT DEFAULT 100,
+    speed_rating INT DEFAULT 5,   
+    image_src TEXT,
+    evasion_chance DECIMAL(5,4) NOT NULL DEFAULT 0.1,
+    critical_chance DECIMAL(5,4) NOT NULL DEFAULT 0.05
 );
 
 CREATE TABLE IF NOT EXISTS boss_ships (
@@ -51,7 +55,12 @@ CREATE TABLE IF NOT EXISTS boss_ships (
     special TEXT,
     shield_strength INT NOT NULL,
     hull_strength INT NOT NULL,
-    image_src TEXT
+    attack_power INT DEFAULT 300,
+    speed_rating INT DEFAULT 3,
+    special_ability VARCHAR, 
+    image_src TEXT,
+    evasion_chance DECIMAL(5,4) NOT NULL DEFAULT 0.05,
+    critical_chance DECIMAL(5,4) NOT NULL DEFAULT 0.15
 );
 
 CREATE TABLE IF NOT EXISTS ship_weapons (

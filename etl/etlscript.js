@@ -19,7 +19,7 @@ async function loadData() {
         await client.query('BEGIN');
         
         // Load special effects first since weapons reference them
-        await loadCsvData(client, './csv_files/special_effects.csv', 'special_effects', [
+        await loadCsvData(client, '../csv_files/special_effects.csv', 'special_effects', [
             {csv: 'effect_id', db: 'effect_id'},
             {csv: 'name', db: 'name'},
             {csv: 'type', db: 'type'},
@@ -27,7 +27,7 @@ async function loadData() {
         ]);
 
         // Load weapons
-        await loadCsvData(client, './csv_files/weapons.csv', 'weapons', [
+        await loadCsvData(client, '../csv_files/weapons.csv', 'weapons', [
             {csv: 'weapon_id', db: 'weapon_id'},
             {csv: 'name', db: 'name'},
             {csv: 'description', db: 'description'},
@@ -39,7 +39,7 @@ async function loadData() {
         ]);
 
         // Load defenses
-        await loadCsvData(client, './csv_files/defenses.csv', 'defenses', [
+        await loadCsvData(client, '../csv_files/defenses.csv', 'defenses', [
             {csv: 'defense_id', db: 'defense_id'},
             {csv: 'name', db: 'name'},
             {csv: 'type', db: 'type'},
@@ -50,15 +50,15 @@ async function loadData() {
         ]);
         
         // Load regular ships
-        const ships = await loadCsvDataToMemory('./csv_files/ships.csv');
+        const ships = await loadCsvDataToMemory('../csv_files/ships.csv');
         await insertShips(client, ships);
         
         // Load boss ships
-        const bossShips = await loadCsvDataToMemory('./csv_files/boss_ships.csv');
+        const bossShips = await loadCsvDataToMemory('../csv_files/boss_ships.csv');
         await insertBossShips(client, bossShips);
         
         // Load ship_weapons relationships
-        await loadCsvData(client, './csv_files/ships_weapons.csv', 'ship_weapons', [
+        await loadCsvData(client, '../csv_files/ships_weapons.csv', 'ship_weapons', [
             {csv: 'ship_id', db: 'ship_id'},
             {csv: 'weapon_id', db: 'weapon_id'},
             {csv: 'damage_multiplier', db: 'damage_multiplier'},
@@ -68,7 +68,7 @@ async function loadData() {
         ]);
         
         // Load ship_defenses relationships
-        await loadCsvData(client, './csv_files/ships_defenses.csv', 'ship_defenses', [
+        await loadCsvData(client, '../csv_files/ships_defenses.csv', 'ship_defenses', [
             {csv: 'ship_id', db: 'ship_id'},
             {csv: 'defense_id', db: 'defense_id'}
         ]);
@@ -141,7 +141,7 @@ async function insertShips(client, ships) {
         await client.query(
             `INSERT INTO ships (
                 ship_id, name, registry, class, owner, description, 
-                shield_strength, hull_strength, image_src
+                shield_strength, hull_strength, image_src, attack_power, speed_rating, evasion_chance, critical_chance
              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
              ON CONFLICT (ship_id) DO UPDATE SET
                 name = EXCLUDED.name,
@@ -161,7 +161,11 @@ async function insertShips(client, ships) {
                 ship.description, 
                 ship.shield_strength, 
                 ship.hull_strength,
-                ship.image_src
+                ship.image_src,
+                ship.attack_power || 100,
+                ship.speed_rating || 5,
+                ship.evasion_chance || 0.1,
+                ship.critical_chance || 0.05
             ]
         );
     }
@@ -175,7 +179,7 @@ async function insertBossShips(client, bossShips) {
             `INSERT INTO boss_ships (
                 ship_id, name, class, owner, description, 
                 ultimate_weapon, weapons, defenses, special,
-                shield_strength, hull_strength, image_src
+                shield_strength, hull_strength, image_src, attack_power, speed_rating, special_ability, evasion_chance, critical_chance  
              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
              ON CONFLICT (ship_id) DO UPDATE SET
                 name = EXCLUDED.name,
@@ -201,7 +205,12 @@ async function insertBossShips(client, bossShips) {
                 ship.special, 
                 ship.shield_strength, 
                 ship.hull_strength, 
-                ship.image_src
+                ship.image_src,
+                ship.attack_power || 300,
+                ship.speed_rating || 3,
+                ship.special_ability,
+                ship.evasion_chance || 0.05,
+                ship.critical_chance || 0.15
             ]
         );
     }
