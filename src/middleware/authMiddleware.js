@@ -1,2 +1,6 @@
 const crypto = require("crypto");
-// todo
+
+module.exports = function(req, res, next) {
+  console.log("Authentication middleware not implemented yet. Skipping auth.");
+  next();
+}
