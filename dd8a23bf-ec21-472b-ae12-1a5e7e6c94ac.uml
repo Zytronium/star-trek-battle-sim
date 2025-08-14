@@ -3,19 +3,54 @@
   <ID>DATABASE</ID>
   <OriginalElement>dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac</OriginalElement>
   <nodes>
-    <node x="280.76263399693715" y="65.14318529862175">dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.weapons</node>
-    <node x="-101.37565084226648" y="65.14318529862175">dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.spacecrafts</node>
+    <node x="183.97249334516414" y="115.08828748890852">dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.weapons</node>
+    <node x="-92.42746228926359" y="115.08828748890852">dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.special_effects</node>
+    <node x="104.72249334516414" y="797.7267080745339">dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.ship_weapons</node>
+    <node x="-765.3558118899736" y="21.340283939662925">dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.boss_ships</node>
+    <node x="-427.8274179236913" y="206.7333629103817">dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.defenses</node>
+    <node x="-707.3558118899736" y="537.8824312333627">dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.ships</node>
+    <node x="-345.5774179236913" y="797.7267080745339">dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.ship_defenses</node>
   </nodes>
   <notes />
   <edges>
-    <edge source="dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.weapons" target="dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.spacecrafts" relationship="REFERENCES">
-      <point x="0.0" y="-155.5" />
-      <point x="414.76263399693715" y="200.0" />
-      <point x="14.12434915773352" y="200.0" />
+    <edge source="dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.ship_defenses" target="dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.defenses" relationship="REFERENCES">
+      <point x="-49.25" y="-50.0" />
+      <point x="0.0" y="125.5" />
+    </edge>
+    <edge source="dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.ship_defenses" target="dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.ships" relationship="REFERENCES">
+      <point x="49.25" y="-50.0" />
+      <point x="-197.8274179236913" y="760.0" />
+      <point x="87.0" y="760.0" />
+      <point x="87.0" y="680.0" />
+      <point x="-590.3558118899736" y="680.0" />
       <point x="0.0" y="155.5" />
     </edge>
+    <edge source="dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.defenses" target="dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.special_effects" relationship="REFERENCES">
+      <point x="0.0" y="-125.5" />
+      <point x="-296.3274179236913" y="187.5" />
+      <point x="9.572537710736412" y="187.5" />
+      <point x="0.0" y="80.5" />
+    </edge>
+    <edge source="dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.ship_weapons" target="dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.ships" relationship="REFERENCES">
+      <point x="-75.75" y="-110.5" />
+      <point x="180.47249334516414" y="760.0" />
+      <point x="87.0" y="760.0" />
+      <point x="87.0" y="680.0" />
+      <point x="-590.3558118899736" y="680.0" />
+      <point x="0.0" y="155.5" />
+    </edge>
+    <edge source="dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.ship_weapons" target="dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.weapons" relationship="REFERENCES">
+      <point x="75.75" y="-110.5" />
+      <point x="0.0" y="140.5" />
+    </edge>
+    <edge source="dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.weapons" target="dd8a23bf-ec21-472b-ae12-1a5e7e6c94ac.TABLE:star_trek_db.public.special_effects" relationship="REFERENCES">
+      <point x="0.0" y="-140.5" />
+      <point x="331.97249334516414" y="40.0" />
+      <point x="9.572537710736412" y="40.0" />
+      <point x="0.0" y="80.5" />
+    </edge>
   </edges>
-  <settings layout="Hierarchic Compact" zoom="1.1150956284153006" showDependencies="false" x="287.5629402756508" y="234.79999999999995" />
+  <settings layout="Hierarchic Compact" zoom="0.6780986762936223" showDependencies="false" x="-107.68134516415444" y="392.847843833186" />
   <SelectedNodes />
   <Categories>
     <Category>Columns</Category>

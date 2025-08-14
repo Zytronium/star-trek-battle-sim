@@ -4,6 +4,7 @@ const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 const router = require('./routes');
+const engineRouter = require("./routes/engine_routes");
 const { pool, verifyConnection } = require('./config/database');
 
 const PORT = process.env.PORT || 5005;
@@ -35,11 +36,15 @@ app.use(cors());
 app.use(morgan(debugMode ? 'dev' : 'combined')); // Log requests to console
 app.use(express.json()); // Allow json requests
 app.set('json spaces', 2); // Pretty print JSON
+app.use(express.urlencoded({ extended: true })); // Auto-parse JSON body
 app.use(express.static(__dirname + '/public')); // Serve static files
 app.use(checkDatabase);
 
 // API routes
 app.use('/api', router);
+
+// Game engine routes
+app.use("/engine", engineRouter);
 
 // Basic health check endpoint
 app.get('/health', async (req, res) => {
@@ -87,6 +92,14 @@ async function startServer() {
           if (layer.route) {
             const methods = Object.keys(layer.route.methods).join(', ').toUpperCase();
             console.log(`- ${methods} api${layer.route.path}`);
+          }
+        });
+
+        console.log('🛣️ Available Game Engine routes:');
+        engineRouter.stack.forEach(layer => {
+          if (layer.route) {
+            const methods = Object.keys(layer.route.methods).join(', ').toUpperCase();
+            console.log(`- ${methods} engine${layer.route.path}`);
           }
         });
       }
