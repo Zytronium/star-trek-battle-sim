@@ -866,29 +866,25 @@
 }
 
     function populateDropdowns() {
-    const player1Select = document.getElementById('player1-select');
-    const player2Select = document.getElementById('player2-select');
+        const player1Select = document.getElementById('player1-select');
+        const player2Select = document.getElementById('player2-select');
 
-    player1Select.innerHTML = '<option value="">-- Select a ship --</option>';
-    player2Select.innerHTML = '<option value="">-- Select a ship --</option>';
+        player1Select.innerHTML = '<option value="">-- Select a ship --</option>';
+        player2Select.innerHTML = '<option value="">-- Select a ship --</option>';
 
-    // Populate both dropdowns with the same ship list
-    ships.forEach(ship => {
-        // Player 1 dropdown
-        const playerOption = document.createElement('option');
-        playerOption.value = ship.ship_id;
-        playerOption.textContent = `${ship.name} (${ship.class})`;
-        playerOption.dataset.ship = JSON.stringify(ship);
-        player1Select.appendChild(playerOption);
+        ships.forEach(ship => {
+            const option1 = document.createElement('option');
+            option1.value = ship.ship_id;
+            option1.textContent = `${ship.name} (${ship.class})`;
+            option1.dataset.ship = JSON.stringify(ship);
 
-        // CPU dropdown
-        const cpuOption = document.createElement('option');
-        cpuOption.value = ship.ship_id;
-        cpuOption.textContent = `${ship.name} (${ship.class})`;
-        cpuOption.dataset.ship = JSON.stringify(ship);
-        player2Select.appendChild(cpuOption);
-    });
-}
+            const option2 = option1.cloneNode(true);
+            option2.dataset.ship = JSON.stringify(ship);
+
+            player1Select.appendChild(option1);
+            player2Select.appendChild(option2);
+        });
+    }
 
     function createShipDisplay(ship) {
         const shieldPercentage = Math.min(100, Math.max(0, (ship.shield_strength / 1000) * 100));
@@ -970,36 +966,33 @@
         battleLog.innerHTML = '<div class="welcome-message">Welcome to the Star Trek Battle Engine! Select your ships and prepare for battle.</div>';
     }
 
-    // ✅ NEW FETCH LOGIC
-    // ✅ Using /api/battle/simulate endpoint from battleRoutes.js
-document.getElementById('battle-btn').addEventListener('click', async () => {
+   document.getElementById('battle-btn').addEventListener('click', async () => {
     if (selectedShips.player1 && selectedShips.player2) {
         clearBattleMessages();
         addBattleMessage(`🚀 Engaging battle between <strong>${selectedShips.player1.name}</strong> and <strong>${selectedShips.player2.name}</strong>...`, 'battle-start');
 
         try {
-            const res = await fetch('/api/simulate-battle', {
+            // Updated URL with trailing slash
+            const res = await fetch('/api/simulate-battle/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     playerShipId: selectedShips.player1.ship_id,
                     enemyShipId: selectedShips.player2.ship_id
                 })
-                });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-
-            // Expecting result like { outcome: 'victory', logs: [...] }
-            if (data.logs && Array.isArray(data.logs)) {
-                data.logs.forEach(line => addBattleMessage(line, 'info'));
-            } else {
-                addBattleMessage(`❌ Unexpected response from server`, 'error');
-                console.warn('Server response:', data);
+            });
+            
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || `HTTP error ${res.status}`);
             }
-
+            
+            const data = await res.json();
+            data.logs.forEach(line => addBattleMessage(line, 'info'));
+            
         } catch (err) {
             console.error('Battle error:', err);
-            addBattleMessage(`⚠️ Error starting battle: ${err.message}`, 'error');
+            addBattleMessage(`⚠️ Error: ${err.message}`, 'error');
         }
     }
 });
