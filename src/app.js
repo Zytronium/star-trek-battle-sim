@@ -38,7 +38,7 @@ app.use(express.json());
 app.set('json spaces', 2);
 app.use(express.static(__dirname + '/public'));
 app.use(checkDatabase);
-app.use('/api/battle', battleRoutes);
+app.use('/api/simulate-battle', battleRoutes);
 
 // API routes
 app.use('/api', router);
@@ -64,18 +64,21 @@ app.get('/health', async (req, res) => {
 app.get('/api/database', async (req, res) => {
   try {
     const ships = await pool.query('SELECT * FROM ships');
-    const bossShips = await pool.query('SELECT * FROM boss_ships');
     const weapons = await pool.query('SELECT * FROM weapons');
     const defenses = await pool.query('SELECT * FROM defenses');
-    
+    const shipWeapons = await pool.query('SELECT * FROM ship_weapons');
+    const shipDefenses = await pool.query('SELECT * FROM ship_defenses');
+
     res.json({
       status: 'success',
       ships: ships.rows,
-      bossShips: bossShips.rows,
       weapons: weapons.rows,
-      defenses: defenses.rows
+      defenses: defenses.rows,
+      ship_weapons: shipWeapons.rows,
+      ship_defenses: shipDefenses.rows
     });
   } catch (err) {
+    console.error('Database query failed:', err);
     res.status(500).json({ error: 'Database query failed' });
   }
 });
@@ -90,14 +93,14 @@ app.get('/api/ships', async (req, res) => {
   }
 });
 
-app.get('/api/boss-ships', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM boss_ships');
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: 'Database query failed' });
-  }
-});
+// app.get('/api/boss-ships', async (req, res) => {
+//   try {
+//     const result = await pool.query('SELECT * FROM boss_ships');
+//     res.json(result.rows);
+//   } catch (err) {
+//     res.status(500).json({ error: 'Database query failed' });
+//   }
+// });
 
 app.get('/api/status', (req, res) => {
   res.json({
@@ -107,54 +110,6 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// Consolidated battle simulation endpoint
-app.post('/api/simulate-battle', async (req, res) => {
-  try {
-    const { playerShipId, enemyShipId } = req.body;
-    
-    // Get player ship
-    const playerShip = await pool.query(
-      'SELECT * FROM ships WHERE ship_id = $1', 
-      [playerShipId]
-    );
-    
-    // Get enemy ship
-    const enemyShip = await pool.query(
-      'SELECT * FROM boss_ships WHERE ship_id = $1', 
-      [enemyShipId]
-    );
-    
-    if (playerShip.rows.length === 0 || enemyShip.rows.length === 0) {
-      return res.status(404).json({ error: 'Ship not found' });
-    }
-    
-    // Add validation
-    const player = playerShip.rows[0];
-    const enemy = enemyShip.rows[0];
-    
-    if (!player.shield_strength || !enemy.shield_strength) {
-      throw new Error('Missing ship stats in database records');
-    }
-
-    // Simulate battle
-    const simulator = new BattleSimulator();
-    const result = simulator.simulateBattle(player, enemy);
-    
-    res.json({
-      result: result.outcome,
-      logs: result.logs,
-      playerShip: player,
-      enemyShip: enemy
-    });
-  } catch (err) {
-    console.error('Battle simulation error:', err);
-    res.status(500).json({ 
-      error: 'Battle simulation failed',
-      message: debugMode ? err.message : 'Internal server error',
-      stack: debugMode ? err.stack : undefined
-    });
-  }
-});
 
 // Error handling
 app.use((err, req, res, next) => {

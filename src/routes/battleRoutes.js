@@ -1,46 +1,46 @@
-#!/usr/bin/env node
-
 const express = require('express');
 const router = express.Router();
 const BattleSimulator = require('../game/battleSimulator');
+const { pool } = require('../config/database');
 
-// Start a new battle
-router.post('/start', async (req, res) => {
-    try {
-        const { playerShipId = 0, enemyShipId = 0 } = req.body;
-        const simulator = new BattleSimulator();
-        const battleState = await simulator.initBattle(playerShipId, enemyShipId);
-        req.session.battle = simulator;
-        res.json(battleState);
-    } catch (err) {
-        res.status(500).json({ error: 'Battle initialization failed', details: err.message });
-    }
-});
-
-// Execute a battle turn
-router.post('/turn', async (req, res) => {
-    try {
-        if (!req.session.battle) {
-            return res.status(400).json({ error: 'No active battle' });
-        }
-        
-        const turnResult = await req.session.battle.simulateTurn();
-        res.json(turnResult);
-    } catch (err) {
-        res.status(500).json({ error: 'Battle turn failed', details: err.message });
-    }
-});
-
-// Simulate full battle (AI vs AI)
 router.post('/simulate', async (req, res) => {
-    try {
-        const { playerShipId = 0, enemyShipId = 0 } = req.body;
-        const simulator = new BattleSimulator();
-        const result = await simulator.simulateFullBattle(playerShipId, enemyShipId);
-        res.json(result);
-    } catch (err) {
-        res.status(500).json({ error: 'Battle simulation failed', details: err.message });
+  try {
+    const { playerShipId, enemyShipId } = req.body;
+    const simulator = new BattleSimulator();
+    
+    // Get player ship
+    const playerShip = await pool.query(
+      'SELECT * FROM ships WHERE ship_id = $1', 
+      [playerShipId]
+    );
+    
+    // Get enemy ship
+    const enemyShip = await pool.query(
+      'SELECT * FROM ships WHERE ship_id = $1', 
+      [enemyShipId]
+    );
+    
+    if (playerShip.rows.length === 0 || enemyShip.rows.length === 0) {
+      return res.status(404).json({ error: 'Ship not found' });
     }
+    
+    const result = simulator.simulateBattle(
+      playerShip.rows[0],
+      enemyShip.rows[0]
+    );
+    
+      res.json({
+            outcome: result.outcome,
+            logs: result.logs,
+            playerShip: playerShip.rows[0],
+            enemyShip: enemyShip.rows[0]
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      error: 'Battle simulation failed',
+      message: err.message
+    });
+  }
 });
 
 module.exports = router;

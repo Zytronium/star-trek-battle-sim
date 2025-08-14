@@ -78,22 +78,23 @@ class BattleSimulator {
     };
   }
 
-  calculateAttack(attacker, defender) {
+    // Update the calculateAttack method:
+    calculateAttack(attacker, defender) {
     // Check for evasion
     if (Math.random() < (defender.evasion_chance || 0.1)) {
-      return { evaded: true };
+        return { evaded: true };
     }
     
-    // Calculate base damage
+    // Calculate base damage - use attack_power from ship data
     let damage = attacker.attack_power * (0.8 + Math.random() * 0.4);
     
     // Check for critical hit
     const isCritical = Math.random() < (attacker.critical_chance || 0.05);
     if (isCritical) {
-      damage *= 2.5;
+        damage *= 2.5;
     }
     
-    // Apply damage
+    // Apply damage - use shield_strength and hull_strength
     const shieldDamage = Math.min(damage, defender.shields);
     const hullDamage = Math.max(0, damage - defender.shields);
     
@@ -101,40 +102,14 @@ class BattleSimulator {
     defender.hull -= hullDamage;
     
     return {
-      damage: Math.round(damage),
-      isCritical,
-      shieldDamage: Math.round(shieldDamage),
-      hullDamage: Math.round(hullDamage),
-      evaded: false
+        damage: Math.round(damage),
+        isCritical,
+        shieldDamage: Math.round(shieldDamage),
+        hullDamage: Math.round(hullDamage),
+        evaded: false
     };
   }
 }
 
 module.exports = BattleSimulator;
 
-class BattleSimulator {
-  simulateBattle(playerShip, enemyShip) {
-    this.logs = [];
-    
-    // Ensure we have all required properties with fallbacks
-    const player = { 
-      ...playerShip,
-      shields: playerShip.shield_strength,
-      hull: playerShip.hull_strength,
-      attack_power: playerShip.attack_power || 10,
-      evasion_chance: playerShip.evasion || 0.1,
-      critical_chance: playerShip.critical || 0.05
-    };
-    
-    const enemy = { 
-      ...enemyShip,
-      shields: enemyShip.shield_strength,
-      hull: enemyShip.hull_strength,
-      attack_power: enemyShip.attack_power || 10,
-      evasion_chance: enemyShip.evasion || 0.1,
-      critical_chance: enemyShip.critical || 0.05
-    };
-
-    // ... rest of the simulation code ...
-  }
-}

@@ -142,7 +142,7 @@ async function insertShips(client, ships) {
             `INSERT INTO ships (
                 ship_id, name, registry, class, owner, description, 
                 shield_strength, hull_strength, image_src, attack_power, speed_rating, evasion_chance, critical_chance
-             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
              ON CONFLICT (ship_id) DO UPDATE SET
                 name = EXCLUDED.name,
                 registry = EXCLUDED.registry,
@@ -151,7 +151,11 @@ async function insertShips(client, ships) {
                 description = EXCLUDED.description,
                 shield_strength = EXCLUDED.shield_strength,
                 hull_strength = EXCLUDED.hull_strength,
-                image_src = EXCLUDED.image_src`,
+                image_src = EXCLUDED.image_src,
+                attack_power = EXCLUDED.attack_power,
+                speed_rating = EXCLUDED.speed_rating,
+                evasion_chance = EXCLUDED.evasion_chance,
+                critical_chance = EXCLUDED.critical_chance`,
             [
                 ship.ship_id, 
                 ship.name, 
@@ -172,6 +176,7 @@ async function insertShips(client, ships) {
     console.log(`Loaded ${ships.length} regular ships`);
 }
 
+
 // Update the insertBossShips function
 async function insertBossShips(client, bossShips) {
     for (const ship of bossShips) {
@@ -179,8 +184,8 @@ async function insertBossShips(client, bossShips) {
             `INSERT INTO boss_ships (
                 ship_id, name, class, owner, description, 
                 ultimate_weapon, weapons, defenses, special,
-                shield_strength, hull_strength, image_src, attack_power, speed_rating, special_ability, evasion_chance, critical_chance  
-             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                shield_strength, hull_strength, image_src, attack_power, speed_rating, special_ability, evasion_chance, critical_chance
+             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
              ON CONFLICT (ship_id) DO UPDATE SET
                 name = EXCLUDED.name,
                 class = EXCLUDED.class,
@@ -192,7 +197,12 @@ async function insertBossShips(client, bossShips) {
                 special = EXCLUDED.special,
                 shield_strength = EXCLUDED.shield_strength,
                 hull_strength = EXCLUDED.hull_strength,
-                image_src = EXCLUDED.image_src`,
+                image_src = EXCLUDED.image_src,
+                attack_power = EXCLUDED.attack_power,
+                speed_rating = EXCLUDED.speed_rating,
+                special_ability = EXCLUDED.special_ability,
+                evasion_chance = EXCLUDED.evasion_chance,
+                critical_chance = EXCLUDED.critical_chance`,
             [
                 ship.ship_id, 
                 ship.name, 
@@ -216,6 +226,7 @@ async function insertBossShips(client, bossShips) {
     }
     console.log(`Loaded ${bossShips.length} boss ships`);
 }
+
 
 // Execute the ETL process
 loadData()

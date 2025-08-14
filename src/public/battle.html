@@ -68,7 +68,7 @@
             box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
             margin-bottom: 20px;
             width: 100%;
-            max-width: 500px;
+            min-width: 475px;
             animation: healthGlow 2.5s ease-in-out infinite alternate;
         }
 
@@ -174,6 +174,15 @@
             align-items: start;
         }
 
+        .battle-center-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 500px;
+            justify-self: center;
+        }
+
         .ship-selection {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 15px;
@@ -183,13 +192,13 @@
             height: fit-content;
         }
 
-        .battle-center {
+        .battle-message-box {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
             gap: 20px;
-            padding: 40px 80px 80px 80px;
+            padding: 30px 60px 50px 60px;
             background: rgba(0, 0, 0, 0.7);
             border: 3px solid #00d4ff;
             border-radius: 25px;
@@ -198,12 +207,31 @@
                 inset 0 0 30px rgba(0, 212, 255, 0.1);
             position: relative;
             overflow: hidden;
-            min-height: 700px;
+            min-height: 625px;
             width: 500px;
             flex-shrink: 0;
         }
 
-        .battle-center::before {
+        .battle-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 30px 60px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 3px solid #00d4ff;
+            border-radius: 25px;
+            box-shadow: 
+                0 0 30px rgba(0, 212, 255, 0.5),
+                inset 0 0 30px rgba(0, 212, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            width: 500px;
+            flex-shrink: 0;
+        }
+
+        .battle-controls::before {
             content: '';
             position: absolute;
             top: 0;
@@ -214,7 +242,7 @@
             z-index: -1;
         }
 
-        .battle-center::after {
+        .battle-controls::after {
             content: '';
             position: absolute;
             top: 0;
@@ -227,7 +255,31 @@
             z-index: -1;
         }
 
-        .battle-center .stars {
+        .battle-message-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 50%, #0f0f23 100%);
+            z-index: -1;
+        }
+
+        .battle-message-box::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 70%, rgba(255, 71, 87, 0.1) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .battle-message-box .stars {
             position: absolute;
             top: 0;
             left: 0;
@@ -237,7 +289,7 @@
             overflow: hidden;
         }
 
-        .battle-center .star {
+        .battle-message-box .star {
             position: absolute;
             background: white;
             border-radius: 50%;
@@ -260,7 +312,7 @@
             50% { opacity: 1; transform: scale(1.2); }
         }
 
-        .battle-center .grid-lines {
+        .battle-message-box .grid-lines {
             position: absolute;
             top: 0;
             left: 0;
@@ -270,7 +322,7 @@
             opacity: 0.1;
         }
 
-        .battle-center .grid-lines::before {
+        .battle-message-box .grid-lines::before {
             content: '';
             position: absolute;
             top: 0;
@@ -289,7 +341,7 @@
             100% { transform: translate(50px, 50px); }
         }
 
-        .battle-center .energy-field {
+        .battle-message-box .energy-field {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -313,7 +365,7 @@
             }
         }
 
-        .battle-center::before {
+        .battle-message-box::before {
             content: '';
             position: absolute;
             top: 0;
@@ -367,10 +419,38 @@
             transition: all 0.3s ease;
             box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
             position: relative;
-            z-index: 1;
+            z-index: 2;
             text-transform: uppercase;
             letter-spacing: 1px;
             animation: healthGlow 2.5s ease-in-out infinite alternate;
+        }
+
+        .battle-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 50%;
+            z-index: -1;
+            animation: pulsateCircle 3s ease-in-out infinite;
+        }
+
+        .battle-button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 400px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 50%;
+            z-index: -2;
+            animation: pulsateCircle 4s ease-in-out infinite reverse;
         }
 
         .battle-button:hover {
@@ -501,6 +581,21 @@
                 border-color: rgba(0, 255, 255, 0.6);
                 box-shadow: 0 0 25px rgba(0, 212, 255, 0.4), inset 0 0 20px rgba(0, 212, 255, 0.1);
                 background: rgba(0, 212, 255, 0.1);
+            }
+        }
+
+        @keyframes pulsateCircle {
+            0% {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0.8;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0.4;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0.8;
             }
         }
 
@@ -709,20 +804,24 @@
                         <div id="player1-ship-display" class="selected-ship-display" style="display: none;"></div>
                     </div>
                     
-                    <div class="battle-center">
-                        <div class="battle-messages">
-                            <div class="message-header">
-                                <h3>Battle Status</h3>
-                            </div>
-                            <div id="battle-log" class="message-content">
-                                <div class="welcome-message">Welcome to the Star Trek Battle Engine! Select your ships and prepare for battle.</div>
+                    <div class="battle-center-column">
+                        <div class="battle-controls">
+                            <div class="vs-display">Star Trek Battle Engine</div>
+                            <button id="battle-btn" class="battle-button" disabled>
+                                START BATTLE
+                            </button>
+                        </div>
+                        <div class="battle-message-box">
+                            <div class="battle-messages">
+                                <div class="message-header">
+                                    <h3>Battle Status</h3>
+                                </div>
+                                <div id="battle-log" class="message-content">
+                                    <div class="welcome-message">Welcome to the Star Trek Battle Engine! Select your ships and prepare for battle.</div>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class="vs-display">Player VS CPU</div>
-                        <button id="battle-btn" class="battle-button" disabled>
-                            START BATTLE
-                        </button>
                     </div>
                     
                     <div id="player2-ship-selection" class="ship-selection">
@@ -737,280 +836,181 @@
         
         <div id="error" class="error" style="display: none;"></div>
     </div>
-
     <script>
-        let ships = [];
-        let selectedShips = { player1: null, player2: null };
-        let shipWeapons = {};
-        let shipDefenses = {};
-        let weapons = {};
-        let defenses = {};
 
-        // Load ships from API
-        async function loadShips() {
-            try {
-                const response = await fetch('/api/database');
-                const data = await response.json();
-                
-                // Store weapons and defenses data
-                weapons = data.weapons || [];
-                defenses = data.defenses || [];
-                
-                // Store ship weapons and defenses relationships
-                shipWeapons = data.ship_weapons || [];
-                shipDefenses = data.ship_defenses || [];
-                
-                // Combine regular ships and boss ships
-                ships = [
-                    ...(data.ships || []).map(ship => ({ ...ship, type: 'regular' })),
-                    ...(data.boss_ships || []).map(ship => ({ ...ship, type: 'boss' }))
-                ];
-                
-                populateDropdowns();
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('battle-interface').style.display = 'block';
-                
-            } catch (error) {
-                console.error('Error loading ships:', error);
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('error').style.display = 'block';
-                document.getElementById('error').textContent = 'Failed to load ships. Please try again.';
-            }
-        }
+    let ships = [];
+    let selectedShips = { player1: null, player2: null };
+    let shipWeapons = {};
+    let shipDefenses = {};
+    let weapons = {};
+    let defenses = {};
 
-        // Populate dropdowns with ships
-        function populateDropdowns() {
-            const player1Select = document.getElementById('player1-select');
-            const player2Select = document.getElementById('player2-select');
-            
-            // Clear existing options (except the first placeholder)
-            player1Select.innerHTML = '<option value="">-- Select a ship --</option>';
-            player2Select.innerHTML = '<option value="">-- Select a ship --</option>';
-            
-            ships.forEach(ship => {
-                const option1 = document.createElement('option');
-                option1.value = ship.ship_id;
-                option1.textContent = `${ship.name} (${ship.class})`;
-                option1.dataset.ship = JSON.stringify(ship);
-                
-                const option2 = option1.cloneNode(true);
-                option2.dataset.ship = JSON.stringify(ship);
-                
-                player1Select.appendChild(option1);
-                player2Select.appendChild(option2);
-            });
-        }
+    async function loadShips() {
+    try {
+        // Fetch all ships
+        const response = await fetch('/api/ships');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const allShips = await response.json();
+        ships = allShips;  // Store all ships
+        
+        populateDropdowns();
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('battle-interface').style.display = 'block';
+    } catch (error) {
+        console.error('Error loading ships:', error);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = 'Failed to load ships. Please try again.';
+    }
+}
 
-        // Get weapons for a specific ship
-        function getShipWeapons(shipId) {
-            return shipWeapons
-                .filter(sw => sw.ship_id == shipId)
-                .map(sw => {
-                    const weapon = weapons.find(w => w.weapon_id == sw.weapon_id);
-                    return {
-                        ...weapon,
-                        damage_multiplier: sw.damage_multiplier,
-                        max_per_turn: sw.max_per_turn,
-                        cooldown_turns: sw.cooldown_turns,
-                        max_usage: sw.max_usage
-                    };
-                })
-                .filter(w => w.name); // Only return weapons that exist
-        }
+    function populateDropdowns() {
+    const player1Select = document.getElementById('player1-select');
+    const player2Select = document.getElementById('player2-select');
 
-        // Get defenses for a specific ship
-        function getShipDefenses(shipId) {
-            return shipDefenses
-                .filter(sd => sd.ship_id == shipId)
-                .map(sd => {
-                    const defense = defenses.find(d => d.defense_id == sd.defense_id);
-                    return defense;
-                })
-                .filter(d => d && d.name); // Only return defenses that exist
-        }
+    player1Select.innerHTML = '<option value="">-- Select a ship --</option>';
+    player2Select.innerHTML = '<option value="">-- Select a ship --</option>';
 
-        // Create weapons section HTML
-        function createWeaponsSection(shipWeaponsList) {
-            return `
-                <div class="weapons-section">
-                    <h3>⚔️ Weapons (${shipWeaponsList.length})</h3>
-                    ${shipWeaponsList.map(weapon => `
-                        <div class="weapon-item">
-                            <div class="weapon-name">${weapon.name}</div>
-                            <div class="weapon-stats">
-                                <div class="weapon-stat">
-                                    <div>💥 Damage</div>
-                                    <div>${weapon.damage}</div>
-                                </div>
-                                <div class="weapon-stat">
-                                    <div>🛡️ Shield Multiplier</div>
-                                    <div>${weapon.shields_multiplier}</div>
-                                </div>
-                                <div class="weapon-stat">
-                                    <div>🛠️ Hull Multiplier</div>
-                                    <div>${weapon.hull_multiplier}</div>
-                                </div>
-                                <div class="weapon-stat">
-                                    <div>⚡ Damage Multiplier</div>
-                                    <div>${weapon.damage_multiplier || 1.0}</div>
-                                </div>
-                            </div>
-                            ${weapon.special_effects ? `<div style="margin-top: 8px; font-size: 0.8em; color: #ffa500;">✨ ${weapon.special_effects}</div>` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
+    // Populate both dropdowns with the same ship list
+    ships.forEach(ship => {
+        // Player 1 dropdown
+        const playerOption = document.createElement('option');
+        playerOption.value = ship.ship_id;
+        playerOption.textContent = `${ship.name} (${ship.class})`;
+        playerOption.dataset.ship = JSON.stringify(ship);
+        player1Select.appendChild(playerOption);
 
-        // Create defenses section HTML
-        function createDefensesSection(shipDefensesList) {
-            return `
-                <div class="weapons-section">
-                    <h3>🛡️ Defenses (${shipDefensesList.length})</h3>
-                    ${shipDefensesList.map(defense => `
-                        <div class="weapon-item">
-                            <div class="weapon-name">${defense.name}</div>
-                            <div class="weapon-stats">
-                                <div class="weapon-stat">
-                                    <div>🛡️ Type</div>
-                                    <div>${defense.type || 'N/A'}</div>
-                                </div>
-                                <div class="weapon-stat">
-                                    <div>❤️ Hit Points</div>
-                                    <div>${defense.hit_points || 'N/A'}</div>
-                                </div>
-                                <div class="weapon-stat">
-                                    <div>📊 Effectiveness</div>
-                                    <div>${defense.effectiveness || 'N/A'}</div>
-                                </div>
-                            </div>
-                            ${defense.special_effects ? `<div style="margin-top: 8px; font-size: 0.8em; color: #ffa500;">✨ ${defense.special_effects}</div>` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
+        // CPU dropdown
+        const cpuOption = document.createElement('option');
+        cpuOption.value = ship.ship_id;
+        cpuOption.textContent = `${ship.name} (${ship.class})`;
+        cpuOption.dataset.ship = JSON.stringify(ship);
+        player2Select.appendChild(cpuOption);
+    });
+}
 
-        // Create ship display card
-        function createShipDisplay(ship) {
-            const shieldPercentage = Math.min(100, Math.max(0, (ship.shield_strength / 1000) * 100));
-            const healthPercentage = Math.min(100, Math.max(0, (ship.hull_strength / 1000) * 100));
-            
-            return `
-                <div class="health-bars">
-                    <div class="health-bar">
-                        <div class="health-bar-label">
-                            <span>Shields</span>
-                            <span>${ship.shield_strength || 0}</span>
-                        </div>
-                        <div class="shield-bar">
-                            <div class="shield-fill" style="width: ${shieldPercentage}%"></div>
-                        </div>
+    function createShipDisplay(ship) {
+        const shieldPercentage = Math.min(100, Math.max(0, (ship.shield_strength / 1000) * 100));
+        const healthPercentage = Math.min(100, Math.max(0, (ship.hull_strength / 1000) * 100));
+
+        return `
+            <div class="health-bars">
+                <div class="health-bar">
+                    <div class="health-bar-label">
+                        <span>Shields</span>
+                        <span>${ship.shield_strength || 0}</span>
                     </div>
-                    
-                    <div class="health-bar">
-                        <div class="health-bar-label">
-                            <span>Hull</span>
-                            <span>${ship.hull_strength || 0}</span>
-                        </div>
-                        <div class="health-bar-red">
-                            <div class="health-fill" style="width: ${healthPercentage}%"></div>
-                        </div>
+                    <div class="shield-bar">
+                        <div class="shield-fill" style="width: ${shieldPercentage}%"></div>
                     </div>
                 </div>
-                
-                <div class="ship-image">
-                    ${ship.image_src ? `<img src="${ship.image_src}" alt="${ship.name}">` : '🚀'}
+                <div class="health-bar">
+                    <div class="health-bar-label">
+                        <span>Hull</span>
+                        <span>${ship.hull_strength || 0}</span>
+                    </div>
+                    <div class="health-bar-red">
+                        <div class="health-fill" style="width: ${healthPercentage}%"></div>
+                    </div>
                 </div>
-                <div class="ship-name">${ship.name}</div>
-                <div class="ship-details">
-                    <div><strong>Class:</strong> ${ship.class}</div>
-                    <div><strong>Owner:</strong> ${ship.owner}</div>
-                    <div><strong>Type:</strong> ${ship.type}</div>
-                    <div><strong>Registry:</strong> ${ship.registry || 'N/A'}</div>
-                </div>
-                ${ship.description ? `<div class="ship-description">"${ship.description}"</div>` : ''}
-            `;
+            </div>
+            <div class="ship-image">
+                ${ship.image_src ? `<img src="${ship.image_src}" alt="${ship.name}">` : '🚀'}
+            </div>
+            <div class="ship-name">${ship.name}</div>
+            <div class="ship-details">
+                <div><strong>Class:</strong> ${ship.class}</div>
+                <div><strong>Owner:</strong> ${ship.owner}</div>
+                <div><strong>Type:</strong> ${ship.type}</div>
+                <div><strong>Registry:</strong> ${ship.registry || 'N/A'}</div>
+            </div>
+            ${ship.description ? `<div class="ship-description">"${ship.description}"</div>` : ''}
+        `;
+    }
+
+    function selectShip(player, shipId) {
+        if (!shipId) {
+            selectedShips[player] = null;
+            document.getElementById(`${player}-ship-display`).style.display = 'none';
+            updateBattleButton();
+            return;
         }
 
-        // Handle ship selection from dropdown
-        function selectShip(player, shipId) {
-            if (!shipId) {
-                // Clear selection
-                selectedShips[player] = null;
-                document.getElementById(`${player}-ship-display`).style.display = 'none';
-                updateBattleButton();
-                return;
+        const ship = ships.find(s => s.ship_id == shipId);
+        if (ship) {
+            selectedShips[player] = ship;
+            const displayElement = document.getElementById(`${player}-ship-display`);
+            displayElement.innerHTML = createShipDisplay(ship);
+            displayElement.style.display = 'block';
+            updateBattleButton();
+        }
+    }
+
+    function updateBattleButton() {
+        const battleBtn = document.getElementById('battle-btn');
+        battleBtn.disabled = !(selectedShips.player1 && selectedShips.player2);
+    }
+
+    function addBattleMessage(message, type = 'info') {
+        const battleLog = document.getElementById('battle-log');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `battle-message ${type}`;
+        messageDiv.innerHTML = message;
+
+        const welcomeMsg = battleLog.querySelector('.welcome-message');
+        if (welcomeMsg) welcomeMsg.remove();
+
+        battleLog.appendChild(messageDiv);
+        battleLog.scrollTop = battleLog.scrollHeight;
+    }
+
+    function clearBattleMessages() {
+        const battleLog = document.getElementById('battle-log');
+        battleLog.innerHTML = '<div class="welcome-message">Welcome to the Star Trek Battle Engine! Select your ships and prepare for battle.</div>';
+    }
+
+    // ✅ NEW FETCH LOGIC
+    // ✅ Using /api/battle/simulate endpoint from battleRoutes.js
+document.getElementById('battle-btn').addEventListener('click', async () => {
+    if (selectedShips.player1 && selectedShips.player2) {
+        clearBattleMessages();
+        addBattleMessage(`🚀 Engaging battle between <strong>${selectedShips.player1.name}</strong> and <strong>${selectedShips.player2.name}</strong>...`, 'battle-start');
+
+        try {
+            const res = await fetch('/api/simulate-battle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    playerShipId: selectedShips.player1.ship_id,
+                    enemyShipId: selectedShips.player2.ship_id
+                })
+                });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+
+            // Expecting result like { outcome: 'victory', logs: [...] }
+            if (data.logs && Array.isArray(data.logs)) {
+                data.logs.forEach(line => addBattleMessage(line, 'info'));
+            } else {
+                addBattleMessage(`❌ Unexpected response from server`, 'error');
+                console.warn('Server response:', data);
             }
-            
-            // Find the selected ship
-            const ship = ships.find(s => s.ship_id == shipId);
-            if (ship) {
-                selectedShips[player] = ship;
-                
-                // Display the selected ship
-                const displayElement = document.getElementById(`${player}-ship-display`);
-                displayElement.innerHTML = createShipDisplay(ship);
-                displayElement.style.display = 'block';
-                
-                updateBattleButton();
-            }
+
+        } catch (err) {
+            console.error('Battle error:', err);
+            addBattleMessage(`⚠️ Error starting battle: ${err.message}`, 'error');
         }
+    }
+});
 
-        // Update battle button state
-        function updateBattleButton() {
-            const battleBtn = document.getElementById('battle-btn');
-            const canBattle = selectedShips.player1 && selectedShips.player2;
-            
-            battleBtn.disabled = !canBattle;
-        }
 
-        // Message display functions
-        function addBattleMessage(message, type = 'info') {
-            const battleLog = document.getElementById('battle-log');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `battle-message ${type}`;
-            messageDiv.innerHTML = message;
-            
-            // Remove welcome message if it exists
-            const welcomeMsg = battleLog.querySelector('.welcome-message');
-            if (welcomeMsg) {
-                welcomeMsg.remove();
-            }
-            
-            battleLog.appendChild(messageDiv);
-            
-            // Auto-scroll to bottom
-            battleLog.scrollTop = battleLog.scrollHeight;
-        }
+    document.addEventListener('DOMContentLoaded', () => {
+        loadShips();
+        document.getElementById('player1-select').addEventListener('change', e => selectShip('player1', e.target.value));
+        document.getElementById('player2-select').addEventListener('change', e => selectShip('player2', e.target.value));
+    });
+</script>
 
-        function clearBattleMessages() {
-            const battleLog = document.getElementById('battle-log');
-            battleLog.innerHTML = '<div class="welcome-message">Welcome to the Star Trek Battle Engine! Select your ships and prepare for battle.</div>';
-        }
-
-        // Handle battle button click
-        document.getElementById('battle-btn').addEventListener('click', () => {
-            if (selectedShips.player1 && selectedShips.player2) {
-                clearBattleMessages();
-                addBattleMessage(`<strong>Battle logic coming soon!</strong>`, 'info');
-                addBattleMessage(`This will include turn-based combat, weapon systems, and tactical decisions.`, 'info');
-            }
-        });
-
-        // Add event listeners for dropdowns
-        document.addEventListener('DOMContentLoaded', () => {
-            loadShips();
-            
-            // Add change event listeners to dropdowns
-            document.getElementById('player1-select').addEventListener('change', (e) => {
-                selectShip('player1', e.target.value);
-            });
-            
-            document.getElementById('player2-select').addEventListener('change', (e) => {
-                selectShip('player2', e.target.value);
-            });
-        });
-    </script>
 </body>
 </html>

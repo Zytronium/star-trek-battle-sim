@@ -1,4 +1,3 @@
--- Create tables in proper dependency order with consistent IF NOT EXISTS
 CREATE TABLE IF NOT EXISTS special_effects (
     effect_id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
