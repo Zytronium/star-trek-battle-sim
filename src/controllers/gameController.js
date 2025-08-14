@@ -80,13 +80,14 @@ class GameController {
     const VALID_TYPES = ["AI V AI", "PLAYER V AI", "PLAYER V PLAYER", "AI V BOSS", "PLAYER V BOSS", "PLAYERS V BOSS" ];
     const IMPLEMENTED_TYPES = ["AI V AI", "PLAYER V AI"];
 
+    // Example request body to give you ani idea of the format we're trying to parse
     const example_req_body = {
       type: "PLAYER V AI",
       ships: [
         {
-          ship_id: 1,
-          pilot: "p1",
-          is_boss: false
+          ship_id: 1, // ID linked to a specific ship in the db (i.e. id 0 = USS Enterprise-D, or if is_boss is true, Borg Tactical Cube)
+          pilot: "p1", // who this ship belongs to - player or ai, and which player or ai. Case-insensitive
+          is_boss: false // if this is a boss ship
         },
         {
           ship_id: 12,
@@ -96,27 +97,35 @@ class GameController {
       ]
     };
 
-    // Validate type
-    if (!type) { // Check if type param is provided
+    // -------------- Validate type -------------- \\
+    // Check if type param is provided
+    if (!type) {
       return res.status(400).send("Missing body param 'type'");
     }
-    if (typeof type !== "string") { // Check if type is a string
+    // Check if type is a string
+    if (typeof type !== "string") {
       return res.status(400).send("Param 'type' must be a string");
     }
-    if (!VALID_TYPES.includes(type.toUpperCase())) { // Check if given type is valid
+    // Check if given game type is valid
+    if (!VALID_TYPES.includes(type.toUpperCase())) {
       return res.status(400).send(`Invalid type. Must be one of: ${VALID_TYPES.join(", ")}`);
     }
-    if (!IMPLEMENTED_TYPES.includes(type.toUpperCase())) { // Check if given type is implemented
+    // Check if given type is implemented
+    if (!IMPLEMENTED_TYPES.includes(type.toUpperCase())) {
       return res.status(501).send(`This type of battle is not implemented yet. Try one of these: ${IMPLEMENTED_TYPES.join(", ")}`);
     }
-    // Validate ships
-    if (!ships) { // Check if ships param is missing or null
+
+    // -------------- Validate ships -------------- \\
+    // Check if ships param is missing or null
+    if (!ships) {
       return res.status(400).send("Missing body param 'ships'");
     }
-    if (!Array.isArray(ships)) { // Check if ships param is not an array
+    // Check if ships param is not an array
+    if (!Array.isArray(ships)) {
       return res.status(400).send("Param 'ships' must be an array");
     }
-    if (ships.length < 2) { // Check if there are less than 2 ships in array
+    // Check if there are less than 2 ships in array
+    if (ships.length < 2) {
       return res.status(400).send("Param 'ships' must contain at least 2 ships");
     }
 
@@ -329,7 +338,7 @@ class GameController {
 
     return res.status(501).send("Not implemented yet. All validation checks passed.");
 
-    // Todo: Ser up game in database
+    // Todo: Set up game in database
     // Todo: generate player tokens and player/ai IDs
     // Todo: maybe do some auth checking
     // Todo: maybe generate player auth token
@@ -341,6 +350,7 @@ class GameController {
 
     // ---------------------------------------------------------------------- \\
 
+    // Example response to get an idea of what the game engine api MIGHT return to the client when finished
     const example_response = {
       players: {
         P1: {
@@ -355,7 +365,7 @@ class GameController {
       spectate_token: "some unique token"
     };
 
-    return res.status(200).send({ example_response });
+    return res.status(200).send({ example_response }); // This doesn't actually run because we already sent status 501
   }
 
   static async getGame(req, res) {
