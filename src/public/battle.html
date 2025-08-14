@@ -68,7 +68,7 @@
             box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
             margin-bottom: 20px;
             width: 100%;
-            max-width: 500px;
+            min-width: 475px;
             animation: healthGlow 2.5s ease-in-out infinite alternate;
         }
 
@@ -174,6 +174,15 @@
             align-items: start;
         }
 
+        .battle-center-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 500px;
+            justify-self: center;
+        }
+
         .ship-selection {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 15px;
@@ -183,13 +192,13 @@
             height: fit-content;
         }
 
-        .battle-center {
+        .battle-message-box {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
             gap: 20px;
-            padding: 40px 80px 80px 80px;
+            padding: 30px 60px 50px 60px;
             background: rgba(0, 0, 0, 0.7);
             border: 3px solid #00d4ff;
             border-radius: 25px;
@@ -198,12 +207,31 @@
                 inset 0 0 30px rgba(0, 212, 255, 0.1);
             position: relative;
             overflow: hidden;
-            min-height: 700px;
+            min-height: 625px;
             width: 500px;
             flex-shrink: 0;
         }
 
-        .battle-center::before {
+        .battle-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 30px 60px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 3px solid #00d4ff;
+            border-radius: 25px;
+            box-shadow: 
+                0 0 30px rgba(0, 212, 255, 0.5),
+                inset 0 0 30px rgba(0, 212, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            width: 500px;
+            flex-shrink: 0;
+        }
+
+        .battle-controls::before {
             content: '';
             position: absolute;
             top: 0;
@@ -214,7 +242,7 @@
             z-index: -1;
         }
 
-        .battle-center::after {
+        .battle-controls::after {
             content: '';
             position: absolute;
             top: 0;
@@ -227,7 +255,31 @@
             z-index: -1;
         }
 
-        .battle-center .stars {
+        .battle-message-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 50%, #0f0f23 100%);
+            z-index: -1;
+        }
+
+        .battle-message-box::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 70%, rgba(255, 71, 87, 0.1) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .battle-message-box .stars {
             position: absolute;
             top: 0;
             left: 0;
@@ -237,7 +289,7 @@
             overflow: hidden;
         }
 
-        .battle-center .star {
+        .battle-message-box .star {
             position: absolute;
             background: white;
             border-radius: 50%;
@@ -260,7 +312,7 @@
             50% { opacity: 1; transform: scale(1.2); }
         }
 
-        .battle-center .grid-lines {
+        .battle-message-box .grid-lines {
             position: absolute;
             top: 0;
             left: 0;
@@ -270,7 +322,7 @@
             opacity: 0.1;
         }
 
-        .battle-center .grid-lines::before {
+        .battle-message-box .grid-lines::before {
             content: '';
             position: absolute;
             top: 0;
@@ -289,7 +341,7 @@
             100% { transform: translate(50px, 50px); }
         }
 
-        .battle-center .energy-field {
+        .battle-message-box .energy-field {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -313,7 +365,7 @@
             }
         }
 
-        .battle-center::before {
+        .battle-message-box::before {
             content: '';
             position: absolute;
             top: 0;
@@ -752,20 +804,24 @@
                         <div id="player1-ship-display" class="selected-ship-display" style="display: none;"></div>
                     </div>
                     
-                    <div class="battle-center">
-                        <div class="battle-messages">
-                            <div class="message-header">
-                                <h3>Battle Status</h3>
-                            </div>
-                            <div id="battle-log" class="message-content">
-                                <div class="welcome-message">Welcome to the Star Trek Battle Engine! Select your ships and prepare for battle.</div>
+                    <div class="battle-center-column">
+                        <div class="battle-controls">
+                            <div class="vs-display">Star Trek Battle Engine</div>
+                            <button id="battle-btn" class="battle-button" disabled>
+                                START BATTLE
+                            </button>
+                        </div>
+                        <div class="battle-message-box">
+                            <div class="battle-messages">
+                                <div class="message-header">
+                                    <h3>Battle Status</h3>
+                                </div>
+                                <div id="battle-log" class="message-content">
+                                    <div class="welcome-message">Welcome to the Star Trek Battle Engine! Select your ships and prepare for battle.</div>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class="vs-display">Player VS CPU</div>
-                        <button id="battle-btn" class="battle-button" disabled>
-                            START BATTLE
-                        </button>
                     </div>
                     
                     <div id="player2-ship-selection" class="ship-selection">
