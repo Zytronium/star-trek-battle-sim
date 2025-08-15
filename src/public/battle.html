@@ -3,789 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Star Trek Battle Engine</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            background: #000;
-            color: #fff;
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        .background-video {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: -2;
-            opacity: 0.8;
-        }
-
-        .container {
-            position: relative;
-            z-index: 1;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .container::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            z-index: -1;
-            pointer-events: none;
-        }
-
-
-
-        .battle-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 30px;
-            padding: 40px 0;
-        }
-
-        .battle-messages {
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-            margin-bottom: 20px;
-            width: 100%;
-            min-width: 475px;
-            animation: healthGlow 2.5s ease-in-out infinite alternate;
-        }
-
-        .ship-selection {
-            width: 350px;
-            flex-shrink: 0;
-        }
-
-        #player2-ship-selection {
-            width: 350px;
-            flex-shrink: 0;
-        }
-
-        .battle-arena {
-            display: flex;
-            justify-content: center;
-            align-items: start;
-            gap: 20px;
-            width: 100%;
-        }
-
-        .message-header {
-            background: rgba(0, 212, 255, 0.2);
-            border-bottom: 2px solid #00d4ff;
-            padding: 15px 25px;
-            border-radius: 13px 13px 0 0;
-        }
-
-        .message-header h3 {
-            color: #00d4ff;
-            margin: 0;
-            font-size: 1.3em;
-            text-align: center;
-            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-        }
-
-        .message-content {
-            padding: 25px;
-            min-height: 80px;
-            max-height: 200px;
-            overflow-y: auto;
-            line-height: 1.6;
-        }
-
-        .welcome-message {
-            color: #00d4ff;
-            font-style: italic;
-            text-align: center;
-            font-size: 1.1em;
-        }
-
-        .battle-message {
-            margin-bottom: 12px;
-            padding: 10px 15px;
-            border-radius: 8px;
-            border-left: 4px solid;
-            background: rgba(0, 0, 0, 0.3);
-            animation: messageSlide 0.3s ease-out;
-        }
-
-        .battle-message.battle-start {
-            border-left-color: #ff4757;
-            color: #ff4757;
-            font-weight: bold;
-            font-size: 1.1em;
-        }
-
-        .battle-message.turn-info {
-            border-left-color: #00d4ff;
-            color: #00d4ff;
-        }
-
-        .battle-message.attack {
-            border-left-color: #ff6b35;
-            color: #ff6b35;
-        }
-
-        .battle-message.defense {
-            border-left-color: #00ff00;
-            color: #00ff00;
-        }
-
-        .battle-message.info {
-            border-left-color: #f39c12;
-            color: #f39c12;
-        }
-
-        @keyframes messageSlide {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .battle-arena {
-            display: grid;
-            grid-template-columns: 350px auto 350px;
-            gap: 20px;
-            align-items: start;
-        }
-
-        .battle-center-column {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            width: 500px;
-            justify-self: center;
-        }
-
-        .ship-selection {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            border: 2px solid #00d4ff;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-            height: fit-content;
-        }
-
-        .battle-message-box {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 20px;
-            padding: 30px 60px 50px 60px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 3px solid #00d4ff;
-            border-radius: 25px;
-            box-shadow:
-                0 0 30px rgba(0, 212, 255, 0.5),
-                inset 0 0 30px rgba(0, 212, 255, 0.1);
-            position: relative;
-            overflow: hidden;
-            min-height: 625px;
-            width: 500px;
-            flex-shrink: 0;
-        }
-
-        .battle-controls {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            padding: 30px 60px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 3px solid #00d4ff;
-            border-radius: 25px;
-            box-shadow:
-                0 0 30px rgba(0, 212, 255, 0.5),
-                inset 0 0 30px rgba(0, 212, 255, 0.1);
-            position: relative;
-            overflow: hidden;
-            width: 500px;
-            flex-shrink: 0;
-        }
-
-        .battle-controls::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 50%, #0f0f23 100%);
-            z-index: -1;
-        }
-
-        .battle-controls::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background:
-                radial-gradient(circle at 30% 30%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 70% 70%, rgba(255, 71, 87, 0.1) 0%, transparent 50%);
-            z-index: -1;
-        }
-
-        .battle-message-box::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 50%, #0f0f23 100%);
-            z-index: -1;
-        }
-
-        .battle-message-box::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background:
-                radial-gradient(circle at 30% 30%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 70% 70%, rgba(255, 71, 87, 0.1) 0%, transparent 50%);
-            z-index: -1;
-        }
-
-        .battle-message-box .stars {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: -1;
-            overflow: hidden;
-        }
-
-        .battle-message-box .star {
-            position: absolute;
-            background: white;
-            border-radius: 50%;
-            animation: twinkle 3s ease-in-out infinite;
-        }
-
-        .battle-center .star:nth-child(1) { width: 2px; height: 2px; top: 20%; left: 20%; animation-delay: 0s; }
-        .battle-center .star:nth-child(2) { width: 1px; height: 1px; top: 30%; left: 80%; animation-delay: 0.5s; }
-        .battle-center .star:nth-child(3) { width: 3px; height: 3px; top: 60%; left: 10%; animation-delay: 1s; }
-        .battle-center .star:nth-child(4) { width: 1px; height: 1px; top: 70%; left: 70%; animation-delay: 1.5s; }
-        .battle-center .star:nth-child(5) { width: 2px; height: 2px; top: 40%; left: 50%; animation-delay: 2s; }
-        .battle-center .star:nth-child(6) { width: 1px; height: 1px; top: 80%; left: 30%; animation-delay: 2.5s; }
-        .battle-center .star:nth-child(7) { width: 2px; height: 2px; top: 15%; left: 60%; animation-delay: 3s; }
-        .battle-center .star:nth-child(8) { width: 1px; height: 1px; top: 85%; left: 85%; animation-delay: 3.5s; }
-        .battle-center .star:nth-child(9) { width: 3px; height: 3px; top: 45%; left: 15%; animation-delay: 4s; }
-        .battle-center .star:nth-child(10) { width: 1px; height: 1px; top: 25%; left: 90%; animation-delay: 4.5s; }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.3; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.2); }
-        }
-
-        .battle-message-box .grid-lines {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: -1;
-            opacity: 0.1;
-        }
-
-        .battle-message-box .grid-lines::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image:
-                linear-gradient(rgba(0, 212, 255, 0.3) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 212, 255, 0.3) 1px, transparent 1px);
-            background-size: 50px 50px;
-            animation: grid-move 20s linear infinite;
-        }
-
-        @keyframes grid-move {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(50px, 50px); }
-        }
-
-        .battle-message-box .energy-field {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 300px;
-            height: 300px;
-            border: 2px solid rgba(0, 212, 255, 0.3);
-            border-radius: 50%;
-            z-index: -1;
-            animation: energy-pulse 4s ease-in-out infinite;
-        }
-
-        @keyframes energy-pulse {
-            0%, 100% {
-                transform: translate(-50%, -50%) scale(1);
-                border-color: rgba(0, 212, 255, 0.3);
-            }
-            50% {
-                transform: translate(-50%, -50%) scale(1.2);
-                border-color: rgba(0, 212, 255, 0.6);
-            }
-        }
-
-        .battle-message-box::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background:
-                linear-gradient(45deg, transparent 30%, rgba(0, 212, 255, 0.05) 50%, transparent 70%),
-                linear-gradient(-45deg, transparent 30%, rgba(0, 212, 255, 0.05) 50%, transparent 70%);
-            z-index: -1;
-            animation: scan 4s linear infinite;
-        }
-
-        @keyframes scan {
-            0% {
-                transform: translateX(-100%) translateY(-100%);
-            }
-            100% {
-                transform: translateX(100%) translateY(100%);
-            }
-        }
-
-        .ship-selection {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            border: 2px solid #00d4ff;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-        }
-
-        .ship-selection h2 {
-            color: #00d4ff;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-
-
-        .battle-button {
-            display: block;
-            width: 220px;
-            margin: 0 auto;
-            padding: 18px 35px;
-            background: linear-gradient(45deg, #00d4ff, #0099cc);
-            color: white;
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            border-radius: 30px;
-            font-size: 1.3em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
-            position: relative;
-            z-index: 2;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            animation: healthGlow 2.5s ease-in-out infinite alternate;
-        }
-
-        .battle-button::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 300px;
-            height: 300px;
-            border: 2px solid rgba(0, 212, 255, 0.3);
-            border-radius: 50%;
-            z-index: -1;
-            animation: pulsateCircle 3s ease-in-out infinite;
-        }
-
-        .battle-button::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 400px;
-            height: 400px;
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            border-radius: 50%;
-            z-index: -2;
-            animation: pulsateCircle 4s ease-in-out infinite reverse;
-        }
-
-        .battle-button:hover {
-            transform: translateY(-3px) scale(1.05);
-            background: linear-gradient(45deg, #ff6b35, #f7931e);
-            border-color: #ff6b35;
-            box-shadow:
-                0 0 30px rgba(255, 107, 53, 0.8),
-                0 0 60px rgba(255, 107, 53, 0.4),
-                0 0 90px rgba(255, 107, 53, 0.2);
-            color: white;
-            animation: none;
-        }
-
-        .battle-button:disabled {
-            background: linear-gradient(45deg, #444, #333);
-            border-color: #555;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .loading {
-            text-align: center;
-            color: #00d4ff;
-            font-size: 1.2em;
-            margin: 40px auto;
-            max-width: 600px;
-        }
-
-        .error {
-            text-align: center;
-            color: #ff4757;
-            font-size: 1.2em;
-            margin: 40px auto;
-            max-width: 600px;
-        }
-
-        .ship-image {
-            width: 100%;
-            height: 120px;
-            background: linear-gradient(45deg, #2c3e50, #34495e);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 10px;
-            font-size: 0.9em;
-            color: #bdc3c7;
-        }
-
-        .ship-dropdown {
-            width: 100%;
-            padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid #00d4ff;
-            border-radius: 8px;
-            color: #fff;
-            font-size: 1em;
-            margin-bottom: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .ship-dropdown:focus {
-            outline: none;
-            border-color: #00d4ff;
-            box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
-        }
-
-        .ship-dropdown option {
-            background: #1a1a3a;
-            color: #fff;
-            padding: 8px;
-        }
-
-        .selected-ship-display {
-            background: rgba(0, 0, 0, 0.8);
-            border: 2px solid #00d4ff;
-            border-radius: 15px;
-            padding: 25px;
-            margin-top: 20px;
-            text-align: center;
-            animation: shipGlow 2s ease-in-out infinite alternate;
-        }
-
-        @keyframes shipGlow {
-            0% {
-                box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-                border-color: #00d4ff;
-            }
-            100% {
-                box-shadow: 0 0 30px rgba(0, 212, 255, 0.8), 0 0 40px rgba(0, 212, 255, 0.4);
-                border-color: #00ffff;
-            }
-        }
-
-        .selected-ship-display .player-info {
-            background: rgba(0, 212, 255, 0.1);
-            border: 1px solid #00d4ff;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #00d4ff;
-        }
-
-        .selected-ship-display .health-bars {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 25px;
-            background: rgba(0, 212, 255, 0.05);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            border-radius: 10px;
-            padding: 15px;
-            animation: healthGlow 2.5s ease-in-out infinite alternate;
-        }
-
-        @keyframes healthGlow {
-            0% {
-                border-color: rgba(0, 212, 255, 0.3);
-                box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
-                background: rgba(0, 212, 255, 0.05);
-            }
-            100% {
-                border-color: rgba(0, 255, 255, 0.6);
-                box-shadow: 0 0 25px rgba(0, 212, 255, 0.4), inset 0 0 20px rgba(0, 212, 255, 0.1);
-                background: rgba(0, 212, 255, 0.1);
-            }
-        }
-
-        @keyframes pulsateCircle {
-            0% {
-                transform: translate(-50%, -50%) scale(0.8);
-                opacity: 0.8;
-            }
-            50% {
-                transform: translate(-50%, -50%) scale(1.2);
-                opacity: 0.4;
-            }
-            100% {
-                transform: translate(-50%, -50%) scale(0.8);
-                opacity: 0.8;
-            }
-        }
-
-        .selected-ship-display .health-bar {
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 10px;
-            padding: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .selected-ship-display .health-bar-label {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 0.9em;
-            color: #ccc;
-        }
-
-        .selected-ship-display .shield-bar {
-            background: rgba(0, 255, 0, 0.2);
-            border: 1px solid #00ff00;
-            border-radius: 8px;
-            height: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .selected-ship-display .shield-fill {
-            background: linear-gradient(90deg, #00ff00, #00cc00);
-            height: 100%;
-            border-radius: 7px;
-            transition: width 0.3s ease;
-        }
-
-        .selected-ship-display .health-bar-red {
-            background: rgba(255, 0, 0, 0.2);
-            border: 1px solid #ff0000;
-            border-radius: 8px;
-            height: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .selected-ship-display .health-fill {
-            background: linear-gradient(90deg, #ff0000, #cc0000);
-            height: 100%;
-            border-radius: 7px;
-            transition: width 0.3s ease;
-        }
-
-        .selected-ship-display .ship-image {
-            width: 200px;
-            height: 130px;
-            margin: 0 auto 20px;
-            border-radius: 10px;
-            overflow: hidden;
-            background: linear-gradient(45deg, #2c3e50, #34495e);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5em;
-            color: #bdc3c7;
-        }
-
-        .selected-ship-display .ship-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .selected-ship-display .ship-name {
-            font-size: 1.3em;
-            font-weight: bold;
-            color: #00d4ff;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .selected-ship-display .ship-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 20px;
-            font-size: 0.9em;
-            background: rgba(0, 212, 255, 0.05);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            border-radius: 10px;
-            padding: 15px;
-            animation: detailsGlow 3s ease-in-out infinite alternate;
-        }
-
-        @keyframes detailsGlow {
-            0% {
-                border-color: rgba(0, 212, 255, 0.3);
-                box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
-                background: rgba(0, 212, 255, 0.05);
-            }
-            100% {
-                border-color: rgba(0, 255, 255, 0.6);
-                box-shadow: 0 0 25px rgba(0, 212, 255, 0.4), inset 0 0 20px rgba(0, 212, 255, 0.1);
-                background: rgba(0, 212, 255, 0.1);
-            }
-        }
-
-        .selected-ship-display .ship-description {
-            margin-top: 15px;
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            font-style: italic;
-            color: #ccc;
-            font-size: 0.9em;
-            border-left: 3px solid #00d4ff;
-        }
-
-        .selected-ship-display .weapons-section {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(255, 71, 87, 0.1);
-            border: 1px solid rgba(255, 71, 87, 0.3);
-            border-radius: 10px;
-        }
-
-        .selected-ship-display .weapons-section h3 {
-            color: #ff4757;
-            margin-bottom: 15px;
-            text-align: center;
-            font-size: 1.1em;
-        }
-
-        .selected-ship-display .weapon-item {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 10px;
-            margin-bottom: 8px;
-            border-radius: 8px;
-            border-left: 3px solid #ff4757;
-        }
-
-        .selected-ship-display .weapon-name {
-            font-weight: bold;
-            color: #ff4757;
-            margin-bottom: 5px;
-        }
-
-        .selected-ship-display .weapon-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            font-size: 0.8em;
-            color: #ccc;
-        }
-
-        .selected-ship-display .weapon-stat {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 5px 8px;
-            border-radius: 5px;
-            text-align: center;
-        }
-
-        .vs-display {
-            text-align: center;
-            font-size: 2.5em;
-            color: #00d4ff;
-            margin: 20px 0;
-            font-weight: bold;
-            text-shadow:
-                0 0 20px rgba(0, 212, 255, 0.8),
-                0 0 40px rgba(0, 212, 255, 0.4);
-            animation: pulse 2s ease-in-out infinite alternate;
-            position: relative;
-            z-index: 1;
-        }
-
-        @keyframes pulse {
-            from {
-                transform: scale(1);
-                text-shadow:
-                    0 0 20px rgba(0, 212, 255, 0.8),
-                    0 0 40px rgba(0, 212, 255, 0.4);
-            }
-            to {
-                transform: scale(1.1);
-                text-shadow:
-                    0 0 30px rgba(0, 212, 255, 1),
-                    0 0 60px rgba(0, 212, 255, 0.6);
-            }
-        }
-    </style>
+    <title>Star Trek Battle Simulator</title>
+    <link rel="stylesheet" href="css/battle.css">
 </head>
 <body>
+    <nav class="side-nav">
+        <div class="nav-links">
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="battle.html" class="nav-link active">Battle</a>
+        </div>
+    </nav>
+
+    <!-- Attack Visualization Bar -->
+    <div class="attack-bar">
+        <div class="player-dot left"></div>
+        
+        <!-- Player phaser fire - 2 blue + 1 silver -->
+        <div class="phaser-beam player-phaser blue-phaser"></div>
+        <div class="phaser-beam player-phaser blue-phaser" style="animation-delay: 0.2s;"></div>
+        <div class="phaser-beam player-phaser silver-phaser" style="animation-delay: 0.4s;"></div>
+        
+        <!-- CPU phaser fire - 2 red lines -->
+        <div class="phaser-beam cpu-phaser cpu-phaser-1"></div>
+        <div class="phaser-beam cpu-phaser cpu-phaser-2" style="animation-delay: 0.3s;"></div>
+        
+        <div class="player-dot right"></div>
+    </div>
+
+
+
     <video class="background-video" autoplay loop muted playsinline>
         <source src="videos/space.webm" type="video/webm">
     </video>
@@ -796,12 +42,19 @@
         <div id="battle-interface" style="display: none;">
             <div class="battle-container">
                 <div class="battle-arena">
-                    <div id="player1-ship-selection" class="ship-selection">
-                        <h2>Player 1 Ship</h2>
-                        <select id="player1-select" class="ship-dropdown">
-                            <option value="">-- Select a ship --</option>
-                        </select>
-                        <div id="player1-ship-display" class="selected-ship-display" style="display: none;"></div>
+                    <div class="player1-column">
+                        <div id="player1-ship-selection" class="ship-selection">
+                            <h2>Player 1 Ship</h2>
+                            <select id="player1-select" class="ship-dropdown">
+                                <option value="">-- Select a ship --</option>
+                            </select>
+                            <div id="player1-ship-display" class="selected-ship-display" style="display: none;"></div>
+                        </div>
+                        <div class="player1-extra-box ship-selection">
+                            <h2>Commanding Officer</h2>
+                            <div class="character-silhouette"><img src=" ">Img here</div>
+                            <p class="dialogue">"Ready to engage, Captain. Awaiting your orders."</p>
+                        </div>
                     </div>
 
                     <div class="battle-center-column">
@@ -824,12 +77,19 @@
 
                     </div>
 
-                    <div id="player2-ship-selection" class="ship-selection">
-                        <h2>CPU Ship</h2>
-                        <select id="player2-select" class="ship-dropdown">
-                            <option value="">-- Select a ship --</option>
-                        </select>
-                        <div id="player2-ship-display" class="selected-ship-display" style="display: none;"></div>
+                    <div class="player2-column">
+                        <div id="player2-ship-selection" class="ship-selection">
+                            <h2>CPU Ship</h2>
+                            <select id="player2-select" class="ship-dropdown">
+                                <option value="">-- Select a ship --</option>
+                            </select>
+                            <div id="player2-ship-display" class="selected-ship-display" style="display: none;"></div>
+                        </div>
+                        <div class="player2-extra-box ship-selection">
+                            <h2>Enemy Commander</h2>
+                            <div class="character-silhouette"><img src=" ">Img here</div>
+                            <p class="dialogue">"Your ship will be destroyed. Resistance is futile."</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1110,7 +370,90 @@
             document.getElementById('player1-select').addEventListener('change', (e) => selectShip('player1', e.target.value));
             document.getElementById('player2-select').addEventListener('change', (e) => selectShip('player2', e.target.value));
         });
-    </script>
 
+        // Add bounce effects when dots get hit
+        function triggerBounce(dotClass) {
+            const dot = document.querySelector(dotClass);
+            if (dot) {
+                dot.classList.add('hit');
+                dot.classList.add('under-attack');
+                
+                // Remove hit effect after bounce
+                setTimeout(() => {
+                    dot.classList.remove('hit');
+                }, 600);
+                
+                // Remove under-attack effect after a random time
+                setTimeout(() => {
+                    dot.classList.remove('under-attack');
+                }, 800 + Math.random() * 400);
+            }
+        }
+
+        // Create particle explosion effect at specific location
+        function createExplosionAtDot(dotClass) {
+            const dot = document.querySelector(dotClass);
+            if (!dot) return;
+            
+            const explosion = document.createElement('div');
+            explosion.className = 'explosion';
+            
+            // Position explosion at the dot's location
+            const rect = dot.getBoundingClientRect();
+            explosion.style.position = 'fixed';
+            explosion.style.left = rect.left + rect.width / 2 + 'px';
+            explosion.style.top = rect.top + rect.height / 2 + 'px';
+            explosion.style.transform = 'translate(-50%, -50%)';
+            
+            document.body.appendChild(explosion);
+
+            // Create multiple particles with random directions
+            for (let i = 0; i < 15; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'explosion-particle';
+                
+                // Random explosion colors (only warm colors: red, orange, yellow, white)
+                const colors = ['#ff4500', '#ff6347', '#ff6b35', '#ff8c00', '#ffa500', '#ffd700', '#ffff00', '#ffffff'];
+                const selectedColor = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.background = selectedColor;
+                particle.style.boxShadow = `0 0 8px ${selectedColor}`;
+                // Ensure no blue colors can be applied
+                particle.style.setProperty('--particle-color', selectedColor);
+                
+                // Random explosion direction and distance
+                const angle = (Math.random() * 360) * (Math.PI / 180);
+                const distance = 30 + Math.random() * 50;
+                const x = Math.cos(angle) * distance;
+                const y = Math.sin(angle) * distance;
+                
+                particle.style.setProperty('--x', `${x}px`);
+                particle.style.setProperty('--y', `${y}px`);
+                
+                explosion.appendChild(particle);
+            }
+
+            // Remove explosion after animation
+            setTimeout(() => {
+                document.body.removeChild(explosion);
+            }, 2000);
+        }
+
+        // Trigger bounces and explosions when lasers reach their targets
+        setInterval(() => {
+            // Player hits CPU at 0.6s into the 3s cycle
+            setTimeout(() => {
+                triggerBounce('.player-dot.right');
+                createExplosionAtDot('.player-dot.right');
+            }, 600);
+        }, 3000);
+
+        setInterval(() => {
+            // CPU hits Player at 2.1s into the 3s cycle (1.5s delay + 0.6s travel)
+            setTimeout(() => {
+                triggerBounce('.player-dot.left');
+                createExplosionAtDot('.player-dot.left');
+            }, 2100);
+        }, 3000);
+    </script>
 </body>
 </html>
