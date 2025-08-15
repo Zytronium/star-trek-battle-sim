@@ -14,16 +14,16 @@
         </div>
     </nav>
 
-    <!-- Dot Attack Animation Bar -->
+    <!-- Attack Visualization Bar -->
     <div class="attack-bar">
         <div class="player-dot left"></div>
         
-        <!-- Player phaser fire - 2 blue + 1 silver, not aligned properly -->
+        <!-- Player phaser fire - 2 blue + 1 silver -->
         <div class="phaser-beam player-phaser blue-phaser"></div>
         <div class="phaser-beam player-phaser blue-phaser" style="animation-delay: 0.2s;"></div>
         <div class="phaser-beam player-phaser silver-phaser" style="animation-delay: 0.4s;"></div>
         
-        <!-- CPU phaser fire - 2 red lines, offset times so it looks alright -->
+        <!-- CPU phaser fire - 2 red lines -->
         <div class="phaser-beam cpu-phaser cpu-phaser-1"></div>
         <div class="phaser-beam cpu-phaser cpu-phaser-2" style="animation-delay: 0.3s;"></div>
         
@@ -42,12 +42,19 @@
         <div id="battle-interface" style="display: none;">
             <div class="battle-container">
                 <div class="battle-arena">
-                    <div id="player1-ship-selection" class="ship-selection">
-                        <h2>Player 1 Ship</h2>
-                        <select id="player1-select" class="ship-dropdown">
-                            <option value="">-- Select a ship --</option>
-                        </select>
-                        <div id="player1-ship-display" class="selected-ship-display" style="display: none;"></div>
+                    <div class="player1-column">
+                        <div id="player1-ship-selection" class="ship-selection">
+                            <h2>Player 1 Ship</h2>
+                            <select id="player1-select" class="ship-dropdown">
+                                <option value="">-- Select a ship --</option>
+                            </select>
+                            <div id="player1-ship-display" class="selected-ship-display" style="display: none;"></div>
+                        </div>
+                        <div class="player1-extra-box ship-selection">
+                            <h2>Commanding Officer</h2>
+                            <div class="character-silhouette"><img src=" ">Img here</div>
+                            <p class="dialogue">"Ready to engage, Captain. Awaiting your orders."</p>
+                        </div>
                     </div>
 
                     <div class="battle-center-column">
@@ -70,12 +77,19 @@
 
                     </div>
 
-                    <div id="player2-ship-selection" class="ship-selection">
-                        <h2>CPU Ship</h2>
-                        <select id="player2-select" class="ship-dropdown">
-                            <option value="">-- Select a ship --</option>
-                        </select>
-                        <div id="player2-ship-display" class="selected-ship-display" style="display: none;"></div>
+                    <div class="player2-column">
+                        <div id="player2-ship-selection" class="ship-selection">
+                            <h2>CPU Ship</h2>
+                            <select id="player2-select" class="ship-dropdown">
+                                <option value="">-- Select a ship --</option>
+                            </select>
+                            <div id="player2-ship-display" class="selected-ship-display" style="display: none;"></div>
+                        </div>
+                        <div class="player2-extra-box ship-selection">
+                            <h2>Enemy Commander</h2>
+                            <div class="character-silhouette"><img src=" ">Img here</div>
+                            <p class="dialogue">"Your ship will be destroyed. Resistance is futile."</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -394,18 +408,21 @@
             document.body.appendChild(explosion);
 
             // Create multiple particles with random directions
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 15; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'explosion-particle';
                 
-                // Random colors (blue, red, orange, white)
-                const colors = ['#00d4ff', '#00d4ff', '#ff0000', '#ff6b35', '#ffffff'];
-                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-                particle.style.boxShadow = `0 0 8px ${particle.style.background}`;
+                // Random explosion colors (only warm colors: red, orange, yellow, white)
+                const colors = ['#ff4500', '#ff6347', '#ff6b35', '#ff8c00', '#ffa500', '#ffd700', '#ffff00', '#ffffff'];
+                const selectedColor = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.background = selectedColor;
+                particle.style.boxShadow = `0 0 8px ${selectedColor}`;
+                // Ensure no blue colors can be applied
+                particle.style.setProperty('--particle-color', selectedColor);
                 
                 // Random explosion direction and distance
                 const angle = (Math.random() * 360) * (Math.PI / 180);
-                const distance = 50 + Math.random() * 100;
+                const distance = 30 + Math.random() * 50;
                 const x = Math.cos(angle) * distance;
                 const y = Math.sin(angle) * distance;
                 
