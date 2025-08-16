@@ -266,7 +266,7 @@ body {
     justify-content: center;
     gap: 20px;
     padding: 30px 60px;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.6);
     border: 3px solid #00d4ff;
     border-radius: 25px;
     box-shadow:
@@ -285,7 +285,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 50%, #0f0f23 100%);
+    background: linear-gradient(135deg, rgba(15, 15, 36, 0.5) 0%, rgba(39, 39, 105, 0.66) 50%, rgba(15, 15, 36, 0.5) 100%);
     z-index: -1;
 }
 
@@ -461,6 +461,12 @@ body {
     animation: healthGlow 2.5s ease-in-out infinite alternate;
 }
 
+/* Disable pointer hitbox on glowing rings */
+.battle-button::before,
+.battle-button::after {
+    pointer-events: none;
+}
+
 .battle-button::before {
     content: '';
     position: absolute;
@@ -489,25 +495,37 @@ body {
     animation: pulsateCircle 4s ease-in-out infinite reverse;
 }
 
-.battle-button:hover {
+/* Add animated gradient glow effect ONLY on hover */
+.battle-button:not(:disabled):hover {
     transform: translateY(-3px) scale(1.05);
-    background: linear-gradient(45deg, #ff6b35, #f7931e);
+    background: linear-gradient(60deg, #ff6b35, #f7931e, #ffbc35, #ff6b35);
+    background-size: 300% 300%;
+    animation: gradientShift 6s ease infinite;
     border-color: #ff6b35;
     box-shadow:
-        0 0 30px rgba(255, 107, 53, 0.8),
-        0 0 60px rgba(255, 107, 53, 0.4),
-        0 0 90px rgba(255, 107, 53, 0.2);
+            0 0 30px rgba(255, 107, 53, 0.8),
+            0 0 60px rgba(255, 107, 53, 0.4),
+            0 0 90px rgba(255, 107, 53, 0.2);
     color: white;
-    animation: none;
 }
 
+/* Disabled state overrides everything */
 .battle-button:disabled {
     background: linear-gradient(45deg, #444, #333);
     border-color: #555;
     cursor: not-allowed;
     transform: none;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    animation: none;
 }
+
+/* Gradient animation definition */
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
 
 .loading {
     text-align: center;
@@ -619,7 +637,7 @@ body {
         0 0 40px rgba(0, 212, 255, 0.4);
     animation: pulse 2s ease-in-out infinite alternate;
     position: relative;
-    z-index: 1;
+    z-index: 3;
 }
 
 @keyframes pulse {
@@ -644,16 +662,17 @@ body {
     position: fixed;
     left: 0;
     top: 0;
-    width: 150px;
-    height: 100vh;
     background: rgba(0, 0, 0, 0.8);
     border-right: 2px solid rgba(0, 212, 255, 0.6);
+    border-bottom: 1px solid rgba(0, 212, 255, 0.5);
+    border-radius: 0 0 20px 0;
+    padding: 1rem 1rem 2rem;
     box-shadow: 2px 0 20px rgba(0, 212, 255, 0.3);
     z-index: 1001;
     display: flex;
     flex-direction: column;
+    text-align: center;
     align-items: center;
-    padding-top: 40px;
 }
 
 .nav-links {
@@ -670,14 +689,19 @@ body {
     text-decoration: none;
     font-size: 18px;
     font-weight: bold;
-    padding: 12px 20px;
-    border-radius: 15px;
+    padding: 8px 8px;
+    border-radius: 500px;
     transition: all 0.3s ease;
     text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
     background: rgba(0, 212, 255, 0.1);
     border: 1px solid rgba(0, 212, 255, 0.4);
-    width: 110px;
-    text-align: center;
+    width: 90px;
+    height: 90px;
+    align-content: center;
+}
+
+.nav-link img {
+    margin: 0 auto 6px;
 }
 
 .nav-link:hover {

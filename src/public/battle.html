@@ -9,8 +9,8 @@
 <body>
     <nav class="side-nav">
         <div class="nav-links">
-            <a href="index.html" class="nav-link">Home</a>
-            <a href="battle.html" class="nav-link active">Battle</a>
+            <a href="index.html" class="nav-link"><img src="favicon.ico" style="width: 100%">Home</a>
+<!--            <a href="battle.html" class="nav-link active">Battle</a>-->
         </div>
     </nav>
 
@@ -49,12 +49,13 @@
                                 <option value="">-- Select a ship --</option>
                             </select>
                             <div id="player1-ship-display" class="selected-ship-display" style="display: none;"></div>
-                        </div>
+                        </div><!--
                         <div class="player1-extra-box ship-selection">
                             <h2>Commanding Officer</h2>
                             <div class="character-silhouette"><img src=" ">Img here</div>
                             <p class="dialogue">"Ready to engage, Captain. Awaiting your orders."</p>
-                        </div>
+                        </div>-->
+                      <!-- ^ We don't need this, but perhaps we can implement it if there's time. ^ -->
                     </div>
 
                     <div class="battle-center-column">
@@ -84,12 +85,13 @@
                                 <option value="">-- Select a ship --</option>
                             </select>
                             <div id="player2-ship-display" class="selected-ship-display" style="display: none;"></div>
-                        </div>
+                        </div><!--
                         <div class="player2-extra-box ship-selection">
                             <h2>Enemy Commander</h2>
                             <div class="character-silhouette"><img src=" ">Img here</div>
                             <p class="dialogue">"Your ship will be destroyed. Resistance is futile."</p>
-                        </div>
+                        </div>-->
+                      <!-- ^ We don't need this, but perhaps we can implement it if there's time. ^ -->
                     </div>
                 </div>
             </div>
@@ -253,7 +255,8 @@
                             <span>${ship.shield_strength || 0}</span>
                         </div>
                         <div class="shield-bar">
-                            <div class="shield-fill" style="width: ${shieldPercentage}%"></div>
+<!--                            <div class="shield-fill" style="width: ${shieldPercentage}%"></div>--> <!-- during battle, ship should be "shield HP / max shield"-->
+                            <div class="shield-fill"></div>
                         </div>
                     </div>
                     <div class="health-bar">
@@ -262,7 +265,8 @@
                             <span>${ship.hull_strength || 0}</span>
                         </div>
                         <div class="health-bar-red">
-                            <div class="health-fill" style="width: ${healthPercentage}%"></div>
+<!--                            <div class="health-fill" style="width: ${healthPercentage}%"></div> --> <!-- during battle, ship should be "hull HP / max Hull"-->
+                            <div class="health-fill"></div>
                         </div>
                     </div>
                 </div>

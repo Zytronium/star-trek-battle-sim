@@ -46,17 +46,60 @@ p {
 }
 
 .btn {
-    display: inline-block;
-    padding: 12px 24px;
-    background: rgba(110, 204, 255, 0.1);
-    border: 1px solid #51c2ff;
-    color: #51c2ff;
     text-decoration: none;
+    font-size: 18px;
     font-weight: bold;
-    border-radius: 6px;
-    transition: background 0.3s;
+    padding: 12px 20px;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+    text-align: center;
+    background: rgba(0, 212, 255, 0.4);
+    border: 1px solid rgba(0, 212, 255, 1);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+    color: #00d4ff;
+    position: relative;
+    overflow: hidden;
 }
 
+/* Animated gradient background for the glow */
+.btn::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(60deg, #00d4ff, #0066ff, #00ffdd, #00d4ff);
+    background-size: 300% 300%;
+    animation: gradientMove 6s ease infinite;
+    filter: blur(30px);
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.btn:hover::before {
+    opacity: 1;
+}
+
+/* On hover, make the button glow more */
 .btn:hover {
-    background: rgba(115, 205, 255, 0.25);
+    color: #fff;
+    box-shadow: 0 0 30px rgba(0, 212, 255, 1), 0 0 60px rgba(0, 212, 255, 0.8);
+    border: 2px solid rgb(73, 224, 255);
+    scale: 1.0625;
+}
+
+/* Keyframes for the gradient animation */
+@keyframes gradientMove {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
 }
