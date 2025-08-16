@@ -6,38 +6,25 @@ class AppController {
   }
 
   static async getDatabase(req, res) {
+    // Note: this does not get the entire database anymore, which means join tables are not returned here.
     try {
-      // Step 1: Get all base tables, views, and materialized views
-      const objectsResult = await pool.query(`
-        SELECT table_name
-        FROM information_schema.tables
-        WHERE table_schema = 'public'
-        
-        UNION
+      const ships = await pool.query('SELECT * FROM ships');
+      // const bossShips = await pool.query('SELECT * FROM boss_ships'); // Uncomment if we implement bosses
+      const weapons = await pool.query('SELECT * FROM weapons');
+      const defenses = await pool.query('SELECT * FROM defenses');
+      const shipWeapons = await pool.query('SELECT * FROM ship_weapons');
+      const shipDefenses = await pool.query('SELECT * FROM ship_defenses');
 
-        SELECT matviewname AS table_name
-        FROM pg_matviews
-        WHERE schemaname = 'public'
-      `);
-
-      const allData = {};
-
-      // Step 2: Query all objects in parallel
-      await Promise.all(objectsResult.rows.map(async ({ table_name }) => {
-        try {
-          const result = await pool.query(`SELECT * FROM "${table_name}"`);
-          allData[table_name] = result.rows;
-        } catch (err) {
-          // In case a view/materialized view fails (permissions, etc.)
-          allData[table_name] = { error: err.message };
-        }
-      }));
-
-      // Step 3: Return everything
-      res.status(200).json(allData);
-
+      res.json({
+        ships: ships.rows,
+        // boss_ships: bossShips.rows, // Uncomment if we implement bosses
+        weapons: weapons.rows,
+        defenses: defenses.rows,
+        ship_weapons: shipWeapons.rows,
+        ship_defenses: shipDefenses.rows
+      });
     } catch (err) {
-      console.error(err);
+      console.error('Database query failed:', err);
       res.status(500).json({ error: 'Database query failed' });
     }
   }

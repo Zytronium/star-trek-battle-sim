@@ -64,28 +64,6 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// Database info endpoint
-app.get('/api/database', async (req, res) => {
-  try {
-    const ships = await pool.query('SELECT * FROM ships');
-    const weapons = await pool.query('SELECT * FROM weapons');
-    const defenses = await pool.query('SELECT * FROM defenses');
-    const shipWeapons = await pool.query('SELECT * FROM ship_weapons');
-    const shipDefenses = await pool.query('SELECT * FROM ship_defenses');
-
-    res.json({
-      status: 'success',
-      ships: ships.rows,
-      weapons: weapons.rows,
-      defenses: defenses.rows,
-      ship_weapons: shipWeapons.rows,
-      ship_defenses: shipDefenses.rows
-    });
-  } catch (err) {
-    console.error('Database query failed:', err);
-    res.status(500).json({ error: 'Database query failed' });
-  }
-});
 
 // Fixed endpoints
 app.get('/api/ships', async (req, res) => {
