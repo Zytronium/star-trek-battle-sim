@@ -65,16 +65,6 @@
                                 START BATTLE
                             </button>
                         </div>
-                        <div class="battle-message-box">
-                            <div class="battle-messages">
-                                <div class="message-header">
-                                    <h3>Battle Status</h3>
-                                </div>
-                                <div id="battle-log" class="message-content">
-                                    <div class="welcome-message">Welcome to the Star Trek Battle Engine! Select your ships and prepare for battle.</div>
-                                </div>
-                            </div>
-                        </div>
 
                     </div>
 
@@ -314,7 +304,7 @@
         }
 
         // Message display functions
-        function addBattleMessage(message, type = 'info') {
+        /*function addBattleMessage(message, type = 'info') {
             const battleLog = document.getElementById('battle-log');
             const messageDiv = document.createElement('div');
             messageDiv.className = `battle-message ${type}`;
@@ -328,18 +318,18 @@
             // Add message log and auto-scroll to bottom
             battleLog.appendChild(messageDiv);
             battleLog.scrollTop = battleLog.scrollHeight;
-        }
+        }*/
 
-        function clearBattleMessages() {
+        /*function clearBattleMessages() {
             const battleLog = document.getElementById('battle-log');
             battleLog.innerHTML = '<div class="welcome-message">Welcome to the Star Trek Battle Engine! Select your ships and prepare for battle.</div>';
-        }
+        }*/
 
         // Start battle on battle button click
        document.getElementById('battle-btn').addEventListener('click', async () => {
         if (selectedShips.player1 && selectedShips.player2) {
-            clearBattleMessages();
-            addBattleMessage(`🚀 Engaging battle between <strong>${selectedShips.player1.name}</strong> and <strong>${selectedShips.player2.name}</strong>...`, 'battle-start');
+            // clearBattleMessages();
+            // addBattleMessage(`🚀 Engaging battle between <strong>${selectedShips.player1.name}</strong> and <strong>${selectedShips.player2.name}</strong>...`, 'battle-start');
 
             try {
                 // Updated URL with trailing slash
@@ -358,11 +348,11 @@
                 }
 
                 const data = await res.json();
-                data.logs.forEach(line => addBattleMessage(line, 'info'));
+                // data.logs.forEach(line => addBattleMessage(line, 'info'));
 
             } catch (err) {
                 console.error('Battle error:', err);
-                addBattleMessage(`⚠️ Error: ${err.message}`, 'error');
+                // addBattleMessage(`⚠️ Error: ${err.message}`, 'error');
             }
         }
     });
