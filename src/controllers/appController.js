@@ -1,4 +1,5 @@
 const { pool } = require("../config/database");
+const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 
 class AppController {
   static getStatus(req, res) {
@@ -7,6 +8,22 @@ class AppController {
       timestamp: new Date().toISOString(),
       version: '1.0.0'
     });
+  }
+
+  static async getHealth(req, res) {
+    try {
+      await pool.query('SELECT 1');
+      res.send({
+        status: 'healthy',
+        debugMode,
+        timestamp: new Date().toISOString()
+      });
+    } catch (err) {
+      res.status(500).send({
+        status: 'unhealthy',
+        error: 'Database check failed'
+      });
+    }
   }
 
   static async getDatabase(req, res) {
@@ -29,7 +46,7 @@ class AppController {
       });
     } catch (err) {
       console.error('Database query failed:', err);
-      res.status(500).json({ error: 'Database query failed' });
+      res.status(500).send({ error: 'Database query failed' });
     }
   }
 
@@ -38,7 +55,7 @@ class AppController {
       const result = await pool.query('SELECT * FROM boss_ships');
       res.json(result.rows);
     } catch (err) {
-      res.status(500).json({ error: 'Database query failed' });
+      res.status(500).send({ error: 'Database query failed' });
     }
   }
 
@@ -49,7 +66,7 @@ class AppController {
       res.status(200).json(result.rows);
     } catch (err) {
       console.error('Database query failed:', err);
-      res.status(500).json({ error: 'Database query failed' });
+      res.status(500).send({ error: 'Database query failed' });
     }
   }
 
@@ -107,7 +124,7 @@ class AppController {
       res.status(200).json({ ships });
     } catch (err) {
       console.error('Database query failed:', err);
-      res.status(500).json({ error: 'Database query failed' });
+      res.status(500).send({ error: 'Database query failed' });
     }
   }
 }

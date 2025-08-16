@@ -5,6 +5,7 @@ const debugLogs = require("../middleware/debugLogs");
 
 router.get('/status', debugLogs, AppController.getStatus); // API Status
 
+router.get('/health', debugLogs, AppController.getHealth); // Basic health check endpoint
 // ============================== DATABASE ============================== \\
 router.get('/database', debugLogs, AppController.getDatabase); // Get (almost) all of the database
 
