@@ -7,4 +7,6 @@ router.get('/status', debugLogs, AppController.getStatus);
 
 router.get('/database', debugLogs, AppController.getDatabase);
 
+router.get('/ships', debugLogs, AppController.getShips)
+
 module.exports = router;

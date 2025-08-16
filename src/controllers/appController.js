@@ -28,6 +28,16 @@ class AppController {
       res.status(500).json({ error: 'Database query failed' });
     }
   }
+
+  static async getShips(req, res) {
+    // Note: this does not get ship weapons
+    try {
+      const result = await pool.query('SELECT * FROM ships');
+      res.json(result.rows);
+    } catch (err) {
+      res.status(500).json({ error: 'Database query failed' });
+    }
+  }
 }
 
 module.exports = AppController;

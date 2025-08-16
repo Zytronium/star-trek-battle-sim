@@ -64,17 +64,6 @@ app.get('/health', async (req, res) => {
   }
 });
 
-
-// Fixed endpoints
-app.get('/api/ships', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM ships');
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: 'Database query failed' });
-  }
-});
-
 // app.get('/api/boss-ships', async (req, res) => {
 //   try {
 //     const result = await pool.query('SELECT * FROM boss_ships');
