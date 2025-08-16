@@ -3,7 +3,7 @@ const router = express.Router();
 const BattleSimulator = require('../game/battleSimulator');
 const { pool } = require('../config/database');
 
-router.post('/', async (req, res) => {
+router.post('/simulate-battle', async (req, res) => {
   try {
     const { playerShipId, enemyShipId } = req.body;
     const simulator = new BattleSimulator();

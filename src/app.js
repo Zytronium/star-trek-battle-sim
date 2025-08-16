@@ -39,7 +39,7 @@ app.set('json spaces', 2); // Pretty print JSON
 app.use(express.urlencoded({ extended: true })); // Auto-parse JSON body
 app.use(express.static(__dirname + '/public')); // Serve static files
 app.use(checkDatabase);
-app.use('/api/simulate-battle', battleRoutes); // Battle simulator routes
+app.use('/api', battleRoutes); // Battle simulator routes
 
 // API routes
 app.use('/api', router);
@@ -63,15 +63,6 @@ app.get('/health', async (req, res) => {
     });
   }
 });
-
-// app.get('/api/boss-ships', async (req, res) => {
-//   try {
-//     const result = await pool.query('SELECT * FROM boss_ships');
-//     res.json(result.rows);
-//   } catch (err) {
-//     res.status(500).json({ error: 'Database query failed' });
-//   }
-// });
 
 // Error handling
 app.use((err, req, res, next) => {
