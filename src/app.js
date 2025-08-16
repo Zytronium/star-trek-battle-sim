@@ -73,15 +73,6 @@ app.get('/health', async (req, res) => {
 //   }
 // });
 
-app.get('/api/status', (req, res) => {
-  res.json({
-    status: 'operational',
-    timestamp: new Date().toISOString(),
-    version: '1.0.0'
-  });
-});
-
-
 // Error handling
 app.use((err, req, res, next) => {
   console.error('Server error:', err);

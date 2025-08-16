@@ -2,7 +2,11 @@ const { pool } = require("../config/database");
 
 class AppController {
   static getStatus(req, res) {
-    res.status(200).send({ status: "OK" });
+    res.status(200).send({
+      status: 'operational',
+      timestamp: new Date().toISOString(),
+      version: '1.0.0'
+    });
   }
 
   static async getDatabase(req, res) {
@@ -30,11 +34,12 @@ class AppController {
   }
 
   static async getShips(req, res) {
-    // Note: this does not get ship weapons
+    // Note: this does not get ship weapons or defenses
     try {
       const result = await pool.query('SELECT * FROM ships');
-      res.json(result.rows);
+      res.status(200).json(result.rows);
     } catch (err) {
+      console.error('Database query failed:', err);
       res.status(500).json({ error: 'Database query failed' });
     }
   }
