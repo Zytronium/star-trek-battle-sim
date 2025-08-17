@@ -196,11 +196,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Build weapon bar (bottom) for player's weapons
       const playerWeapons = Array.isArray(playerFull?.weapons) ? playerFull.weapons : (playerFull?.ship_weapons || []);
       renderWeaponButtons(playerWeapons, (w) => {
-        // Simple intent payload; add token/auth later
+        // Simple intent payload; todo: add token/auth later
         socket.emit('playerIntent', {
           gameId,
+          // playerToken,
           intent: {
-            type: 'attack',
+            attacker: playerBase.pilot ?? 'P1',
             weapon_id: w.weapon_id ?? w.id,
             target: cpuBase.pilot ?? 'COM1'
           }

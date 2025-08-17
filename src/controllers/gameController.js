@@ -282,7 +282,7 @@ class GameController {
     const gameId = uuidv4();
     // use gameId as spectate token
     const playerTokens = ships
-      .filter(s => !s.is_boss)
+      .filter(s => !s.is_boss && s.pilot.toUpperCase().at(0) === "P")
       .reduce((acc, s, i) => {
         acc[`P${i+1}`] = uuidv4();
         return acc;
@@ -362,11 +362,90 @@ class GameController {
     // Todo: return turn events from the given turn
   }
 
-  // POST /engine/games/:id/intent
+// POST /engine/games/:id/intent
   static async postIntent(req, res) {
-    res.status(501).send("Not implemented yet.");
+    try {
+      const gameId = req.params.id;
+      const intent = req.body.intent;
 
-    // Todo: receive game action, check player token, and maybe do some auth checking
+      const game = activeGames[gameId];
+      if (!game) return res.status(400).send("Invalid game id.");
+
+      const updatedGame = GameController.applyIntentToGame(game, intent);
+
+      res.status(200).json({ game: updatedGame });
+
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  // ================= Helper function ================== \\
+  static applyIntentToGame(game, intent) {
+    if (!game)
+      throw new Error("Game object is required");
+
+    console.log(game);
+    console.log("Attacker ship:", intent.attacker);
+    console.log("Target ship:", intent.target);
+
+    const attackerShip = game.ships.find(s => s.pilot.toUpperCase() === intent.attacker.toUpperCase());
+    const targetShip   = game.ships.find(s => s.pilot.toUpperCase() === intent.target.toUpperCase());
+
+    console.log("attacker ship weapons:", attackerShip.weapons);
+
+    if (!attackerShip)
+      throw new Error("Invalid attacker ship.");
+    if (!targetShip)
+      throw new Error("Invalid target ship.");
+
+    const weaponData = attackerShip.weapons.find(w => w.weapon_id === intent.weapon_id);
+    if (!weaponData)
+      throw new Error("Weapon not equipped on ship");
+
+    // ================ Damage calculations ================ \\
+    let baseDamage = weaponData.damage * parseFloat(weaponData.damage_multiplier);
+    let damageToShields = baseDamage * parseFloat(weaponData.shields_multiplier);
+    let damageToHull = baseDamage * parseFloat(weaponData.hull_multiplier);
+
+    // Apply defenses
+    for (const defense of targetShip.defenses) {
+      if (defense.type === 'Armor') { // ablative armor
+        const absorbed = damageToHull * 0.8;
+        damageToHull -= absorbed;
+        defense.hit_points -= absorbed / 3;
+        if (defense.hit_points < 0) defense.hit_points = 0;
+      }
+
+      if (defense.type === 'Shield') {
+        const shieldEffectiveness = parseFloat(defense.effectiveness);
+        const shieldDamage = damageToShields * shieldEffectiveness;
+        const overflowToHull = damageToShields - shieldDamage;
+
+        damageToShields = shieldDamage;
+        damageToHull += overflowToHull;
+      }
+    }
+
+    // Apply damage to shields first, then hull overflow
+    targetShip.shield_strength -= damageToShields;
+    if (targetShip.shield_strength < 0) {
+      damageToHull += -targetShip.shield_strength;
+      targetShip.shield_strength = 0;
+    }
+
+    targetShip.hull_strength -= damageToHull;
+    if (targetShip.hull_strength < 0) targetShip.hull_strength = 0;
+
+    // Reduce weapon max usage
+    if (weaponData.max_usage !== 99999) {
+      weaponData.max_usage = Math.max(0, weaponData.max_usage - 1);
+    }
+
+    // Log the action
+    game.logs.push({ player: intent.attacker, action: intent });
+
+    return game;
   }
 }
 

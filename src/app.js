@@ -13,6 +13,7 @@ const { pool, verifyConnection } = require('./config/database');
 const http = require('http');
 const { Server } = require('socket.io');
 const { activeGames, setIO } = require('./gameState');
+const { applyIntentToGame } = require("./controllers/gameController");
 
 const PORT = process.env.PORT || 5005;
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
@@ -24,7 +25,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: '*', //todo: set this from env variable: this is the website domain (I think)
     methods: ['GET', 'POST']
   }
 });
@@ -46,20 +47,23 @@ io.on('connection', (socket) => {
   });
 
   socket.on('playerIntent', ({ gameId, intent }) => {
-    const game = activeGames[gameId];
-    if (!game)
-      return;
+    try {
+      // Get the current game
+      const game = activeGames[gameId];
+      if (!game)
+        throw new Error("Game not found");
 
-    // Append player intent
-    game.logs.push(`Player action: ${JSON.stringify(intent)}`);
+      // Call the server-side handler directly with the full game object
+      const updatedGame = applyIntentToGame(game, intent);
 
-    // Example: AI turn immediately after player action
-    const aiAction = { action: 'attack', target: 'player1', damage: Math.floor(Math.random() * 20) };
-    game.logs.push(`AI action: ${JSON.stringify(aiAction)}`);
-
-    // Broadcast updates to everyone in game room
-    io.to(`game-${gameId}`).emit('gameUpdate', game);
+      // Broadcast the returned game state to everyone in the room
+      io.to(`game-${gameId}`).emit('gameUpdate', updatedGame);
+    } catch (err) {
+      console.error('Failed to process intent:', err);
+      socket.emit('errorMessage', err.message);
+    }
   });
+
 });
 
 // Trust proxy to allow logging IP addresses
