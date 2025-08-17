@@ -17,20 +17,18 @@
     <!-- Attack Visualization Bar -->
     <div class="attack-bar">
         <div class="player-dot left"></div>
-        
+
         <!-- Player phaser fire - 2 blue + 1 silver -->
         <div class="phaser-beam player-phaser blue-phaser"></div>
         <div class="phaser-beam player-phaser blue-phaser" style="animation-delay: 0.2s;"></div>
         <div class="phaser-beam player-phaser silver-phaser" style="animation-delay: 0.4s;"></div>
-        
+
         <!-- CPU phaser fire - 2 red lines -->
         <div class="phaser-beam cpu-phaser cpu-phaser-1"></div>
         <div class="phaser-beam cpu-phaser cpu-phaser-2" style="animation-delay: 0.3s;"></div>
-        
+
         <div class="player-dot right"></div>
     </div>
-
-
 
     <video class="background-video" autoplay loop muted playsinline>
         <source src="videos/space.webm" type="video/webm">
@@ -65,6 +63,20 @@
                                 START BATTLE
                             </button>
                         </div>
+
+                      <div class="battle-message-box">
+                        <div class="battle-messages">
+                          <div class="message-header">
+                            <h3>Battle Status</h3>
+                          </div>
+                          <div id="battle-log" class="message-content">
+                            <div class="welcome-message">
+                              <p>Welcome to the Star Trek Battle Engine! Select your ships and prepare for battle.</p>
+                              <small>Note: This is placeholder battle logic. Actual battle simulation coming soon.</small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
                     </div>
 
