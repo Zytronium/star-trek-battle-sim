@@ -5,11 +5,13 @@ const morgan = require('morgan');
 const cors = require('cors');
 const router = require('./routes');
 const engineRouter = require("./routes/engine_routes");
+const battleRoutes = require('./routes/battleRoutes');
+const errorHandler = require('./middleware/errorHandler')
+const checkDatabase = require("./middleware/checkDatabase")
 const { pool, verifyConnection } = require('./config/database');
 
 const PORT = process.env.PORT || 5005;
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
-const battleRoutes = require('./routes/battleRoutes');
 
 // Express app
 const app = express();
@@ -17,112 +19,22 @@ const app = express();
 // Trust proxy to allow logging IP addresses
 app.set('trust proxy', true);
 
-// Database health check middleware
-async function checkDatabase(req, res, next) {
-  try {
-    await pool.query('SELECT 1');
-    next();
-  } catch (err) {
-    console.error('Database connection error:', err);
-    res.status(503).json({
-      error: 'Database unavailable',
-      details: debugMode ? err.message : undefined
-    });
-  }
-}
-
-// Middleware
-app.use(cors()); //what is this
+// ================ Middleware ================ \\
+app.use(cors());                                 // Enable CORS
 app.use(morgan(debugMode ? 'dev' : 'combined')); // Log requests to console
-app.use(express.json()); // Allow json requests
-app.set('json spaces', 2); // Pretty print JSON
+app.use(express.json());                         // Parse JSON
 app.use(express.urlencoded({ extended: true })); // Auto-parse JSON body
-app.use(express.static(__dirname + '/public')); // Serve static files
-app.use(checkDatabase);
-app.use('/api/simulate-battle', battleRoutes); // Battle simulator routes
+app.set('json spaces', 2);                       // Pretty print JSON
+app.use(express.static(__dirname + '/public'));  // Serve static files
+app.use(checkDatabase);                          // Database health check middleware
 
-// API routes
-app.use('/api', router);
+// ================== Routes ================== \\
+app.use('/api', router);           // API routes
+app.use('/api', battleRoutes);     // (Old) Battle simulator routes
+app.use("/engine", engineRouter);  // Game engine routes
 
-// Game engine routes
-app.use("/engine", engineRouter);
-
-// Basic health check endpoint
-app.get('/health', async (req, res) => {
-  try {
-    await pool.query('SELECT 1');
-    res.json({
-      status: 'healthy',
-      debugMode,
-      timestamp: new Date().toISOString()
-    });
-  } catch (err) {
-    res.status(500).json({
-      status: 'unhealthy',
-      error: 'Database check failed'
-    });
-  }
-});
-
-// Database info endpoint
-app.get('/api/database', async (req, res) => {
-  try {
-    const ships = await pool.query('SELECT * FROM ships');
-    const weapons = await pool.query('SELECT * FROM weapons');
-    const defenses = await pool.query('SELECT * FROM defenses');
-    const shipWeapons = await pool.query('SELECT * FROM ship_weapons');
-    const shipDefenses = await pool.query('SELECT * FROM ship_defenses');
-
-    res.json({
-      status: 'success',
-      ships: ships.rows,
-      weapons: weapons.rows,
-      defenses: defenses.rows,
-      ship_weapons: shipWeapons.rows,
-      ship_defenses: shipDefenses.rows
-    });
-  } catch (err) {
-    console.error('Database query failed:', err);
-    res.status(500).json({ error: 'Database query failed' });
-  }
-});
-
-// Fixed endpoints
-app.get('/api/ships', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM ships');
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: 'Database query failed' });
-  }
-});
-
-// app.get('/api/boss-ships', async (req, res) => {
-//   try {
-//     const result = await pool.query('SELECT * FROM boss_ships');
-//     res.json(result.rows);
-//   } catch (err) {
-//     res.status(500).json({ error: 'Database query failed' });
-//   }
-// });
-
-app.get('/api/status', (req, res) => {
-  res.json({
-    status: 'operational',
-    timestamp: new Date().toISOString(),
-    version: '1.0.0'
-  });
-});
-
-
-// Error handling
-app.use((err, req, res, next) => {
-  console.error('Server error:', err);
-  res.status(500).json({
-    error: 'Internal server error',
-    details: debugMode ? err.message : undefined
-  });
-});
+// ============== Error Handling ============== \\
+app.use(errorHandler); // MUST be last
 
 async function startServer() {
   try {
@@ -154,6 +66,7 @@ async function startServer() {
             console.log(`- ${methods} engine${layer.route.path}`);
           }
         });
+        console.log('-------------------------------');
       }
     });
 
@@ -168,18 +81,14 @@ async function startServer() {
   }
 }
 
+async function shutdown(signal) {
+  console.log(`${signal} received - shutting down gracefully`);
+  await pool.end();
+  process.exit(0);
+}
+
 // Start the application
 startServer();
 
 // Cleanup on exit
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM received - shutting down gracefully');
-  await pool.end();
-  process.exit(0);
-});
-
-process.on('SIGINT', async () => {
-  console.log('SIGINT received - shutting down gracefully');
-  await pool.end();
-  process.exit(0);
-});
+['SIGTERM', 'SIGINT'].forEach(sig => process.on(sig, () => shutdown(sig)));

@@ -27,7 +27,7 @@ class BattleSimulator {
     this.logs.push(`${player.name} vs ${enemy.name}`);
     
     let round = 1;
-    while (player.hull > 0 && enemy.hull > 0) {
+    while (player.hull > 0 && enemy.hull >= 0) {
       this.logs.push(`\n===== ROUND ${round} =====`);
       
       // Player attack
