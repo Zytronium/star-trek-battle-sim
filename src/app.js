@@ -4,16 +4,15 @@ const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 const router = require('./routes');
-const engineRouter = require("./routes/engine_routes");
-const battleRoutes = require('./routes/battleRoutes');
-const errorHandler = require('./middleware/errorHandler')
-const checkDatabase = require("./middleware/checkDatabase")
-const cleanHtmlUrls = require("./middleware/cleanURLs")
+const errorHandler = require('./middleware/errorHandler');
+const checkDatabase = require("./middleware/checkDatabase");
+const cleanHtmlUrls = require("./middleware/cleanURLs");
+const debugLogs = require('./middleware/debugLogs');
 const { pool, verifyConnection } = require('./config/database');
 const http = require('http');
 const { Server } = require('socket.io');
-const { activeGames, setIO } = require('./gameState');
-const { applyIntentToGame } = require("./controllers/gameController");
+const registerSockets = require('./sockets');
+const { setIO } = require('./game/gameState');
 
 const PORT = process.env.PORT || 5005;
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
@@ -29,42 +28,10 @@ const io = new Server(server, {
     methods: ['GET', 'POST']
   }
 });
+
+// Create and register web sockets
 setIO(io);
-
-// Socket.IO connection handler
-io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
-
-  // Player joins a game (or spectates)
-  socket.on('joinGame', (gameId) => {
-    console.log(`Socket ${socket.id} joining game ${gameId}`);
-    socket.join(`game-${gameId}`);
-
-    // Send current state if game exists
-    if (activeGames[gameId]) {
-      socket.emit('gameUpdate', activeGames[gameId]);
-    }
-  });
-
-  socket.on('playerIntent', ({ gameId, intent }) => {
-    try {
-      // Get the current game
-      const game = activeGames[gameId];
-      if (!game)
-        throw new Error("Game not found");
-
-      // Call the server-side handler directly with the full game object
-      const updatedGame = applyIntentToGame(game, intent);
-
-      // Broadcast the returned game state to everyone in the room
-      io.to(`game-${gameId}`).emit('gameUpdate', updatedGame);
-    } catch (err) {
-      console.error('Failed to process intent:', err);
-      socket.emit('errorMessage', err.message);
-    }
-  });
-
-});
+registerSockets(io);
 
 // Trust proxy to allow logging IP addresses
 app.set('trust proxy', true);
@@ -75,17 +42,16 @@ app.use(morgan(debugMode ? 'dev' : 'combined')); // Log requests to console
 app.use(express.json());                         // Parse JSON
 app.use(express.urlencoded({ extended: true })); // Auto-parse JSON body
 app.set('json spaces', 2);                       // Pretty print JSON
+app.use(debugLogs);                              // Debug logs middleware
+app.use('/api', checkDatabase);                  // Database health check middleware
 app.use(cleanHtmlUrls(__dirname + '/public'));   // Serve pages to URLs without ".html" (i.e. /game instead of /game.html)
 app.use(express.static(__dirname + '/public'));  // Serve static files
-app.use(checkDatabase);                          // Database health check middleware
 
 // ================== Routes ================== \\
-app.use('/api', router);           // API routes
-app.use('/api', battleRoutes);     // (Old) Battle simulator routes
-app.use("/engine", engineRouter);  // Game engine routes
+app.use('/api', router);  // API routes
 
 // ============== Error Handling ============== \\
-app.use(errorHandler); // MUST be last
+app.use(errorHandler);  // MUST be last
 
 async function startServer() {
   try {
@@ -107,14 +73,6 @@ async function startServer() {
           if (layer.route) {
             const methods = Object.keys(layer.route.methods).join(', ').toUpperCase();
             console.log(`- ${methods} api${layer.route.path}`);
-          }
-        });
-
-        console.log('🛣️ Available Game Engine routes:');
-        engineRouter.stack.forEach(layer => {
-          if (layer.route) {
-            const methods = Object.keys(layer.route.methods).join(', ').toUpperCase();
-            console.log(`- ${methods} engine${layer.route.path}`);
           }
         });
         console.log('-------------------------------');
