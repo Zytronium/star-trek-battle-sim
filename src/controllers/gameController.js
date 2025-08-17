@@ -1,11 +1,15 @@
 const { pool } = require("../config/database");
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
+const http = require('http');
+const { server } = require("socket.io");
 
 class GameController {
+  // GET /engine/status
   static getStatus(req, res) {
     return res.status(200).send("OK");
   }
 
+  // POST /engine/game/new
   static async postNewGame(req, res) {
     if (!req.body) {
       return res.status(400).send("Request body is missing.");
@@ -302,6 +306,7 @@ class GameController {
     return res.status(200).send({ example_response }); // This doesn't actually run because we already sent status 501
   }
 
+  // GET /engine/games/:id
   static async getGame(req, res) {
     if (!req.params.id) {
       return res.status(400).send("Param 'id' is missing. Use /engine/games/:id");
@@ -314,6 +319,7 @@ class GameController {
     // Todo: return only the game data required; avoid returning sensitive data like player tokens
   }
 
+  // GET /engine/games/:id/events
   static async getEvents(req, res) {
     if (!req.params.id) { // This should never happen, but just to be safe...
       return res.status(400).send("Param 'id' is missing. Use /engine/games/:id/events");
@@ -336,6 +342,7 @@ class GameController {
     // Todo: return turn events from the given turn
   }
 
+  // POST /engine/games/:id/intent
   static async postIntent(req, res) {
     res.status(501).send("Not implemented yet.");
 
