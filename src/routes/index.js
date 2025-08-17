@@ -4,11 +4,11 @@ const AppController = require("../controllers/appController");
 
 router.get('/status', AppController.getStatus);          // API Status
 
-// ============================== DATABASE ============================== \\
+// ========================== DATABASE ========================== \\
 router.get('/database', AppController.getDatabase);      // Get (almost) all the database
 router.get('/health', AppController.getHealth);          // Basic DB & API health check endpoint
 
-// ================================ SHIPS ================================ \\
+// ============================ SHIPS ============================ \\
 router.get('/ships', AppController.getShips);            // Just ships table
 router.get('/ships/full', AppController.getShipsFull);   // Ships info combined with weapons & defenses
 

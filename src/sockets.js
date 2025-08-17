@@ -38,11 +38,10 @@ module.exports = function registerSockets(io) {
     // Player sends an intent
     socket.on('playerIntent', ({ gameId, intent }) => {
       try {
-
         // Get the current game
         const game = GameEngine.getGame(gameId);
         // Call the server-side handler directly with the full game object
-        const updatedGame = GameEngine.applyIntentToGame(game, intent);
+        const updatedGame = GameEngine.processTurnIntent(game, intent);
         // Broadcast the returned game state to everyone in the room
         io.to(`game-${gameId}`).emit('gameUpdate', updatedGame);
       } catch (err) {

@@ -8,6 +8,7 @@ class GameEngine {
   static VALID_TYPES = ["AI V AI", "PLAYER V AI", "PLAYER V PLAYER", "AI V BOSS", "PLAYER V BOSS", "PLAYERS V BOSS"];
   static IMPLEMENTED_TYPES = ["PLAYER V AI"];
 
+  // ======== Create new game ======== \\
   static createGame(setup) {
     const { type, ships } = setup;
 
@@ -76,6 +77,7 @@ class GameEngine {
     return { success: true, gameId, playerTokens, gameState };
   }
 
+  // Helper function for validating ships in createGame()
   static validateShips(ships, type) {
     let return_value = {
       valid: true,
@@ -273,6 +275,7 @@ class GameEngine {
     return return_value;
   }
 
+  // ======== Get game from ID ======== \\
   static getGame(gameId) {
     const game = activeGames[gameId];
     if (!game) {
@@ -282,6 +285,7 @@ class GameEngine {
     return game;
   }
 
+  // ======== Get game event logs ======== \\
   static async getEvents(gameId, turn) {
     if (isNaN(turn) || turn < 0) {
       throw new Error("turn must be a positive number.");
@@ -297,26 +301,8 @@ class GameEngine {
     // Todo: return turn events from the given turn
   }
 
-  // POST /engine/games/:id/intent
-  static async postIntent(req, res) {
-    try {
-      const gameId = req.params.id;
-      const intent = req.body.intent;
-
-      const game = activeGames[gameId];
-      if (!game) return res.status(400).send("Invalid game id.");
-
-      const updatedGame = GameEngine.applyIntentToGame(game, intent);
-
-      res.status(200).json({ game: updatedGame });
-
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  }
-
-  // ================= Helper function ================== \\
-  static applyIntentToGame(game, intent) {
+  // ======== Process game logic for new turn ======== \\
+  static processTurnIntent(game, intent) {
     if (!game)
       throw new Error("Game object is required");
 
