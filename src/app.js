@@ -8,6 +8,7 @@ const engineRouter = require("./routes/engine_routes");
 const battleRoutes = require('./routes/battleRoutes');
 const errorHandler = require('./middleware/errorHandler')
 const checkDatabase = require("./middleware/checkDatabase")
+const cleanHtmlUrls = require("./middleware/cleanURLs")
 const { pool, verifyConnection } = require('./config/database');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -70,6 +71,7 @@ app.use(morgan(debugMode ? 'dev' : 'combined')); // Log requests to console
 app.use(express.json());                         // Parse JSON
 app.use(express.urlencoded({ extended: true })); // Auto-parse JSON body
 app.set('json spaces', 2);                       // Pretty print JSON
+app.use(cleanHtmlUrls(__dirname + '/public'));   // Serve pages to URLs without ".html" (i.e. /game instead of /game.html)
 app.use(express.static(__dirname + '/public'));  // Serve static files
 app.use(checkDatabase);                          // Database health check middleware
 
