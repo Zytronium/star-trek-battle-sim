@@ -1,7 +1,7 @@
 const { pool } = require("../config/database");
-const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 const http = require('http');
-const { server } = require("socket.io");
+const { Server } = require("socket.io");
+const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 
 class GameController {
   // GET /engine/status

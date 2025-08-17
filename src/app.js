@@ -9,12 +9,58 @@ const battleRoutes = require('./routes/battleRoutes');
 const errorHandler = require('./middleware/errorHandler')
 const checkDatabase = require("./middleware/checkDatabase")
 const { pool, verifyConnection } = require('./config/database');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const PORT = process.env.PORT || 5005;
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 
 // Express app
 const app = express();
+
+// Socket.io
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+
+// Store active games in memory for now
+const activeGames = {};
+
+// Socket.IO connection handler
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
+  // Player joins a game (or spectates)
+  socket.on('joinGame', (gameId) => {
+    console.log(`Socket ${socket.id} joining game ${gameId}`);
+    socket.join(`game-${gameId}`);
+
+    // Send current state if game exists
+    if (activeGames[gameId]) {
+      socket.emit('gameUpdate', activeGames[gameId]);
+    }
+  });
+
+  socket.on('playerIntent', ({ gameId, intent }) => {
+    const game = activeGames[gameId];
+    if (!game)
+      return;
+
+    // Append player intent
+    game.logs.push(`Player action: ${JSON.stringify(intent)}`);
+
+    // Example: AI turn immediately after player action
+    const aiAction = { action: 'attack', target: 'player1', damage: Math.floor(Math.random() * 20) };
+    game.logs.push(`AI action: ${JSON.stringify(aiAction)}`);
+
+    // Broadcast updates to everyone in game room
+    io.to(`game-${gameId}`).emit('gameUpdate', game);
+  });
+});
 
 // Trust proxy to allow logging IP addresses
 app.set('trust proxy', true);
@@ -46,9 +92,9 @@ async function startServer() {
     console.log('🔌 Database connection verified');
 
     // Start server
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}${debugMode ? ' in debug mode' : ''}`);
-      console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+      console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
 
       if (debugMode) {
         console.log('🛣️ Available API routes:');
