@@ -235,28 +235,26 @@ function clearBattleMessages() {
 // Start battle on battle button click
 document.getElementById('battle-btn').addEventListener('click', async () => {
   if (selectedShips.player1 && selectedShips.player2) {
-    clearBattleMessages();
-    addBattleMessage(`🚀 Engaging battle between <strong>${selectedShips.player1.name}</strong> and <strong>${selectedShips.player2.name}</strong>...`, 'battle-start');
-
     try {
-      // Updated URL with trailing slash
-      const res = await fetch('/api/simulate-battle/', {
+      const res = await fetch('/engine/game/new', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          playerShipId: selectedShips.player1.ship_id,
-          enemyShipId: selectedShips.player2.ship_id
+          type: "PLAYER V AI",
+          ships: [
+            { ship_id: selectedShips.player1.ship_id, pilot: "P1", is_boss: false },
+            { ship_id: selectedShips.player2.ship_id, pilot: "COM1", is_boss: false }
+          ]
         })
       });
+
+      const data = await res.json();
+      window.location.href = `game.html?gameId=${data.gameId}`;
 
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || `HTTP error ${res.status}`);
       }
-
-      const data = await res.json();
-      data.logs.forEach(line => addBattleMessage(line, 'info'));
-
     } catch (err) {
       console.error('Battle error:', err);
       addBattleMessage(`⚠️ Error: ${err.message}`, 'error');

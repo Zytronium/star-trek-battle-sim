@@ -9,7 +9,7 @@ const { activeGames, getIO } = require('../gameState');
 class GameController {
   // GET /engine/status
   static getStatus(req, res) {
-    return res.status(200).send(`debug mode: ${debugMode}`);
+    return res.status(200).send(`OK`);
   }
 
   // POST /engine/game/new
