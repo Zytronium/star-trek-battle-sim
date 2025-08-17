@@ -11,6 +11,7 @@ const checkDatabase = require("./middleware/checkDatabase")
 const { pool, verifyConnection } = require('./config/database');
 const http = require('http');
 const { Server } = require('socket.io');
+const { activeGames, setIO } = require('./gameState');
 
 const PORT = process.env.PORT || 5005;
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
@@ -26,9 +27,7 @@ const io = new Server(server, {
     methods: ['GET', 'POST']
   }
 });
-
-// Store active games in memory for now
-const activeGames = {};
+setIO(io);
 
 // Socket.IO connection handler
 io.on('connection', (socket) => {
