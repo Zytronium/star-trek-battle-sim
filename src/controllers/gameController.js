@@ -1,12 +1,15 @@
 const { pool } = require("../config/database");
-const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 const http = require('http');
-const { server } = require("socket.io");
+const { Server } = require("socket.io");
+const {v4: uuidv4 } = require('uuid');
+const { activeGames, getIO } = require('../gameState');
+
+// const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 
 class GameController {
   // GET /engine/status
   static getStatus(req, res) {
-    return res.status(200).send("OK");
+    return res.status(200).send(`OK`);
   }
 
   // POST /engine/game/new
@@ -276,17 +279,35 @@ class GameController {
       return res.status(400).send(`Param 'ships' is invalid: ${shipsCheck.reason}`);
     }
 
-    return res.status(501).send("Not implemented yet. All validation checks passed.");
+    const gameId = uuidv4();
+    // use gameId as spectate token
+    const playerTokens = ships
+      .filter(s => !s.is_boss)
+      .reduce((acc, s, i) => {
+        acc[`P${i+1}`] = uuidv4();
+        return acc;
+      }, {});
 
-    // Todo: Set up game in database
-    // Todo: generate player tokens and player/ai IDs
-    // Todo: generate a sharable spectate token
-    // Todo: return only the data the client needs
-    // Note: the client on all players' ends will likely be listening for a
-    //       response if more than one player is participating. We will need
-    //       to figure that out on both the front end and back end.
+    // Create initial game state
+    const gameState = {
+      gameId,
+      type,
+      ships,
+      logs: [`Game created: ${type}`],
+      turn: 0,
+      playerTokens
+    };
+
+     // Store in activeGames (for WebSocket broadcasting)
+    activeGames[gameId] = gameState;
+    getIO().to(`game-${gameId}`).emit('gameUpdate', gameState);
+
+    // Respond with game ID & tokens
+    res.status(200).json({ gameId, playerTokens}); // note: maybe filter player tokens so players can only see their token and not the other player's token.
 
     // ---------------------------------------------------------------------- \\
+
+    // Todo: Set up game in database (?)
 
     // Example response to get an idea of what the game engine api MIGHT return to the client when finished
     const example_response = {
@@ -303,7 +324,6 @@ class GameController {
       spectate_token: "some unique token"
     };
 
-    return res.status(200).send({ example_response }); // This doesn't actually run because we already sent status 501
   }
 
   // GET /engine/games/:id
