@@ -106,6 +106,7 @@ nav.side-nav {
     justify-content: space-between;
     padding: 4px 0;
     opacity: 0.95;
+    text-align: right;
 }
 .ship-stats .label { color: var(--cyan); }
 

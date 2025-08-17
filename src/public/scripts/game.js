@@ -3,7 +3,9 @@ const socket = io();
 
 // ================ Helpers ================ \\
 
-function qs(sel) { return document.querySelector(sel); }
+function qs(sel) {
+  return document.querySelector(sel);
+}
 
 function pct(num, den) {
   if (!den || den <= 0) return 0;
@@ -118,13 +120,43 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Spectate link copy
   qs('#copy-spectate').addEventListener('click', () => {
     if (!gameId) {
-      alert('Game not started yet');
+      alert('Unable to generate spectate link: No game ID found');
       return;
     }
-    const url = `${window.location.origin}/spectate?id=${gameId}`;
-    navigator.clipboard.writeText(url)
-      .then(() => alert('Spectate link copied!'))
-      .catch(err => console.error('Copy failed:', err));
+    const url = `${window.location.origin}/game/spectate?id=${gameId}`;
+    try {
+      navigator.clipboard.writeText(url)
+        .then(() => {
+          console.log("Spectate link copied:", url);
+          alert("Spectate link copied to clipboard.");
+        })
+        .catch(err => {
+          console.error(`Failed to copy spectate link "${url}":`, err);
+          alert(`Failed to copy to clipboard. Manually copy this: ${url}`);
+        });
+    } catch (err) {
+      console.error(`Failed to copy spectate link "${url}":`, err);
+
+      let message = `Failed to copy to clipboard. Manually copy this: ${url}`;
+
+      // Suggest HTTPS if the current page is not secure
+      if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+        message += "\n\nTip: Your connection is not secure. Try switching URL to HTTPS for clipboard support.";
+      }
+
+      // Suggest localhost if using 0.0.0.0
+      if (window.location.hostname === '0.0.0.0') {
+        message += "\n\nTip: You are using 0.0.0.0. Try using http://localhost instead.";
+      }
+
+      // Warn that this link only works on your device
+      if (['localhost', '0.0.0.0'].includes(window.location.hostname)) {
+        message += `\n\nNote: You are locally hosting this website. This link only works on your device. Try \`ip addr show\` in Linux terminal and replacing ${window.location.hostname} with your IP.`
+      }
+
+      alert(message);
+    }
+
   });
 
   // Join the Socket.IO room as soon as possible
