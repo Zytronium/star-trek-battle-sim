@@ -12,8 +12,7 @@ async function loadShips() {
     const response = await fetch('/api/ships');
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-    const allShips = await response.json();
-    ships = allShips;  // Store all ships
+    ships = await response.json();  // Store all ships
 
     populateDropdowns();
     document.getElementById('loading').style.display = 'none';

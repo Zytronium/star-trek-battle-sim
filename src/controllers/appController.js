@@ -1,5 +1,5 @@
 const { pool } = require("../config/database");
-const appService = require("./appService");
+const AppService = require("./appService");
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 
 class AppController {
@@ -34,7 +34,7 @@ class AppController {
   // GET /api/database
   static async getDatabase(req, res) {
     try {
-      const data = await appService.getDatabase();
+      const data = await AppService.getDatabase();
       res.status(200).json(data);
     } catch (err) {
       console.error('Database query failed:', err);
@@ -45,7 +45,7 @@ class AppController {
   // GET /api/boss-ships
   static async getBosses(req, res) {
     try {
-      const data = appService.getBosses()
+      const data = AppService.getBosses()
       res.status(200).json(data);
     } catch (err) {
       res.status(500).send({ error: 'Database query failed' });
@@ -62,7 +62,7 @@ class AppController {
       return res.status(400).send("Param 'id' is invalid");
     }
     try {
-      const data = await appService.getBossByID(id);
+      const data = await AppService.getBossByID(id);
       res.status(200).json(data);
     } catch (err) {
       if (err.message === `Boss Ship with ID ${id} not found`) {
@@ -75,7 +75,7 @@ class AppController {
   // GET /api/ships
   static async getShips(req, res) {
     try {
-      const data = await appService.getShips();
+      const data = await AppService.getShips();
       res.status(200).json(data);
     } catch (err) {
       console.error('Database query failed:', err);
@@ -86,7 +86,7 @@ class AppController {
   // GET /api/ships/full
   static async getShipsFull(req, res) {
     try {
-      const data = await appService.getShipsFull();
+      const data = await AppService.getShipsFull();
       res.status(200).json(data);
     } catch (err) {
       console.error('Database query failed:', err);
@@ -104,7 +104,7 @@ class AppController {
       return res.status(400).send("Param 'id' is invalid");
     }
     try {
-      const data = await appService.getShipByID(id);
+      const data = await AppService.getShipByID(id);
       res.status(200).json(data);
     } catch (err) {
       if (err.message === `Ship with ID ${id} not found`) {
@@ -124,7 +124,7 @@ class AppController {
       return res.status(400).send("Param 'id' is invalid");
     }
     try {
-      const data = await appService.getShipFullByID(id);
+      const data = await AppService.getShipFullByID(id);
       res.status(200).json(data);
     } catch (err) {
       if (err.message === `Ship with ID ${id} not found`) {

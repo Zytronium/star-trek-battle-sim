@@ -29,7 +29,8 @@ class AppService {
   // ======== Get All Bosses ======== \\
   static async getBosses() {
     try {
-      return await pool.query('SELECT * FROM boss_ships').rows;
+      const result = pool.query('SELECT * FROM boss_ships');
+      return result.rows;
     } catch (e) {
       throw new Error(`Database query failed: ${e.message}`);
     }
@@ -55,7 +56,8 @@ class AppService {
   static async getShips() {
     // Gets base data on all ships (no weapons or defenses)
     try {
-      return await pool.query('SELECT * FROM ships');
+      const result = await pool.query('SELECT * FROM ships');
+      return result.rows;
     } catch (e) {
       throw new Error(`Database query failed: ${e.message}`);
     }
@@ -80,7 +82,7 @@ class AppService {
       const shipWeapons = shipWeaponsRes.rows;
       const shipDefenses = shipDefensesRes.rows;
 
-      const ships = shipsRes.rows.map(ship => {
+      return shipsRes.rows.map(ship => {
         // Weapons: combine without ship_id or usage_limit
         const weaponsForShip = shipWeapons
           .filter(sw => sw.ship_id === ship.ship_id)
@@ -112,8 +114,6 @@ class AppService {
           defenses: defensesForShip
         };
       });
-
-      return ships;
     } catch (e) {
       throw new Error(`Database query failed: ${e.message}`);
     }

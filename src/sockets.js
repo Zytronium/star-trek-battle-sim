@@ -17,10 +17,10 @@ module.exports = function registerSockets(io) {
     });
 
     // Create a new game
-    socket.on('createGame', (setup, callback) => {
+    socket.on('createGame', async (setup, callback) => {
       try {
         console.log("Creating new game...");
-        const result = GameEngine.createGame(setup);
+        const result = await GameEngine.createGame(setup);
 
         if (!result.error) {
           console.log("Game created.");
@@ -36,12 +36,12 @@ module.exports = function registerSockets(io) {
     });
 
     // Player sends an intent
-    socket.on('playerIntent', ({ gameId, intent }) => {
+    socket.on('playerIntent', async ({ gameId, intent }) => {
       try {
         // Get the current game
         const game = GameEngine.getGame(gameId);
         // Call the server-side handler directly with the full game object
-        const updatedGame = GameEngine.processTurnIntent(game, intent);
+        const updatedGame = await GameEngine.processTurnIntent(game, intent);
         // Broadcast the returned game state to everyone in the room
         io.to(`game-${gameId}`).emit('gameUpdate', updatedGame);
       } catch (err) {

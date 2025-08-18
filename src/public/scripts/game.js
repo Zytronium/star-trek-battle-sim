@@ -24,30 +24,28 @@ async function fetchJSON(url) {
   return res.json();
 }
 
-// Fetch full ship details including weapons/defenses
-async function getShipFull(shipId) {
-  return fetchJSON(`/api/ship/${shipId}/full`);
-}
-
 // Update a side panel (stats + bars)
 function updateSidePanel(prefix, data) {
   // prefix: 'p' or 'c'
-  qs(`#${prefix}-name`).textContent = data.name ?? `Ship ${data.ship_id}`;
-  qs(`#${prefix}-class`).textContent = data.class ?? '—';
-  qs(`#${prefix}-owner`).textContent = data.owner ?? '—';
-  qs(`#${prefix}-registry`).textContent = data.registry ?? '—';
+  qs(`#${prefix}-name`).textContent = data.baseStats.name ?? `Ship ${data.ship_id}`;
+  qs(`#${prefix}-class`).textContent = data.baseStats.class ?? '—';
+  qs(`#${prefix}-owner`).textContent = data.baseStats.owner ?? '—';
+  qs(`#${prefix}-registry`).textContent = data.baseStats.registry ?? '—';
 
-  const shieldsNow = data.shields_now ?? data.shield_strength ?? data.shield ?? data.shields ?? 0;
-  const shieldsMax = data.shields_max ?? data.shield_strength ?? 1000;
-  const hullNow = data.hull_now ?? data.hull_strength ?? data.hull ?? 0;
-  const hullMax = data.hull_max ?? data.hull_strength ?? 1000;
+  const shieldsNow = data.state?.shield_hp ?? 0;
+  const shieldsMax = data.baseStats?.shield_strength ?? 1000;
+  const hullNow = data.state?.hull_hp ?? 0;
+  const hullMax = data.baseStats?.hull_strength ?? 1000;
 
   qs(`#${prefix}-shields-val`).textContent = `${Math.max(0, Math.floor(shieldsNow))}/${Math.floor(shieldsMax)}`;
   qs(`#${prefix}-hull-val`).textContent = `${Math.max(0, Math.floor(hullNow))}/${Math.floor(hullMax)}`;
 
   qs(`#${prefix}-shields-fill`).style.width = `${pct(shieldsNow, shieldsMax)}%`;
   qs(`#${prefix}-hull-fill`).style.width = `${pct(hullNow, hullMax)}%`;
+
+  // todo: set ship image SRC for side panels
 }
+
 
 // Update the center display cards (image + name)
 function updateCenterCards(prefix, data) {
@@ -165,53 +163,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Listen for server pushes
-  socket.on('gameUpdate', async (gameState) => {
-    try {
-      updateTopBar(gameState);
+  socket.on('gameUpdate', (gameState) => {
+    const playerShip = gameState.ships.find(s => s.pilot === 'P1');
+    const cpuShip = gameState.ships.find(s => s.pilot !== 'P1');
 
-      // Identify ships. In your POST you set pilots "P1" and "COM1".
-      const playerBase = gameState.ships.find(s => String(s.pilot).toLowerCase() === 'p1');
-      // Pick a non-P1 entry as CPU (COM1 or similar)
-      const cpuBase = gameState.ships.find(s => String(s.pilot).toLowerCase() !== 'p1');
+    // Use baseStats for design-time info (weapons, names, hull capacity, etc.)
+    updateSidePanel('p', playerShip);
+    updateSidePanel('c', cpuShip);
 
-      if (!playerBase || !cpuBase) return;
-
-      // Fetch full DB details (including weapons) once per update (can cache if needed)
-      const [playerFull, cpuFull] = await Promise.all([
-        getShipFull(playerBase.ship_id),
-        getShipFull(cpuBase.ship_id)
-      ]);
-
-      // playerFull format expected from your /api/ship/:id/full:
-      // { ship: {...}, weapons: [...], defenses: [...] }
-      const playerShip = hydrateShip(playerBase, playerFull?.ship ?? playerFull);
-      const cpuShip = hydrateShip(cpuBase, cpuFull?.ship ?? cpuFull);
-
-      // Left/right panels and center cards
-      updateSidePanel('p', playerShip);
-      updateSidePanel('c', cpuShip);
-      updateCenterCards('p', playerShip);
-      updateCenterCards('c', cpuShip);
-
-      // Build weapon bar (bottom) for player's weapons
-      const playerWeapons = Array.isArray(playerFull?.weapons) ? playerFull.weapons : (playerFull?.ship_weapons || []);
-      renderWeaponButtons(playerWeapons, (w) => {
-        // Simple intent payload; todo: add token/auth later
-        socket.emit('playerIntent', {
-          gameId,
-          // playerToken,
-          intent: {
-            attacker: playerBase.pilot ?? 'P1',
-            weapon_id: w.weapon_id ?? w.id,
-            target: cpuBase.pilot ?? 'COM1'
-          }
-        });
+    // Render weapon buttons using baseStats
+    renderWeaponButtons(playerShip.baseStats.weapons, (w) => {
+      socket.emit('playerIntent', {
+        gameId: gameState.gameId,
+        intent: {
+          attacker: playerShip.pilot,
+          weapon_id: w.weapon_id,
+          target: cpuShip.pilot
+        }
       });
-
-    } catch (err) {
-      console.error('Failed to update game UI:', err);
-    }
+    });
   });
+
 });
 
 // Update top bar (last log + turn)

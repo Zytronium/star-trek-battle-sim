@@ -1,6 +1,7 @@
 const { pool } = require("../config/database");
 const {v4: uuidv4 } = require('uuid');
 const { activeGames, getIO } = require('./gameState');
+const AppService = require('../controllers/appService');
 
 // const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 
@@ -9,7 +10,7 @@ class GameEngine {
   static IMPLEMENTED_TYPES = ["PLAYER V AI"];
 
   // ======== Create new game ======== \\
-  static createGame(setup) {
+  static async createGame(setup) {
     const { type, ships } = setup;
 
     // ---------- Validate type ---------- //
@@ -51,6 +52,12 @@ class GameEngine {
       };
     }
 
+    // ---------- Build runtime ships ---------- //
+    const runtimeShips = [];
+    for (const s of ships) {
+      const runtimeShip = await this.createRuntimeShip(s.ship_id, s.pilot, s.is_boss);
+      runtimeShips.push(runtimeShip);
+    }
     // ---------- Create game ---------- //
     const gameId = uuidv4();
     const playerTokens = ships // todo: change this to client side logic so each player can only see their own token without te server needing to manage multiple sockets per game.
@@ -63,7 +70,7 @@ class GameEngine {
     const gameState = {
       gameId,
       type,
-      ships,
+      ships: runtimeShips,
       logs: [`Game created: ${type}`],
       turn: 0,
       playerTokens // todo: remove this when client-side logic generates their player tokens; replace with saving the player token instead.
@@ -75,6 +82,32 @@ class GameEngine {
     getIO().to(`game-${gameId}`).emit('gameUpdate', gameState);
 
     return { success: true, gameId, playerTokens, gameState };
+  }
+
+  // Helper function for creating ships in memory at start of createGame()
+  static async createRuntimeShip(ship_id, pilot, is_boss) {
+    const shipData = await AppService.getShipFullByID(ship_id);
+
+    return {
+      ship_id,
+      pilot,
+      is_boss,
+      baseStats: shipData,  // keep the raw DB stats for reference
+      state: {
+        shield_hp: shipData.shield_strength,
+        hull_hp: shipData.hull_strength,
+        weapons: shipData.weapons.map(w => ({
+          weapon_id: w.weapon_id,
+          cooldown_left: 0,
+          usage_left: w.max_usage
+        })),
+        defenses: shipData.defenses.map(d => ({
+          defense_id: d.defense_id,
+          type: d.type,
+          hit_points: d.hit_points  // for defenses like ablative armor. Does not apply to shields.
+        }))
+      }
+    };
   }
 
   // Helper function for validating ships in createGame()
@@ -275,6 +308,7 @@ class GameEngine {
     return return_value;
   }
 
+
   // ======== Get game from ID ======== \\
   static getGame(gameId) {
     const game = activeGames[gameId];
@@ -302,36 +336,40 @@ class GameEngine {
   }
 
   // ======== Process game logic for new turn ======== \\
-  static processTurnIntent(game, intent) {
-    if (!game)
-      throw new Error("Game object is required");
+  static async processTurnIntent(game, intent) {
+    if (!game) throw new Error("Game object is required");
 
-    console.log(game);
+    console.log(JSON.stringify(game, null, 2));
+
     console.log("Attacker ship:", intent.attacker);
     console.log("Target ship:", intent.target);
 
-    const attackerShip = game.ships.find(s => s.pilot.toUpperCase() === intent.attacker.toUpperCase());
-    const targetShip = game.ships.find(s => s.pilot.toUpperCase() === intent.target.toUpperCase());
+    // Find attacker & target in memory
+    const attacker = game.ships.find(s => s.pilot.toUpperCase() === intent.attacker.toUpperCase());
+    const target   = game.ships.find(s => s.pilot.toUpperCase() === intent.target.toUpperCase());
 
-    console.log("attacker ship weapons:", attackerShip.weapons);
+    if (!attacker) throw new Error("Invalid attacker ship.");
+    if (!target) throw new Error("Invalid target ship.");
 
-    if (!attackerShip)
-      throw new Error("Invalid attacker ship.");
-    if (!targetShip)
-      throw new Error("Invalid target ship.");
+    // Find weapon in runtime state
+    const weaponState = attacker.state.weapons.find(w => w.weapon_id === intent.weapon_id);
+    const weaponBase  = attacker.baseStats.weapons.find(w => w.weapon_id === intent.weapon_id);
 
-    const weaponData = attackerShip.weapons.find(w => w.weapon_id === intent.weapon_id);
-    if (!weaponData)
+    if (!weaponState || !weaponBase)
       throw new Error("Weapon not equipped on ship");
 
-    // ================ Damage calculations ================ \\
-    let baseDamage = weaponData.damage * parseFloat(weaponData.damage_multiplier);
-    let damageToShields = baseDamage * parseFloat(weaponData.shields_multiplier);
-    let damageToHull = baseDamage * parseFloat(weaponData.hull_multiplier);
+    if (weaponState.cooldown_left > 0)
+      throw new Error("Weapon still on cooldown");
+    if (weaponState.usage_left <= 0)
+      throw new Error("Weapon out of uses");
 
-    // Apply defenses
-    for (const defense of targetShip.defenses) {
-      if (defense.type === 'Armor') { // ablative armor
+    // ================ Damage calculations ================ \\
+    let baseDamage = weaponBase.damage * parseFloat(weaponBase.damage_multiplier);
+    let damageToShields = baseDamage * parseFloat(weaponBase.shields_multiplier);
+    let damageToHull = baseDamage * parseFloat(weaponBase.hull_multiplier);
+
+    for (const defense of target.baseStats.defenses) {
+      if (defense.type === 'Armor') {
         const absorbed = damageToHull * 0.8;
         damageToHull -= absorbed;
         defense.hit_points -= absorbed / 3;
@@ -348,19 +386,25 @@ class GameEngine {
       }
     }
 
-    // Apply damage to shields first, then hull overflow
-    targetShip.shield_strength -= damageToShields;
-    if (targetShip.shield_strength < 0) {
-      damageToHull += -targetShip.shield_strength;
-      targetShip.shield_strength = 0;
+    // Apply damage to runtime state, shields first, then hull overflow
+    target.state.shield_hp -= damageToShields;
+    if (target.state.shield_hp < 0) {
+      damageToHull += -target.state.shield_hp;
+      target.state.shield_hp = 0;
     }
 
-    targetShip.hull_strength -= damageToHull;
-    if (targetShip.hull_strength < 0) targetShip.hull_strength = 0;
+    target.state.hull_hp -= damageToHull;
+    if (target.state.hull_hp < 0) target.state.hull_hp = 0;
 
-    // Reduce weapon max usage
-    if (weaponData.max_usage !== 99999) {
-      weaponData.max_usage = Math.max(0, weaponData.max_usage - 1);
+    // Update weapon state (usage + cooldown)
+    if (weaponState.usage_left !== 99999) {
+      weaponState.usage_left = Math.max(0, weaponState.usage_left - 1);
+    }
+    weaponState.cooldown_left = weaponBase.cooldown;
+
+    // Decrease cooldowns on ALL weapons each turn
+    for (const w of attacker.state.weapons) {
+      if (w.cooldown_left > 0) w.cooldown_left--;
     }
 
     // Log the action
