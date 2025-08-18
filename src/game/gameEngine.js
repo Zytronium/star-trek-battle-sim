@@ -339,7 +339,7 @@ class GameEngine {
   static async processTurnIntent(game, intent) {
     if (!game) throw new Error("Game object is required");
 
-    console.log(JSON.stringify(game, null, 2));
+    // console.log(JSON.stringify(game, null, 2));
 
     // console.log("Attacker ship:", intent.attacker);
     // console.log("Target ship:", intent.target);
@@ -358,10 +358,10 @@ class GameEngine {
     if (!weaponState || !weaponBase)
       throw new Error("Weapon not equipped on ship");
 
-    if (weaponState.cooldown_left > 0)
-      throw new Error("Weapon still on cooldown");
     if (weaponState.usage_left <= 0)
       throw new Error("Weapon out of uses");
+    if (weaponState.cooldown_left > 0)
+      throw new Error(`Weapon still on cooldown (Cooldown turns left: ${weaponState.cooldown_left})`);
 
     // ================ Damage calculations ================ \\
     const baseDamage = weaponBase.damage * parseFloat(weaponBase.damage_multiplier);
@@ -408,12 +408,15 @@ class GameEngine {
     if (weaponState.usage_left !== 99999) {
       weaponState.usage_left = Math.max(0, weaponState.usage_left - 1);
     }
-    weaponState.cooldown_left = weaponBase.cooldown;
+    weaponState.cooldown_left = weaponBase.cooldown_turns;
 
     // Decrease cooldowns on ALL weapons each turn
     for (const w of attacker.state.weapons) {
       if (w.cooldown_left > 0) w.cooldown_left--;
     }
+
+    console.log("Cooldown left:", weaponState.cooldown_left);
+    console.log("Uses left:", weaponState.usage_left);
 
     // Log the action
     game.logs.push({ player: intent.attacker, action: intent });
