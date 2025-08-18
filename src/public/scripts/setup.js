@@ -12,8 +12,7 @@ async function loadShips() {
     const response = await fetch('/api/ships');
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-    const allShips = await response.json();
-    ships = allShips;  // Store all ships
+    ships = await response.json();  // Store all ships
 
     populateDropdowns();
     document.getElementById('loading').style.display = 'none';
@@ -231,36 +230,6 @@ function clearBattleMessages() {
     const battleLog = document.getElementById('battle-log');
     battleLog.innerHTML = '<div class="welcome-message">Welcome to the Star Trek Battle Engine! Select your ships and prepare for battle.</div>';
 }
-
-// Start battle on battle button click
-document.getElementById('battle-btn').addEventListener('click', async () => {
-  if (selectedShips.player1 && selectedShips.player2) {
-    try {
-      const res = await fetch('/engine/game/new', {
-        method: 'POST',
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "PLAYER V AI",
-          ships: [
-            { ship_id: selectedShips.player1.ship_id, pilot: "P1", is_boss: false },
-            { ship_id: selectedShips.player2.ship_id, pilot: "COM1", is_boss: false }
-          ]
-        })
-      });
-
-      const data = await res.json();
-      window.location.href = `game.html?gameId=${data.gameId}`;
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `HTTP error ${res.status}`);
-      }
-    } catch (err) {
-      console.error('Battle error:', err);
-      addBattleMessage(`⚠️ Error: ${err.message}`, 'error');
-    }
-  }
-});
 
 // Load ships and add change event listeners for dropdowns
 document.addEventListener('DOMContentLoaded', () => {
