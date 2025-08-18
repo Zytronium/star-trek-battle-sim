@@ -341,8 +341,8 @@ class GameEngine {
 
     console.log(JSON.stringify(game, null, 2));
 
-    console.log("Attacker ship:", intent.attacker);
-    console.log("Target ship:", intent.target);
+    // console.log("Attacker ship:", intent.attacker);
+    // console.log("Target ship:", intent.target);
 
     // Find attacker & target in memory
     const attacker = game.ships.find(s => s.pilot.toUpperCase() === intent.attacker.toUpperCase());
@@ -364,37 +364,45 @@ class GameEngine {
       throw new Error("Weapon out of uses");
 
     // ================ Damage calculations ================ \\
-    let baseDamage = weaponBase.damage * parseFloat(weaponBase.damage_multiplier);
-    let damageToShields = baseDamage * parseFloat(weaponBase.shields_multiplier);
-    let damageToHull = baseDamage * parseFloat(weaponBase.hull_multiplier);
+    const baseDamage = weaponBase.damage * parseFloat(weaponBase.damage_multiplier);
+    const Sm = parseFloat(weaponBase.shields_multiplier ?? 1);
+    const Hm = parseFloat(weaponBase.hull_multiplier ?? 1);
+    const bypass = parseFloat(weaponBase.bypass_fraction ?? 0); // 0..1
+
+    // Portion that goes toward shields, portion that bypasses directly
+    let toShields = baseDamage * Sm * (1 - bypass);
+    let damageToHull = baseDamage * Sm * bypass; // bypass hull damage
 
     for (const defense of target.baseStats.defenses) {
-      if (defense.type === 'Armor') {
-        const absorbed = damageToHull * 0.8;
-        damageToHull -= absorbed;
-        defense.hit_points -= absorbed / 3;
-        if (defense.hit_points < 0) defense.hit_points = 0;
-      }
-
       if (defense.type === 'Shield') {
-        const shieldEffectiveness = parseFloat(defense.effectiveness);
-        const shieldDamage = damageToShields * shieldEffectiveness;
-        const overflowToHull = damageToShields - shieldDamage;
+        const shieldEff = parseFloat(defense.effectiveness ?? 1);
+        const absorb = Math.min(target.state.shield_hp, toShields * shieldEff);
 
-        damageToShields = shieldDamage;
-        damageToHull += overflowToHull;
+        target.state.shield_hp -= absorb;
+        const unabsorbed = toShields - absorb;
+
+        // any part that shields couldn't handle bleeds into hull
+        damageToHull += unabsorbed;
       }
     }
 
-    // Apply damage to runtime state, shields first, then hull overflow
-    target.state.shield_hp -= damageToShields;
-    if (target.state.shield_hp < 0) {
-      damageToHull += -target.state.shield_hp;
-      target.state.shield_hp = 0;
+    // If shields are *down*, add the hull-multiplier portion
+    if (target.state.shield_hp <= 0) {
+      const remainderOfD = Math.max(0, baseDamage - (baseDamage * Sm));
+      damageToHull += remainderOfD * Hm;
     }
 
-    target.state.hull_hp -= damageToHull;
-    if (target.state.hull_hp < 0) target.state.hull_hp = 0;
+    // Armor mitigation (after shields)
+    for (const defense of target.baseStats.defenses) {
+      if (defense.type === 'Armor' && (defense.hit_points ?? 0) > 0) {
+        const absorbed = damageToHull * 0.8; // or defense.effectiveness
+        damageToHull -= absorbed;
+        defense.hit_points = Math.max(0, defense.hit_points - absorbed / 3);
+      }
+    }
+
+    // Finally apply to hull
+    target.state.hull_hp = Math.max(0, target.state.hull_hp - damageToHull);
 
     // Update weapon state (usage + cooldown)
     if (weaponState.usage_left !== 99999) {

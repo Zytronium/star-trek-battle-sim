@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Star Trek Battle - Live Match</title>
   <link rel="stylesheet" href="css/game.css" />
+  <link rel="stylesheet" href="css/weapons.css" />
 </head>
 <body>
 <nav class="side-nav">
@@ -36,6 +37,11 @@
     <!-- Player ship details -->
     <div class="ship-panel" id="player-panel">
       <h2>Player Ship</h2>
+      <div class="ship-display">
+        <div class="ship-image-wrap">
+          <img id="p-image" alt="Player Ship" />
+        </div>
+      </div>
       <div class="ship-stats" id="player-stats">
         <div class="stat-line"><span class="label">Name:</span> <span id="p-name">--</span></div>
         <div class="stat-line"><span class="label">Class:</span> <span id="p-class">--</span></div>
@@ -57,20 +63,21 @@
     <!-- Center: two ships facing each other -->
     <div class="center-arena">
       <div class="ship-display-box">
-        <div class="ship-display">
-          <div class="ship-image-wrap">
-            <img id="p-image" alt="Player Ship" />
-          </div>
-          <div class="ship-name" id="p-name-center">--</div>
-        </div>
 
-        <div class="vs-badge">VS</div>
+        <!-- Attack Visualization Bar -->
+        <div class="attack-bar">
+          <div class="player-dot left"></div>
 
-        <div class="ship-display">
-          <div class="ship-image-wrap">
-            <img id="c-image" alt="CPU Ship" />
-          </div>
-          <div class="ship-name" id="c-name-center">--</div>
+          <!-- Player phaser fire - 2 blue + 1 silver -->
+          <div class="phaser-beam player-phaser blue-phaser"></div>
+          <div class="phaser-beam player-phaser blue-phaser" style="animation-delay: 0.2s;"></div>
+          <div class="phaser-beam player-phaser silver-phaser" style="animation-delay: 0.4s;"></div>
+
+          <!-- CPU phaser fire - 2 red lines -->
+          <div class="phaser-beam cpu-phaser cpu-phaser-1"></div>
+          <div class="phaser-beam cpu-phaser cpu-phaser-2" style="animation-delay: 0.3s;"></div>
+
+          <div class="player-dot right"></div>
         </div>
       </div>
     </div>
@@ -78,6 +85,11 @@
     <!-- CPU ship details -->
     <div class="ship-panel" id="cpu-panel">
       <h2>CPU Ship</h2>
+      <div class="ship-display">
+        <div class="ship-image-wrap">
+          <img id="c-image" alt="CPU Ship" />
+        </div>
+      </div>
       <div class="ship-stats" id="cpu-stats">
         <div class="stat-line"><span class="label">Name:</span> <span id="c-name">--</span></div>
         <div class="stat-line"><span class="label">Class:</span> <span id="c-class">--</span></div>
