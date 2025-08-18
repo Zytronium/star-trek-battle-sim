@@ -41,11 +41,17 @@ module.exports = function registerSockets(io) {
         // Get the current game
         const game = GameEngine.getGame(gameId);
         // Call the server-side handler directly with the full game object
-        const updatedGame = await GameEngine.processTurnIntent(game, intent);
-        // Broadcast the returned game state to everyone in the room
-        io.to(`game-${gameId}`).emit('gameUpdate', updatedGame);
+        await GameEngine.processTurnIntent(game, intent)
+          .then(updatedGame => {
+            // Broadcast the returned game state to everyone in the room
+            io.to(`game-${gameId}`).emit('gameUpdate', updatedGame);
+          })
+          .catch(e => {
+            console.error('Failed to process intent:', e.message);
+            socket.emit('errorMessage', e.message);
+          });
       } catch (err) {
-        console.error('Failed to process intent:', err);
+        console.error('Failed to process intent:', err.message);
         socket.emit('errorMessage', err.message);
       }
     });
