@@ -40,11 +40,25 @@ module.exports = function registerSockets(io) {
       try {
         // Get the current game
         const game = GameEngine.getGame(gameId);
-        // Call the server-side handler directly with the full game object
+        if (!game)
+          throw new Error(`Game ${gameId} not found.`);
+
+        // Process player turn intent
         await GameEngine.processTurnIntent(game, intent)
-          .then(updatedGame => {
+          .then(async (updatedGame) => {
             // Broadcast the returned game state to everyone in the room
             io.to(`game-${gameId}`).emit('gameUpdate', updatedGame);
+
+            // Process CPU turn if Player V AI
+            if (game.type.toUpperCase() === "PLAYER V AI") {
+              await GameEngine.getAiIntent(gameId, "COM1") // Get CPU intent
+                .then(async (AiIntent) => {
+                  await GameEngine.processTurnIntent(game, AiIntent) // Process CPU turn intent
+                    .then((nextGameUpdate) => {
+                      // todo
+                    })
+                })
+            }
           })
           .catch(e => {
             console.error('Failed to process intent:', e.message);

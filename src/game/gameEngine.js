@@ -1,9 +1,9 @@
-const { pool } = require("../config/database");
 const {v4: uuidv4 } = require('uuid');
 const { activeGames, getIO } = require('./gameState');
 const AppService = require('../controllers/appService');
+const { inspect } = require("node:util");
 
-// const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
+const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 
 class GameEngine {
   static VALID_TYPES = ["AI V AI", "PLAYER V AI", "PLAYER V PLAYER", "AI V BOSS", "PLAYER V BOSS", "PLAYERS V BOSS"];
@@ -72,10 +72,11 @@ class GameEngine {
       type,
       ships: runtimeShips,
       logs: [`Game created: ${type}`],
-      turn: 0,
+      turn: 1,
       playerTokens // todo: remove this when client-side logic generates their player tokens; replace with saving the player token instead.
     };
 
+    // Save game in activeGames (retrieve with await GameEngine.getGame(gameId);)
     activeGames[gameId] = gameState;
 
     // Broadcast initial game state
@@ -308,38 +309,47 @@ class GameEngine {
     return return_value;
   }
 
-
   // ======== Get game from ID ======== \\
   static getGame(gameId) {
-    const game = activeGames[gameId];
-    if (!game) {
-      throw new Error(`Game ${gameId} not found.`);
-    }
-
-    return game;
+    return activeGames[gameId];
+    // Caller is responsible for checking if a game was found with `if (!game) {}`
   }
 
   // ======== Get game event logs ======== \\
-  static async getEvents(gameId, turn) {
+  static async getEvents(gameId, turn=0) {
+    // Returns all events if `turn` is 0 (default), else, returns event for given turn
+
+    // Ensure turn number is a valid positive number
     if (isNaN(turn) || turn < 0) {
       throw new Error("turn must be a positive number.");
     }
 
+    // Get this game and ensure its valid
     const game = this.getGame(gameId);
+    if (!game)
+      throw new Error(`Game ${gameId} not found.`);
 
+    // Return all game logs if turn is 0 (default)
+    if (turn === 0)
+      return game.logs;
+
+    // Ensure turn exists in this game
+    if (game.logs.length <= turn) {
+      throw new Error(`This game does not have ${turn} turns.`);
+    }
+
+    // Return this turn's log
     return game.logs[turn];
-
-    // Todo: Check if game ID is valid by checking database
-    // Todo: Check is turn number is valid by checking database for it
-    // Todo: maybe do some auth checking
-    // Todo: return turn events from the given turn
   }
 
   // ======== Process game logic for new turn ======== \\
   static async processTurnIntent(game, intent) {
     if (!game) throw new Error("Game object is required");
 
-    // console.log(JSON.stringify(game, null, 2));
+    console.log(inspect(game, {
+      colors: true, // enable ANSI colors
+      depth: null  // unlimited nesting
+    }));
 
     // console.log("Attacker ship:", intent.attacker);
     // console.log("Target ship:", intent.target);
@@ -362,6 +372,8 @@ class GameEngine {
       throw new Error("Weapon out of uses");
     if (weaponState.cooldown_left > 0)
       throw new Error(`Weapon still on cooldown (Cooldown turns left: ${weaponState.cooldown_left})`);
+
+    console.log(`Starting turn ${game.turn}`);
 
     // ================ Damage calculations ================ \\
     const baseDamage = weaponBase.damage * parseFloat(weaponBase.damage_multiplier);
@@ -419,9 +431,117 @@ class GameEngine {
     console.log("Uses left:", weaponState.usage_left);
 
     // Log the action
+    game.turn ++;
     game.logs.push({ player: intent.attacker, action: intent });
+    console.log(`Turn completed. Next turn: ${game.turn}`);
 
     return game;
+  }
+
+  // ======== CPU Turn ======== \\
+  static async getAiIntent(gameId, cpuId) {
+    // Verify game exists and get it
+    const game = await this.getGame(gameId);
+    if (!game)
+      throw new Error(`Game ${gameId} not found.`);
+
+    // Verify CPU ID is valid
+    if (!cpuId.toUpperCase().startsWith("COM"))
+      throw new Error(`CPU ID ${cpuId} is not a valid CPU ID and thus should not exist. It should start with 'COM' and is case in-sensitive.`);
+    const cpu = game.ships.find(s => s.pilot.toUpperCase() === cpuId.toUpperCase());
+    if (!cpu)
+      throw new Error(`Ship piloted by ${cpuId} not found.`);
+
+    // Get target (only other ship in game assuming it's 1v1, which currently is always the case)
+    const target = game.ships.find(s => s.pilot.toUpperCase() !== cpuId.toUpperCase());
+    // Verify target exists (it always should, but it's best to be safe)
+    if (!target) {
+      if (debugMode) {
+        console.warn(
+          "An unexpected error occurred. Is game.ships malformed? game.ships:",
+          inspect(game.ships, {
+            colors: true, // enable ANSI colors
+            depth: null  // unlimited nesting
+          }));
+      }
+      throw new Error("Unable to find a target ship. Is the battle object malformed?");
+    }
+
+    // Get CPU weapons
+    const cpuWeapons = cpu.weapons
+      .filter(w => w.cooldown_left > 0 && w.usage_left > 0) // Filter out ones depleted or on cooldown
+      .filter(w => w.damage * w.damage_multiplier > 0);    // Filter out ones that don't do anything yet (i.e. Tribble that does 0 damage)
+
+    // Adjust the probability of choosing weapons based on certain factors (raw damage, shield/hull modifiers, target's shields down, etc.)
+    const weightedWeapons = cpuWeapons.map(w => weighWeapon(w));
+
+    // Randomly select a weapon to fire
+    const chosenWeapon = pickWeightedRandom(weightedWeapons);
+
+    // Build and return intent object
+    return {
+      gameId: gameId,
+      intent: {
+        attacker: cpuId,
+        weapon_id: chosenWeapon.weapon_id,
+        target: target.pilot.toUpperCase()
+      }
+    }
+
+    // ======== Helper Functions ======== \\
+
+    // Helper function to weigh weapons (adjust probabilities)
+    function weighWeapon(weapon) {
+      let weight = 1;
+      const shieldsMul = weapon.shields_multiplier;
+      const hullMul    = weapon.hull_multiplier;
+
+      // If shields are up (and not dangerously low), prioritize weapons strong against shields
+      if (target.state.shield_hp >= 10) {
+        weight *= shieldsMul ?? 1;
+      } else { // If shields are down, prioritize weapons strong against hull
+        weight *= hullMul ?? 1;
+      }
+
+      // Factor in raw damage (scale: 50 dmg = x1, 100 dmg = x2, cap at x5 (250 dmg).)
+      const effectiveDamage = weapon.damage * (weapon.damage_multiplier ?? 1);
+      weight *= Math.min(effectiveDamage / 50, 5);
+
+      // Save limited weapons that are good against hull for when target shields goes down
+      if (
+        target.state.shield_hp >= 10 &&    // target shields not down nor dangerously low
+        weapon.max_usage <= 5 &&           // weapon has very limited uses
+        (hullMul ?? 1) > (shieldsMul ?? 1) // weapon is stronger against hull than shields
+      ) {
+        weight *= 0.25;
+      } else if ( // Somewhat prioritize limited weapons that are good against hull when target shields are down
+        target.state.shield_hp < 10 &&     // target shields are down or dangerously low
+        weapon.max_usage <= 5 &&           // weapon has very limited uses
+        (hullMul ?? 1) > (shieldsMul ?? 1) // weapon is stronger against hull than shields
+      ) {
+        weight *= 1.125; // Only a small effect because damage should be a larger factor
+      }
+
+      // Avoid negative or 0 weight (set minimum weight to 0.01)
+      if (weight < 0.01)
+        weight = 0.01;
+
+      return { weapon, weight };
+    }
+
+    // Helper function to randomly pick weapon based on adjusted probabilities
+    function pickWeightedRandom(weightedArray) {
+      const totalWeight = weightedArray.reduce((sum, w) => sum + w.weight, 0);
+      let r = Math.random() * totalWeight;
+
+      for (const entry of weightedArray) {
+        if ((r -= entry.weight) <= 0) {
+          return entry.weapon;
+        }
+      }
+      // fallback (shouldn’t happen if weights > 0)
+      return weightedArray[0].weapon;
+    }
   }
 }
 
