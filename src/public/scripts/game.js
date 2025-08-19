@@ -18,12 +18,6 @@ function getQueryParam(name) {
   return url.searchParams.get(name);
 }
 
-async function fetchJSON(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return res.json();
-}
-
 // Update a side panel (stats + bars)
 function updateSidePanel(prefix, data) {
   // prefix: 'p' or 'c'
@@ -42,25 +36,6 @@ function updateSidePanel(prefix, data) {
 
   qs(`#${prefix}-shields-fill`).style.width = `${pct(shieldsNow, shieldsMax)}%`;
   qs(`#${prefix}-hull-fill`).style.width = `${pct(hullNow, hullMax)}%`;
-
-  // todo: set ship image SRC for side panels
-}
-
-
-// Update the center display cards (image + name)
-function updateCenterCards(prefix, data) {
-  // prefix: 'p' or 'c'
-  const imgEl = qs(`#${prefix}-image`);
-  const nameEl = qs(`#${prefix}-name-center`);
-
-  nameEl.textContent = data.name ?? `Ship ${data.ship_id}`;
-  if (data.image_src) {
-    imgEl.src = data.image_src;
-    imgEl.style.display = 'block';
-  } else {
-    imgEl.removeAttribute('src');
-    imgEl.style.display = 'none';
-  }
 }
 
 // Build weapon buttons for the player's ship
@@ -80,25 +55,6 @@ function renderWeaponButtons(weapons, onClick) {
     btn.addEventListener('click', () => onClick(w));
     bar.appendChild(btn);
   });
-}
-
-// Map a basic gameState ship entry + full details into a unified object
-function hydrateShip(base, full) {
-  // prefer live values from base (if your engine adds them), fall back to DB
-  const obj = {
-    ship_id: base.ship_id,
-    name: full?.name ?? base.name,
-    class: full?.class ?? base.class,
-    owner: full?.owner ?? base.owner,
-    registry: full?.registry ?? base.registry,
-    image_src: full?.image_src ?? base.image_src,
-    // live values prefer base (game state), otherwise DB max values
-    shields_now: base?.shields_now ?? base?.shields ?? full?.shield_strength ?? 0,
-    shields_max: full?.shield_strength ?? base?.shields_max ?? 1000,
-    hull_now: base?.hull_now ?? base?.hull ?? full?.hull_strength ?? 0,
-    hull_max: full?.hull_strength ?? base?.hull_max ?? 1000
-  };
-  return obj;
 }
 
 // ================ Main live page logic ================ \\
@@ -217,9 +173,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     setTimeout(() => {
       // Populate side panels on turn 1
       if (target === "NONE") {
+        const playerShipImg = document.getElementById('p-image');
+        const cpuShipImg = document.getElementById('c-image');
+
+        // Fetch player ship image
+        fetch(`/api/shipImg/${playerShip.ship_id}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.src) playerShipImg.src = data.src;
+          })
+          .catch(err => console.error("Failed to load player ship image:", err));
+
+        // Fetch CPU ship image
+        fetch(`/api/shipImg/${cpuShip.ship_id}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.src) cpuShipImg.src = data.src;
+          })
+          .catch(err => console.error("Failed to load CPU ship image:", err));
+
         updateSidePanel('p', playerShip);
         updateSidePanel('c', cpuShip);
       }
+
       updateTopBar(gameState);
     }, 300)
 

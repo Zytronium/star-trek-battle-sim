@@ -18,6 +18,8 @@ router.get('/ship/:id/full', AppController.getShipFull); // Full combined ship i
 router.get('/boss-ships', AppController.getBosses);      // Get all boss ships
 router.get('/boss-ship/:id', AppController.getBoss);     // Get a boss ship
 
+router.get('/shipImg/:id', AppController.getShipImage);  // Get a ship image src
+
 // =========================== WEAPONS =========================== \\
 router.get('/weapon/:id', AppController.getWeapon);      // Get a weapon
 // router.get('/weapons', AppController.getWeapons);        // Get all weapons
