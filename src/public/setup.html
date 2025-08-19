@@ -4,18 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Star Trek Battle Simulator</title>
-    <link rel="stylesheet" href="css/battle.css">
+    <link rel="stylesheet" href="css/setup.css">
+    <link rel="stylesheet" href="css/weapons.css">
 </head>
 <body>
     <nav class="side-nav">
         <div class="nav-links">
-            <a href="index.html" class="nav-link"><img src="favicon.ico" style="width: 100%">Home</a>
-<!--            <a href="battle.html" class="nav-link active">Battle</a>-->
+            <a href="/" class="nav-link"><img src="favicon.ico" style="width: 100%">Home</a>
+<!--            <a href="setup.html" class="nav-link active">Setup</a>-->
         </div>
     </nav>
 
     <!-- Attack Visualization Bar -->
-    <div class="attack-bar">
+    <div class="attack-bar long">
         <div class="player-dot left"></div>
 
         <!-- Player phaser fire - 2 blue + 1 silver -->
@@ -64,7 +65,7 @@
                             </button>
                         </div>
 
-                      <div class="battle-message-box">
+                      <!--<div class="battle-message-box">
                         <div class="battle-messages">
                           <div class="message-header">
                             <h3>Battle Status</h3>
@@ -76,7 +77,7 @@
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </div>-->
 
                     </div>
 
@@ -102,6 +103,9 @@
         <div id="error" class="error" style="display: none;"></div>
     </div>
 
-    <script src="scripts/battle.js"></script>
+    <script src="scripts/setup.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="scripts/startGame.js"></script>
+
 </body>
 </html>

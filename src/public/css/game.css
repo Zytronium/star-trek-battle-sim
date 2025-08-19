@@ -1,0 +1,208 @@
+/* Layout base */
+:root {
+    --cyan: rgba(0,212,255,0.7);
+    --cyan-dim: rgba(0,212,255,0.35);
+    --accent: #ffa500;
+    --bg-glass: rgba(0,0,0,0.5);
+    --bg-glass-strong: rgba(0,0,0,0.7);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #000;
+    color: #fff;
+    overflow: hidden;
+}
+
+.background-video {
+    position: fixed;
+    right: 0; bottom: 0; top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    z-index: -2;
+    filter: brightness(0.55) saturate(1.2);
+}
+
+nav.side-nav {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 80px;
+    background: rgba(0, 0, 0, 0.8);
+    border-right: 2px solid var(--cyan);
+    padding: 10px;
+    z-index: 5;
+}
+
+.container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin-left: 80px; /* leave space for side nav */
+}
+
+/* Top bar (last update + turn + spectate) */
+.top-bar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-glass-strong);
+    border-bottom: 1px solid var(--cyan);
+    min-height: 54px;
+}
+
+.top-left { justify-self: start; }
+.top-center { justify-self: center; text-align: center; font-weight: bold; }
+.top-right { justify-self: end; color: var(--cyan); }
+
+.spectate-btn {
+    padding: 7px 12px;
+    border: 1px solid var(--cyan);
+    background: transparent;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+}
+.spectate-btn:hover { background: var(--bg-glass); }
+
+/* Main 3-column layout */
+.battle-layout {
+    display: grid;
+    grid-template-columns: 25% 1fr 25%;
+    grid-template-rows: 1fr;
+    gap: 20px;
+    padding: 20px 20px 80px; /* bottom space for weapons bar */
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Panels */
+.ship-panel {
+    background: var(--bg-glass);
+    border: 1px solid var(--cyan-dim);
+    border-radius: 12px;
+    padding: 14px;
+    overflow-y: auto;
+}
+
+.ship-panel h2 {
+    margin: 0 0 10px 0;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Stats & bars */
+.ship-stats .stat-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    opacity: 0.95;
+    text-align: right;
+}
+.ship-stats .label { color: var(--cyan); }
+
+.bars { margin-top: 10px; display: grid; gap: 10px; }
+
+.bar-head {
+    display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 6px;
+}
+.bar-track {
+    position: relative;
+    height: 12px; border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--cyan-dim);
+    background: rgba(255,255,255,0.05);
+}
+.bar-track.shield { box-shadow: 0 0 10px rgba(0,212,255,0.15) inset; }
+.bar-track.hull   { box-shadow: 0 0 10px rgba(255,0,0,0.15) inset; }
+
+.bar-fill {
+    height: 100%;
+    width: 0%;
+    transition: width 300ms ease;
+    background: linear-gradient(90deg, rgba(0,212,255,0.9), rgba(0,212,255,0.5));
+}
+.bar-track.hull .bar-fill {
+    background: linear-gradient(90deg, rgba(255,0,0,0.85), rgba(255,80,80,0.6));
+}
+
+/* Center arena */
+.center-arena {
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg-glass);
+    border: 1px solid var(--cyan-dim);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.ship-display-box {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 32px;
+    padding: 20px;
+    width: 100%;
+}
+
+.ship-display {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+
+.ship-image-wrap {
+    display: grid; place-items: center;
+    width: 220px; height: 220px;
+    border: 1px solid var(--cyan-dim);
+    border-radius: 16px;
+    background: rgba(255,255,255,0.04);
+    overflow: hidden;
+}
+.ship-image-wrap img {
+    max-width: 100%; max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 6px rgba(0,212,255,0.25));
+}
+
+.ship-name { margin-top: 4px; font-weight: 600; letter-spacing: 0.4px; }
+
+.vs-badge {
+    padding: 8px 14px;
+    border: 1px solid var(--cyan);
+    border-radius: 999px;
+    color: var(--cyan);
+    letter-spacing: 1px;
+}
+
+/* Bottom weapons bar */
+.bottom-bar {
+    position: fixed;
+    left: 80px; right: 0; bottom: 0;
+    background: var(--bg-glass-strong);
+    border-top: 1px solid var(--cyan);
+    display: flex; flex-wrap: wrap;
+    gap: 12px;
+    padding: 10px 14px;
+    z-index: 3;
+    justify-content: center;
+}
+
+.weapon-button {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--cyan);
+    background: rgba(0,212,255,0.12);
+    color: #fff;
+    cursor: pointer;
+    min-width: 120px;
+    max-width: 220px;
+    text-align: center;
+}
+.weapon-button:hover { background: rgba(0,212,255,0.25); }
+.weapon-button:disabled { opacity: 0.5; cursor: not-allowed; }

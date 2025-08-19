@@ -12,8 +12,7 @@ async function loadShips() {
     const response = await fetch('/api/ships');
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-    const allShips = await response.json();
-    ships = allShips;  // Store all ships
+    ships = await response.json();  // Store all ships
 
     populateDropdowns();
     document.getElementById('loading').style.display = 'none';
@@ -231,38 +230,6 @@ function clearBattleMessages() {
     const battleLog = document.getElementById('battle-log');
     battleLog.innerHTML = '<div class="welcome-message">Welcome to the Star Trek Battle Engine! Select your ships and prepare for battle.</div>';
 }
-
-// Start battle on battle button click
-document.getElementById('battle-btn').addEventListener('click', async () => {
-  if (selectedShips.player1 && selectedShips.player2) {
-    clearBattleMessages();
-    addBattleMessage(`🚀 Engaging battle between <strong>${selectedShips.player1.name}</strong> and <strong>${selectedShips.player2.name}</strong>...`, 'battle-start');
-
-    try {
-      // Updated URL with trailing slash
-      const res = await fetch('/api/simulate-battle/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          playerShipId: selectedShips.player1.ship_id,
-          enemyShipId: selectedShips.player2.ship_id
-        })
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `HTTP error ${res.status}`);
-      }
-
-      const data = await res.json();
-      data.logs.forEach(line => addBattleMessage(line, 'info'));
-
-    } catch (err) {
-      console.error('Battle error:', err);
-      addBattleMessage(`⚠️ Error: ${err.message}`, 'error');
-    }
-  }
-});
 
 // Load ships and add change event listeners for dropdowns
 document.addEventListener('DOMContentLoaded', () => {

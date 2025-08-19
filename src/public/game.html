@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Star Trek Battle - Live Match</title>
+  <link rel="stylesheet" href="css/game.css" />
+  <link rel="stylesheet" href="css/weapons.css" />
+</head>
+<body>
+<nav class="side-nav">
+  <div class="nav-links">
+    <a href="index.html" class="nav-link"><img src="favicon.ico" style="width:100%">Home</a>
+  </div>
+</nav>
+
+<video class="background-video" autoplay loop muted playsinline>
+  <source src="videos/space.webm" type="video/webm">
+</video>
+
+<div class="container">
+  <!-- Top bar: last update -->
+  <div class="top-bar">
+    <div class="top-left">
+      <button id="copy-spectate" class="spectate-btn">Copy Spectate Link</button>
+    </div>
+    <div class="top-center">
+      <span id="last-update">Awaiting first update…</span>
+    </div>
+    <div class="top-right">
+      <span id="turn-indicator"></span>
+    </div>
+  </div>
+
+  <!-- Main layout -->
+  <div class="battle-layout">
+    <!-- Player ship details -->
+    <div class="ship-panel" id="player-panel">
+      <h2>Player Ship</h2>
+      <div class="ship-display">
+        <div class="ship-image-wrap">
+          <img id="p-image" alt="Player Ship" />
+        </div>
+      </div>
+      <div class="ship-stats" id="player-stats">
+        <div class="stat-line"><span class="label">Name:</span> <span id="p-name">--</span></div>
+        <div class="stat-line"><span class="label">Class:</span> <span id="p-class">--</span></div>
+        <div class="stat-line"><span class="label">Owner:</span> <span id="p-owner">--</span></div>
+        <div class="stat-line"><span class="label">Registry:</span> <span id="p-registry">--</span></div>
+        <div class="bars">
+          <div class="bar">
+            <div class="bar-head"><span>Shields</span><span id="p-shields-val">--/--</span></div>
+            <div class="bar-track shield"><div id="p-shields-fill" class="bar-fill"></div></div>
+          </div>
+          <div class="bar">
+            <div class="bar-head"><span>Hull</span><span id="p-hull-val">--/--</span></div>
+            <div class="bar-track hull"><div id="p-hull-fill" class="bar-fill"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center: two ships facing each other -->
+    <div class="center-arena">
+      <div class="ship-display-box">
+
+        <!-- Attack Visualization Bar -->
+        <div class="attack-bar">
+          <div class="player-dot left"></div>
+
+          <!-- Player phaser fire - 2 blue + 1 silver -->
+          <div class="phaser-beam player-phaser blue-phaser"></div>
+          <div class="phaser-beam player-phaser blue-phaser" style="animation-delay: 0.2s;"></div>
+          <div class="phaser-beam player-phaser silver-phaser" style="animation-delay: 0.4s;"></div>
+
+          <!-- CPU phaser fire - 2 red lines -->
+          <div class="phaser-beam cpu-phaser cpu-phaser-1"></div>
+          <div class="phaser-beam cpu-phaser cpu-phaser-2" style="animation-delay: 0.3s;"></div>
+
+          <div class="player-dot right"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CPU ship details -->
+    <div class="ship-panel" id="cpu-panel">
+      <h2>CPU Ship</h2>
+      <div class="ship-display">
+        <div class="ship-image-wrap">
+          <img id="c-image" alt="CPU Ship" />
+        </div>
+      </div>
+      <div class="ship-stats" id="cpu-stats">
+        <div class="stat-line"><span class="label">Name:</span> <span id="c-name">--</span></div>
+        <div class="stat-line"><span class="label">Class:</span> <span id="c-class">--</span></div>
+        <div class="stat-line"><span class="label">Owner:</span> <span id="c-owner">--</span></div>
+        <div class="stat-line"><span class="label">Registry:</span> <span id="c-registry">--</span></div>
+        <div class="bars">
+          <div class="bar">
+            <div class="bar-head"><span>Shields</span><span id="c-shields-val">--/--</span></div>
+            <div class="bar-track shield"><div id="c-shields-fill" class="bar-fill"></div></div>
+          </div>
+          <div class="bar">
+            <div class="bar-head"><span>Hull</span><span id="c-hull-val">--/--</span></div>
+            <div class="bar-track hull"><div id="c-hull-fill" class="bar-fill"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom weapons bar -->
+  <div class="bottom-bar" id="weapon-buttons"></div>
+</div>
+
+<!-- Use CDN to avoid /socket.io path issues -->
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+<script src="scripts/game.js"></script>
+</body>
+</html>

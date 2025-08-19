@@ -4,17 +4,34 @@ const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 const router = require('./routes');
-const engineRouter = require("./routes/engine_routes");
-const battleRoutes = require('./routes/battleRoutes');
-const errorHandler = require('./middleware/errorHandler')
-const checkDatabase = require("./middleware/checkDatabase")
+const errorHandler = require('./middleware/errorHandler');
+const checkDatabase = require("./middleware/checkDatabase");
+const cleanHtmlUrls = require("./middleware/cleanURLs");
+const debugLogs = require('./middleware/debugLogs');
 const { pool, verifyConnection } = require('./config/database');
+const http = require('http');
+const { Server } = require('socket.io');
+const registerSockets = require('./sockets');
+const { setIO } = require('./game/gameState');
 
 const PORT = process.env.PORT || 5005;
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 
 // Express app
 const app = express();
+
+// Socket.io
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*', //todo: set this from env variable: this is the website domain (I think)
+    methods: ['GET', 'POST']
+  }
+});
+
+// Create and register web sockets
+setIO(io);
+registerSockets(io);
 
 // Trust proxy to allow logging IP addresses
 app.set('trust proxy', true);
@@ -25,16 +42,16 @@ app.use(morgan(debugMode ? 'dev' : 'combined')); // Log requests to console
 app.use(express.json());                         // Parse JSON
 app.use(express.urlencoded({ extended: true })); // Auto-parse JSON body
 app.set('json spaces', 2);                       // Pretty print JSON
+app.use(debugLogs);                              // Debug logs middleware
+app.use('/api', checkDatabase);                  // Database health check middleware
+app.use(cleanHtmlUrls(__dirname + '/public'));   // Serve pages to URLs without ".html" (i.e. /game instead of /game.html)
 app.use(express.static(__dirname + '/public'));  // Serve static files
-app.use(checkDatabase);                          // Database health check middleware
 
 // ================== Routes ================== \\
-app.use('/api', router);           // API routes
-app.use('/api', battleRoutes);     // (Old) Battle simulator routes
-app.use("/engine", engineRouter);  // Game engine routes
+app.use('/api', router);  // API routes
 
 // ============== Error Handling ============== \\
-app.use(errorHandler); // MUST be last
+app.use(errorHandler);  // MUST be last
 
 async function startServer() {
   try {
@@ -46,9 +63,9 @@ async function startServer() {
     console.log('🔌 Database connection verified');
 
     // Start server
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}${debugMode ? ' in debug mode' : ''}`);
-      console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+      console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
 
       if (debugMode) {
         console.log('🛣️ Available API routes:');
@@ -56,14 +73,6 @@ async function startServer() {
           if (layer.route) {
             const methods = Object.keys(layer.route.methods).join(', ').toUpperCase();
             console.log(`- ${methods} api${layer.route.path}`);
-          }
-        });
-
-        console.log('🛣️ Available Game Engine routes:');
-        engineRouter.stack.forEach(layer => {
-          if (layer.route) {
-            const methods = Object.keys(layer.route.methods).join(', ').toUpperCase();
-            console.log(`- ${methods} engine${layer.route.path}`);
           }
         });
         console.log('-------------------------------');
