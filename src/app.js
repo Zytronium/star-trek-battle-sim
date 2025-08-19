@@ -4,6 +4,7 @@ const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 const router = require('./routes');
+const gameRouter = require('./routes/gameRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const checkDatabase = require("./middleware/checkDatabase");
 const cleanHtmlUrls = require("./middleware/cleanURLs");
@@ -49,6 +50,7 @@ app.use(express.static(__dirname + '/public'));  // Serve static files
 
 // ================== Routes ================== \\
 app.use('/api', router);  // API routes
+app.use('', gameRouter);  // Special game routes (/game/spectate)
 
 // ============== Error Handling ============== \\
 app.use(errorHandler);  // MUST be last
