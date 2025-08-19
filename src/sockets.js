@@ -47,6 +47,12 @@ module.exports = function registerSockets(io) {
         if (!game)
           throw new Error(`Game ${gameId} not found.`);
 
+        // Reject intents if game is already over
+        if (game.winner) {
+          endGame(gameId)
+          return socket.emit('errorMessage', `Game over. Winner: ${game.winner}`);
+        }
+
         // Reject intents if CPU is still processing (except on turn 1)
         if (cpuProcessingLock.has(gameId)) {
           return socket.emit('errorMessage', 'Please wait for the CPU to take its turn before submitting another action.');
@@ -63,8 +69,8 @@ module.exports = function registerSockets(io) {
         // Broadcast the updated game state to all clients in the room
         io.to(`game-${gameId}`).emit('gameUpdate', updatedGame);
 
-        // If the game is Player vs AI, process the CPU turn
-        if (game.type.toUpperCase() === "PLAYER V AI") {
+        // If there's no winner yet and the game is Player vs AI, process the CPU turn
+        if (!updatedGame.winner && game.type.toUpperCase() === "PLAYER V AI") {
           try {
             const cpuStart = Date.now();
 
@@ -93,6 +99,11 @@ module.exports = function registerSockets(io) {
           } finally {
             // Unlock CPU processing for this game so player can act next
             cpuProcessingLock.delete(gameId);
+
+            if (game.winner) {
+              endGame(gameId);
+              socket.emit('message', `Game over. Winner: ${game.winner}`);
+            }
           }
         }
 
@@ -100,6 +111,15 @@ module.exports = function registerSockets(io) {
         // Handle errors from the player's turn processing
         console.error('Failed to process player intent:', playerError);
         socket.emit('errorMessage', debugMode ? playerError : playerError.message);
+      }
+
+      // Helper function to end and cleanup game
+      function endGame(gameId) {
+        cpuProcessingLock.delete(gameId);
+        // Delete game from memory after 3 minutes
+        setTimeout(() => {
+          delete activeGames[gameId];
+        }, 1000 * 60 * 3);
       }
     });
   });

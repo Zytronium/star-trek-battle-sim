@@ -170,34 +170,35 @@ document.addEventListener('DOMContentLoaded', async () => {
       }, targetDot === "right" ? 700 : 900);
     }
 
-    setTimeout(() => {
-      // Populate side panels on turn 1
-      if (target === "NONE") {
-        const playerShipImg = document.getElementById('p-image');
-        const cpuShipImg = document.getElementById('c-image');
+    // Populate side panels on turn 1
+    if (target === "NONE") {
+      updateSidePanel('p', playerShip);
+      updateSidePanel('c', cpuShip);
+    }
 
-        // Fetch player ship image
-        fetch(`/api/shipImg/${playerShip.ship_id}`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.src) playerShipImg.src = data.src;
-          })
-          .catch(err => console.error("Failed to load player ship image:", err));
+    // Set ship images if not already loaded (i.e. turn 1 or page reload)
+    const playerShipImg = document.getElementById('p-image');
+    const cpuShipImg = document.getElementById('c-image');
+    if (!playerShipImg.src) {
+      // Fetch and set player ship image
+      fetch(`/api/shipImg/${playerShip.ship_id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.src) playerShipImg.src = data.src;
+        })
+        .catch(err => console.error("Failed to load player ship image:", err));
+    }
+    if (!cpuShipImg.src) {
+      // Fetch and set CPU ship image
+      fetch(`/api/shipImg/${cpuShip.ship_id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.src) cpuShipImg.src = data.src;
+        })
+        .catch(err => console.error("Failed to load CPU ship image:", err));
+    }
 
-        // Fetch CPU ship image
-        fetch(`/api/shipImg/${cpuShip.ship_id}`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.src) cpuShipImg.src = data.src;
-          })
-          .catch(err => console.error("Failed to load CPU ship image:", err));
-
-        updateSidePanel('p', playerShip);
-        updateSidePanel('c', cpuShip);
-      }
-
-      updateTopBar(gameState);
-    }, 300)
+    updateTopBar(gameState);
 
     // Render weapon buttons using baseStats
     renderWeaponButtons(playerShip.baseStats.weapons, (w) => {
