@@ -135,6 +135,26 @@ class AppController {
     }
   }
 
+  // GET /api/weapon/:id
+  static async getWeapon(req, res) {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).send("Param 'id' is required");
+    }
+    if (isNaN(id)) {
+      return res.status(400).send("Param 'id' is invalid");
+    }
+    try {
+      const data = await AppService.getWeaponByID(id);
+      res.status(200).json(data);
+    } catch (err) {
+      if (err.message === `Weapon with ID ${id} not found`) {
+        return res.status(404).json({ error: 'Weapon not found' });
+      }
+      res.status(500).send({ error: 'Database query failed' });
+    }
+  }
+
 }
 
 module.exports = AppController;

@@ -382,6 +382,7 @@ class GameEngine {
     const bypass = parseFloat(weaponBase.bypass_fraction ?? 0); // 0..1
 
     // Portion that goes toward shields, portion that bypasses directly
+    const originalShieldHp = target.state.shield_hp;
     let toShields = baseDamage * Sm * (1 - bypass);
     let damageToHull = baseDamage * Sm * bypass; // bypass hull damage
 
@@ -427,9 +428,13 @@ class GameEngine {
       if (w.cooldown_left > 0) w.cooldown_left--;
     }
 
+    const damageToShields = Math.max(0, originalShieldHp - target.state.shield_hp);
+    const totalDamage = damageToShields + damageToHull;
+
     // Log the action
     game.turn ++;
-    game.logs.push({ player: intent.attacker, action: intent });
+    const weapon = await AppService.getWeaponByID(intent.weapon_id);
+    game.logs.push({ player: intent.attacker, action: intent, message: `${intent.attacker} fired ${weapon.name} at ${intent.target}, dealing ${totalDamage} total damage${target.state.hull_hp === 0 ? ` and destroying ${intent.target}!` : "."}` });
     console.log(`Turn completed. Next turn: ${game.turn}`);
 
     return game;

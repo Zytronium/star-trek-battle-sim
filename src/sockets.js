@@ -1,6 +1,8 @@
 const { activeGames } = require('./game/gameState');
 const GameEngine = require('./game/gameEngine');
 
+const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
+
 module.exports = function registerSockets(io) {
   io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
@@ -87,7 +89,7 @@ module.exports = function registerSockets(io) {
           } catch (cpuError) {
             // Handle errors specifically from CPU turn processing
             console.error('Failed to process CPU turn:', cpuError);
-            socket.emit('errorMessage', cpuError.message);
+            socket.emit('errorMessage', debugMode ? cpuError : cpuError.message);
           } finally {
             // Unlock CPU processing for this game so player can act next
             cpuProcessingLock.delete(gameId);
@@ -97,7 +99,7 @@ module.exports = function registerSockets(io) {
       } catch (playerError) {
         // Handle errors from the player's turn processing
         console.error('Failed to process player intent:', playerError);
-        socket.emit('errorMessage', playerError.message);
+        socket.emit('errorMessage', debugMode ? playerError : playerError.message);
       }
     });
   });
