@@ -82,7 +82,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       navigator.clipboard.writeText(url)
         .then(() => {
           console.log("Spectate link copied:", url);
-          alert("Spectate link copied to clipboard.");
+          let message = "Spectate link copied to clipboard.";
+          // Warn that this link only works on your device
+          if (['localhost', '0.0.0.0'].includes(window.location.hostname)) {
+            message += `\n\nNote: You are locally hosting this website. This link only works on your device. Try \`ip addr show\` in Linux terminal and replacing ${window.location.hostname} with your IP. Then, others on your network can spectate.`
+          }
+          alert(message);
         })
         .catch(err => {
           console.error(`Failed to copy spectate link "${url}":`, err);
@@ -105,7 +110,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Warn that this link only works on your device
       if (['localhost', '0.0.0.0'].includes(window.location.hostname)) {
-        message += `\n\nNote: You are locally hosting this website. This link only works on your device. Try \`ip addr show\` in Linux terminal and replacing ${window.location.hostname} with your IP.`
+        message += `\n\nNote: You are locally hosting this website. This link only works on your device. Try \`ip addr show\` in Linux terminal and replacing ${window.location.hostname} with your IP. Then, others on your network can spectate.`
       }
 
       alert(message);
