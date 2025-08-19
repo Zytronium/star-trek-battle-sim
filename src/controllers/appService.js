@@ -1,10 +1,9 @@
 const { pool } = require("../config/database");
-const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 
 class AppService {
   // ======== Get Database ======== \\
   static async getDatabase() {
-    // Note: this does not get the entire database anymore, which means join tables are not returned here.
+    // Note: this does not get the entire database anymore, which means some tables may not be returned here.
     try {
       const ships = await pool.query('SELECT * FROM ships');
       // const bossShips = await pool.query('SELECT * FROM boss_ships'); // Uncomment if we implement bosses
@@ -12,17 +11,17 @@ class AppService {
       const defenses = await pool.query('SELECT * FROM defenses');
       const shipWeapons = await pool.query('SELECT * FROM ship_weapons');
       const shipDefenses = await pool.query('SELECT * FROM ship_defenses');
+
+      return {
+        ships: ships.rows,
+        // boss_ships: bossShips.rows, // Uncomment if we implement bosses
+        weapons: weapons.rows,
+        defenses: defenses.rows,
+        ship_weapons: shipWeapons.rows,
+        ship_defenses: shipDefenses.rows
+      }
     } catch (e) {
       throw new Error(`Database query failed: ${e.message}`);
-    }
-
-    return {
-      ships: ships.rows,
-      // boss_ships: bossShips.rows, // Uncomment if we implement bosses
-      weapons: weapons.rows,
-      defenses: defenses.rows,
-      ship_weapons: shipWeapons.rows,
-      ship_defenses: shipDefenses.rows
     }
   }
 
@@ -183,6 +182,23 @@ class AppService {
       weapons: weaponsForShip,
       defenses: defensesForShip
     };
+  }
+
+  // ======== Get a Weapon ======== \\
+  static async getWeaponByID(id) {
+    // Grabs a weapon by its ID
+    let result;
+    try {
+      result = await pool.query('SELECT * FROM weapons WHERE weapon_id = $1', [id]);
+    } catch (e) {
+      throw new Error(`Database query failed: ${e.message}`);
+    }
+
+    if (result.rows.length === 0) {
+      throw new Error(`Weapon with ID ${id} not found`);
+    }
+
+    return (result.rows[0]);
   }
 
 }

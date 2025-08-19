@@ -170,6 +170,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Use baseStats for design-time info (weapons, names, hull capacity, etc.)
     updateSidePanel('p', playerShip);
     updateSidePanel('c', cpuShip);
+    updateTopBar(gameState);
 
     // Render weapon buttons using baseStats
     renderWeaponButtons(playerShip.baseStats.weapons, (w) => {
@@ -189,7 +190,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Update top bar (last log + turn)
 function updateTopBar(gameState) {
   const logs = Array.isArray(gameState.logs) ? gameState.logs : [];
-  const last = logs[logs.length - 1] || '--';
+  const last = logs[logs.length - 1].message || '--';
   qs('#last-update').textContent = last;
   qs('#turn-indicator').textContent = typeof gameState.turn === 'number'
     ? `Turn: ${gameState.turn}`
@@ -197,7 +198,6 @@ function updateTopBar(gameState) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-
 
 // Add bounce effects when dots get hit
   function triggerBounce(dotClass) {
