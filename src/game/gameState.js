@@ -1,8 +1,6 @@
-const { Server } = require('socket.io');
-
 // Store active games in memory for now
 const activeGames = {};
-let io; // will be set later
+let io;
 
 function setIO(socketServer) {
   io = socketServer;

@@ -1,7 +1,7 @@
 const {v4: uuidv4 } = require('uuid');
 const { activeGames, getIO } = require('./gameState');
-const AppService = require('../controllers/appService');
 const { inspect } = require("node:util");
+const AppService = require('../controllers/appService');
 
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 
@@ -346,10 +346,10 @@ class GameEngine {
   static async processTurnIntent(game, intent) {
     if (!game) throw new Error("Game object is required");
 
-    console.log(inspect(game, {
+/*    console.log(inspect(game, {
       colors: true, // enable ANSI colors
       depth: null  // unlimited nesting
-    }));
+    }));*/
 
     // console.log("Attacker ship:", intent.attacker);
     // console.log("Target ship:", intent.target);
@@ -427,9 +427,6 @@ class GameEngine {
       if (w.cooldown_left > 0) w.cooldown_left--;
     }
 
-    console.log("Cooldown left:", weaponState.cooldown_left);
-    console.log("Uses left:", weaponState.usage_left);
-
     // Log the action
     game.turn ++;
     game.logs.push({ player: intent.attacker, action: intent });
@@ -468,9 +465,14 @@ class GameEngine {
     }
 
     // Get CPU weapons
-    const cpuWeapons = cpu.weapons
-      .filter(w => w.cooldown_left > 0 && w.usage_left > 0) // Filter out ones depleted or on cooldown
-      .filter(w => w.damage * w.damage_multiplier > 0);    // Filter out ones that don't do anything yet (i.e. Tribble that does 0 damage)
+    const cpuWeapons = cpu.state.weapons
+      .filter(w => w.cooldown_left === 0 && w.usage_left > 0) // Filter out ones depleted or on cooldown
+      .map(w => {
+        // Attach baseStats for multipliers, damage, etc.
+        const baseWeapon = cpu.baseStats.weapons.find(bw => bw.weapon_id === w.weapon_id);
+        return { ...w, ...baseWeapon };
+      })
+      .filter(w => (w.damage * (w.damage_multiplier ?? 1)) > 0); // Filter out ones that don't do anything yet (i.e. Tribble that does 0 damage)
 
     // Adjust the probability of choosing weapons based on certain factors (raw damage, shield/hull modifiers, target's shields down, etc.)
     const weightedWeapons = cpuWeapons.map(w => weighWeapon(w));
@@ -480,12 +482,9 @@ class GameEngine {
 
     // Build and return intent object
     return {
-      gameId: gameId,
-      intent: {
-        attacker: cpuId,
-        weapon_id: chosenWeapon.weapon_id,
-        target: target.pilot.toUpperCase()
-      }
+      attacker: cpuId,
+      weapon_id: chosenWeapon.weapon_id,
+      target: target.pilot.toUpperCase()
     }
 
     // ======== Helper Functions ======== \\

@@ -35,38 +35,69 @@ module.exports = function registerSockets(io) {
       }
     });
 
+    const cpuProcessingLock = new Set();
+
     // Player sends an intent
     socket.on('playerIntent', async ({ gameId, intent }) => {
       try {
-        // Get the current game
+        // Retrieve the current game from the game engine
         const game = GameEngine.getGame(gameId);
         if (!game)
           throw new Error(`Game ${gameId} not found.`);
 
-        // Process player turn intent
-        await GameEngine.processTurnIntent(game, intent)
-          .then(async (updatedGame) => {
-            // Broadcast the returned game state to everyone in the room
-            io.to(`game-${gameId}`).emit('gameUpdate', updatedGame);
+        // Reject intents if CPU is still processing (except on turn 1)
+        if (cpuProcessingLock.has(gameId)) {
+          return socket.emit('errorMessage', 'Please wait for the CPU to take its turn before submitting another action.');
+        }
 
-            // Process CPU turn if Player V AI
-            if (game.type.toUpperCase() === "PLAYER V AI") {
-              await GameEngine.getAiIntent(gameId, "COM1") // Get CPU intent
-                .then(async (AiIntent) => {
-                  await GameEngine.processTurnIntent(game, AiIntent) // Process CPU turn intent
-                    .then((nextGameUpdate) => {
-                      // todo
-                    })
-                })
-            }
-          })
-          .catch(e => {
-            console.error('Failed to process intent:', e.message);
-            socket.emit('errorMessage', e.message);
-          });
-      } catch (err) {
-        console.error('Failed to process intent:', err.message);
-        socket.emit('errorMessage', err.message);
+        // Process the player's turn intent
+        const updatedGame = await GameEngine.processTurnIntent(game, intent);
+
+        // Lock CPU processing for this game if player turn succeeded
+        if (game.type.toUpperCase() === "PLAYER V AI") {
+          cpuProcessingLock.add(gameId);
+        }
+
+        // Broadcast the updated game state to all clients in the room
+        io.to(`game-${gameId}`).emit('gameUpdate', updatedGame);
+
+        // If the game is Player vs AI, process the CPU turn
+        if (game.type.toUpperCase() === "PLAYER V AI") {
+          try {
+            const cpuStart = Date.now();
+
+            // Generate the CPU's intent based on the current game state
+            const cpuIntent = await GameEngine.getAiIntent(gameId, "COM1");
+
+            // Process the CPU's turn intent, updating the game state again
+            const nextGameUpdate = await GameEngine.processTurnIntent(game, cpuIntent);
+
+            const cpuElapsed = Date.now() - cpuStart;
+            console.log(`CPU intent generation and processing took ${cpuElapsed} ms`);
+
+            // Calculate delay to ensure at least 2 seconds after player update
+            const delay = Math.max(2000 - cpuElapsed, 0);
+
+            // Wait before sending CPU update
+            await new Promise(resolve => setTimeout(resolve, delay));
+
+            // Broadcast the updated game state after the CPU turn
+            io.to(`game-${gameId}`).emit('gameUpdate', nextGameUpdate);
+
+          } catch (cpuError) {
+            // Handle errors specifically from CPU turn processing
+            console.error('Failed to process CPU turn:', cpuError);
+            socket.emit('errorMessage', cpuError.message);
+          } finally {
+            // Unlock CPU processing for this game so player can act next
+            cpuProcessingLock.delete(gameId);
+          }
+        }
+
+      } catch (playerError) {
+        // Handle errors from the player's turn processing
+        console.error('Failed to process player intent:', playerError);
+        socket.emit('errorMessage', playerError.message);
       }
     });
   });
