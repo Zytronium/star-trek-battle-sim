@@ -184,6 +184,23 @@ class AppService {
     };
   }
 
+  // ======== Get a Ship's Image SRC ======== \\
+  static async getShipImageSRC(id) {
+    // Gets a ship's image src
+    let result;
+    try {
+      result = await pool.query('SELECT image_src FROM ships WHERE ship_id = $1', [id]);
+    } catch (e) {
+      throw new Error(`Database query failed: ${e.message}`);
+    }
+
+    if (result.rows.length === 0) {
+      throw new Error(`Ship with ID ${id} not found`);
+    }
+
+    return (result.rows[0].image_src);
+  }
+
   // ======== Get a Weapon ======== \\
   static async getWeaponByID(id) {
     // Grabs a weapon by its ID

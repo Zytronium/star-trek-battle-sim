@@ -18,12 +18,6 @@ function getQueryParam(name) {
   return url.searchParams.get(name);
 }
 
-async function fetchJSON(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return res.json();
-}
-
 // Update a side panel (stats + bars)
 function updateSidePanel(prefix, data) {
   // prefix: 'p' or 'c'
@@ -42,25 +36,6 @@ function updateSidePanel(prefix, data) {
 
   qs(`#${prefix}-shields-fill`).style.width = `${pct(shieldsNow, shieldsMax)}%`;
   qs(`#${prefix}-hull-fill`).style.width = `${pct(hullNow, hullMax)}%`;
-
-  // todo: set ship image SRC for side panels
-}
-
-
-// Update the center display cards (image + name)
-function updateCenterCards(prefix, data) {
-  // prefix: 'p' or 'c'
-  const imgEl = qs(`#${prefix}-image`);
-  const nameEl = qs(`#${prefix}-name-center`);
-
-  nameEl.textContent = data.name ?? `Ship ${data.ship_id}`;
-  if (data.image_src) {
-    imgEl.src = data.image_src;
-    imgEl.style.display = 'block';
-  } else {
-    imgEl.removeAttribute('src');
-    imgEl.style.display = 'none';
-  }
 }
 
 // Build weapon buttons for the player's ship
@@ -80,25 +55,6 @@ function renderWeaponButtons(weapons, onClick) {
     btn.addEventListener('click', () => onClick(w));
     bar.appendChild(btn);
   });
-}
-
-// Map a basic gameState ship entry + full details into a unified object
-function hydrateShip(base, full) {
-  // prefer live values from base (if your engine adds them), fall back to DB
-  const obj = {
-    ship_id: base.ship_id,
-    name: full?.name ?? base.name,
-    class: full?.class ?? base.class,
-    owner: full?.owner ?? base.owner,
-    registry: full?.registry ?? base.registry,
-    image_src: full?.image_src ?? base.image_src,
-    // live values prefer base (game state), otherwise DB max values
-    shields_now: base?.shields_now ?? base?.shields ?? full?.shield_strength ?? 0,
-    shields_max: full?.shield_strength ?? base?.shields_max ?? 1000,
-    hull_now: base?.hull_now ?? base?.hull ?? full?.hull_strength ?? 0,
-    hull_max: full?.hull_strength ?? base?.hull_max ?? 1000
-  };
-  return obj;
 }
 
 // ================ Main live page logic ================ \\
@@ -166,10 +122,82 @@ document.addEventListener('DOMContentLoaded', async () => {
   socket.on('gameUpdate', (gameState) => {
     const playerShip = gameState.ships.find(s => s.pilot === 'P1');
     const cpuShip = gameState.ships.find(s => s.pilot !== 'P1');
+    const target = gameState.logs.length === 1
+      ? "NONE"
+      : gameState.logs[gameState.logs.length - 1].action.target;
 
-    // Use baseStats for design-time info (weapons, names, hull capacity, etc.)
-    updateSidePanel('p', playerShip);
-    updateSidePanel('c', cpuShip);
+    const targetDot = target.toUpperCase() === "P1" ? "left" : "right";
+
+    if (target !== "NONE") {
+      const attackBar = document.getElementById("attack-bar");
+      if (attackBar) {
+        const phaserBlue = document.createElement("div");
+        phaserBlue.className = "phaser-beam player-phaser blue-phaser";
+        phaserBlue.style.animationDelay = "0.2s";
+
+        const phaserSilver = document.createElement("div");
+        phaserSilver.className = "phaser-beam player-phaser silver-phaser";
+        phaserSilver.style.animationDelay = "0.4s";
+
+        const phaserRed = document.createElement("div");
+        phaserRed.className = "phaser-beam cpu-phaser cpu-phaser-1";
+        phaserRed.style.animationDelay = "0.3s";
+
+        if (targetDot === "right") {
+          attackBar.append(phaserBlue, phaserSilver);
+
+          setTimeout(() => {
+            phaserBlue.remove();
+            phaserSilver.remove();
+          }, 1500);
+
+        } else {
+          attackBar.append(phaserRed);
+
+          setTimeout(() => {
+            phaserRed.remove();
+          }, 1500);
+        }
+      }
+
+      // Update side panels and visualize explosions
+      setTimeout(() => {
+        updateSidePanel('p', playerShip);
+        updateSidePanel('c', cpuShip);
+
+        triggerBounce(`.player-dot.${targetDot}`);
+        createExplosionAtDot(`.player-dot.${targetDot}`);
+      }, targetDot === "right" ? 700 : 900);
+    }
+
+    // Populate side panels on turn 1
+    if (target === "NONE") {
+      updateSidePanel('p', playerShip);
+      updateSidePanel('c', cpuShip);
+    }
+
+    // Set ship images if not already loaded (i.e. turn 1 or page reload)
+    const playerShipImg = document.getElementById('p-image');
+    const cpuShipImg = document.getElementById('c-image');
+    if (!playerShipImg.src) {
+      // Fetch and set player ship image
+      fetch(`/api/shipImg/${playerShip.ship_id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.src) playerShipImg.src = data.src;
+        })
+        .catch(err => console.error("Failed to load player ship image:", err));
+    }
+    if (!cpuShipImg.src) {
+      // Fetch and set CPU ship image
+      fetch(`/api/shipImg/${cpuShip.ship_id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.src) cpuShipImg.src = data.src;
+        })
+        .catch(err => console.error("Failed to load CPU ship image:", err));
+    }
+
     updateTopBar(gameState);
 
     // Render weapon buttons using baseStats
@@ -197,91 +225,69 @@ function updateTopBar(gameState) {
     : '';
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-
 // Add bounce effects when dots get hit
-  function triggerBounce(dotClass) {
-    const dot = document.querySelector(dotClass);
-    if (dot) {
-      dot.classList.add('hit');
-      dot.classList.add('under-attack');
+function triggerBounce(dotClass) {
+  const dot = document.querySelector(dotClass);
+  if (dot) {
+    dot.classList.add('hit');
+    dot.classList.add('under-attack');
 
-      // Remove hit effect after bounce
-      setTimeout(() => {
-        dot.classList.remove('hit');
-      }, 600);
+    // Remove hit effect after bounce
+    setTimeout(() => {
+      dot.classList.remove('hit');
+    }, 600);
 
-      // Remove under-attack effect after a random time
-      setTimeout(() => {
-        dot.classList.remove('under-attack');
-      }, 800 + Math.random() * 400);
-    }
+    // Remove under-attack effect after a random time
+    setTimeout(() => {
+      dot.classList.remove('under-attack');
+    }, 800 + Math.random() * 400);
   }
+}
 
 // Create particle explosion effect at specific location
-  function createExplosionAtDot(dotClass) {
-    const dot = document.querySelector(dotClass);
-    if (!dot) return;
+function createExplosionAtDot(dotClass) {
+  const dot = document.querySelector(dotClass);
+  if (!dot) return;
 
-    const explosion = document.createElement('div');
-    explosion.className = 'explosion';
+  const explosion = document.createElement('div');
+  explosion.className = 'explosion';
 
-    // Position explosion at the dot's location
-    const rect = dot.getBoundingClientRect();
-    explosion.style.position = 'fixed';
-    explosion.style.left = rect.left + rect.width / 2 + 'px';
-    explosion.style.top = rect.top + rect.height / 2 + 'px';
-    explosion.style.transform = 'translate(-50%, -50%)';
+  // Position explosion at the dot's location
+  const rect = dot.getBoundingClientRect();
+  explosion.style.position = 'fixed';
+  explosion.style.left = rect.left + rect.width / 2 + 'px';
+  explosion.style.top = rect.top + rect.height / 2 + 'px';
+  explosion.style.transform = 'translate(-50%, -50%)';
 
-    document.body.appendChild(explosion);
+  document.body.appendChild(explosion);
 
-    // Create multiple particles with random directions
-    for (let i = 0; i < 15; i++) {
-      const particle = document.createElement('div');
-      particle.className = 'explosion-particle';
+  // Create multiple particles with random directions
+  for (let i = 0; i < 15; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'explosion-particle';
 
-      // Random explosion colors (only warm colors: red, orange, yellow, white)
-      const colors = ['#ff4500', '#ff6347', '#ff6b35', '#ff8c00', '#ffa500', '#ffd700', '#ffff00', '#ffffff'];
-      const selectedColor = colors[Math.floor(Math.random() * colors.length)];
-      particle.style.background = selectedColor;
-      particle.style.boxShadow = `0 0 8px ${selectedColor}`;
-      // Ensure no blue colors can be applied
-      particle.style.setProperty('--particle-color', selectedColor);
+    // Random explosion colors (only warm colors: red, orange, yellow, white)
+    const colors = ['#ff4500', '#ff6347', '#ff6b35', '#ff8c00', '#ffa500', '#ffd700', '#ffff00', '#ffffff'];
+    const selectedColor = colors[Math.floor(Math.random() * colors.length)];
+    particle.style.background = selectedColor;
+    particle.style.boxShadow = `0 0 8px ${selectedColor}`;
+    // Ensure no blue colors can be applied
+    particle.style.setProperty('--particle-color', selectedColor);
 
-      // Random explosion direction and distance
-      const angle = (Math.random() * 360) * (Math.PI / 180);
-      const distance = 30 + Math.random() * 50;
-      const x = Math.cos(angle) * distance;
-      const y = Math.sin(angle) * distance;
+    // Random explosion direction and distance
+    const angle = (Math.random() * 360) * (Math.PI / 180);
+    const distance = 30 + Math.random() * 50;
+    const x = Math.cos(angle) * distance;
+    const y = Math.sin(angle) * distance;
 
-      particle.style.setProperty('--x', `${x}px`);
-      particle.style.setProperty('--y', `${y}px`);
+    particle.style.setProperty('--x', `${x}px`);
+    particle.style.setProperty('--y', `${y}px`);
 
-      explosion.appendChild(particle);
-    }
-
-    // Remove explosion after animation
-    setTimeout(() => {
-      document.body.removeChild(explosion);
-    }, 2000);
+    explosion.appendChild(particle);
   }
 
-// Trigger bounces and explosions when lasers reach their targets
-  setInterval(() => {
-    // Player hits CPU at 0.6s into the 3s cycle
-    setTimeout(() => {
-      triggerBounce('.player-dot.right');
-      createExplosionAtDot('.player-dot.right');
-    }, 600);
-  }, 3000);
-
-  setInterval(() => {
-    // CPU hits Player at 2.1s into the 3s cycle (1.5s delay + 0.6s travel)
-    setTimeout(() => {
-      triggerBounce('.player-dot.left');
-      createExplosionAtDot('.player-dot.left');
-    }, 2100);
-  }, 3000);
-
-
-});
+  // Remove explosion after animation
+  setTimeout(() => {
+    document.body.removeChild(explosion);
+  }, 2000);
+}
