@@ -73,6 +73,7 @@ class GameEngine {
       ships: runtimeShips,
       logs: [`Game created: ${type}`],
       turn: 1,
+      winner: null,
       playerTokens // todo: remove this when client-side logic generates their player tokens; replace with saving the player token instead.
     };
 
@@ -434,7 +435,10 @@ class GameEngine {
     // Log the action
     game.turn ++;
     const weapon = await AppService.getWeaponByID(intent.weapon_id);
-    game.logs.push({ player: intent.attacker, action: intent, message: `${attacker.baseStats.name} fired ${weapon.name} at ${target.baseStats.name}, dealing ${Number(totalDamage.toFixed(3))} total damage${target.state.hull_hp === 0 ? ` and destroying ${intent.target}!` : "."}` });
+    game.logs.push({ player: intent.attacker, action: intent, message: `${attacker.baseStats.name} fired ${weapon.name} at ${target.baseStats.name}, dealing ${Number(totalDamage.toFixed(3))} total damage${target.state.hull_hp === 0 ? ` and destroying ${target.baseStats.name}!` : "."}` });
+    if (target.state.hull_hp <= 0) {
+      game.winner = intent.attacker;
+    }
     console.log(`Turn completed. Next turn: ${game.turn}`);
 
     return game;

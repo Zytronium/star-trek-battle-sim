@@ -135,6 +135,7 @@ class AppController {
     }
   }
 
+
   // GET /api/weapon/:id
   static async getWeapon(req, res) {
     const { id } = req.params;
@@ -154,6 +155,27 @@ class AppController {
       res.status(500).send({ error: 'Database query failed' });
     }
   }
+
+  //  GET /api/shipImg/:id  Why is this comment orange
+  static async getShipImage(req, res) {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).send("Param 'id'' is required")
+    }
+    if (isNaN(id)) {
+      return res.status(400).send("Param 'id' is invalid");
+    }
+    try {
+      const img = await AppService.getShipImageSRC(id);
+      res.status(200).send({ status: 'success', src: img });
+    } catch (err) {
+      if (err.message === `Ship with ID ${id} not found`) {
+        return res.status(404).json({ error: 'Ship not found' });
+      }
+      res.status(500).send({ error: 'Database query failed' });
+    }
+  }
+
 
 }
 
