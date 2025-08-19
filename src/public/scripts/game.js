@@ -48,7 +48,7 @@ function renderWeaponButtons(weapons, onClick) {
     btn.textContent = w.name ?? `Weapon ${w.weapon_id}`;
     btn.title = [
       w.special_effects ? `✨ ${w.special_effects}` : '',
-      w.damage != null ? `💥 Damage: ${w.damage}` : '',
+      w.damage != null ? `💥 Damage: ${w.damage * w.damage_multiplier ?? 1}` : '',
       w.hull_multiplier != null ? `🛠 Hull x${w.hull_multiplier}` : '',
       w.shields_multiplier != null ? `🛡 Shields x${w.shields_multiplier}` : ''
     ].filter(Boolean).join(' • ');
@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       fetch(`/api/shipImg/${playerShip.ship_id}`)
         .then(res => res.json())
         .then(data => {
-          if (data.src) playerShipImg.src = data.src;
+          if (data.src) playerShipImg.src = `/${data.src}`;
         })
         .catch(err => console.error("Failed to load player ship image:", err));
     }
@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       fetch(`/api/shipImg/${cpuShip.ship_id}`)
         .then(res => res.json())
         .then(data => {
-          if (data.src) cpuShipImg.src = data.src;
+          if (data.src) cpuShipImg.src = `/${data.src}`;
         })
         .catch(err => console.error("Failed to load CPU ship image:", err));
     }
