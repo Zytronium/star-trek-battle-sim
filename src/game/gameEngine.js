@@ -434,7 +434,7 @@ class GameEngine {
     // Log the action
     game.turn ++;
     const weapon = await AppService.getWeaponByID(intent.weapon_id);
-    game.logs.push({ player: intent.attacker, action: intent, message: `${intent.attacker} fired ${weapon.name} at ${intent.target}, dealing ${totalDamage} total damage${target.state.hull_hp === 0 ? ` and destroying ${intent.target}!` : "."}` });
+    game.logs.push({ player: intent.attacker, action: intent, message: `${attacker.baseStats.name} fired ${weapon.name} at ${target.baseStats.name}, dealing ${Number(totalDamage.toFixed(3))} total damage${target.state.hull_hp === 0 ? ` and destroying ${intent.target}!` : "."}` });
     console.log(`Turn completed. Next turn: ${game.turn}`);
 
     return game;
