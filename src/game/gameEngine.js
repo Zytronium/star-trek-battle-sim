@@ -380,7 +380,7 @@ class GameEngine {
     const baseDamage = weaponBase.damage * parseFloat(weaponBase.damage_multiplier ?? 1);
     const Sm = parseFloat(weaponBase.shields_multiplier ?? 1);
     const Hm = parseFloat(weaponBase.hull_multiplier ?? 1);
-    const bypass = weaponBase.special_effects === 'Partial Shield Bypass' ? 0.6 : 0; // 0..1
+    const bypass = weaponBase.special_effects === 'Partial Shield Bypass' ? 0.8 : 0; // 0..1
 
     // Portion that goes toward shields, portion that bypasses directly
     const originalShieldHp = target.state.shield_hp;
