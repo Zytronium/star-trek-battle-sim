@@ -225,6 +225,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
+  socket.on('errorMessage', (errorMessage) => {
+    alert(`Game Error: ${errorMessage}`);
+  });
+
 });
 
 // Update top bar (last log + turn)
