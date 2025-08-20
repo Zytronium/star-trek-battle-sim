@@ -171,6 +171,103 @@
     }
 }
 
+/* Projectile animation (for torpedoes, energy cannons, etc) */
+.projectile {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    z-index: 1001;
+    opacity: 1;
+    pointer-events: none;
+    will-change: transform, opacity;
+    --travel: 520px; /* default travel fallback if JS didn't set it */
+}
+
+/* Player projectile (blue) - starts near left and moves right */
+.projectile.player {
+    left: 90px;
+    top: 20px;
+    background: radial-gradient(circle at 35% 35%, #ffffff, #00ddff 60%);
+    box-shadow: 0 0 12px rgba(0, 221, 255, 0.95);
+    animation-name: projectileMove;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+/* CPU second projectile */
+.projectile.player.player-2 {
+    left: 90px;
+    top: 32px;
+    width: 10px;
+    height: 10px;
+    background: radial-gradient(circle at 35% 35%, #ffffff, #4fc7ff 60%);
+    box-shadow: 0 0 12px rgba(79, 199, 255, 0.95);
+    animation-name: projectileMove;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+/* Player secondary Quantum Torpedo (silver variant) */
+.projectile.player.silver {
+    left: 90px;
+    top: 32px;
+    width: 10px;
+    height: 10px;
+    background: radial-gradient(circle at 35% 35%, #ffffff, #aee8ff 60%);
+    box-shadow: 0 0 10px rgba(173, 232, 255, 0.9);
+    animation-name: projectileMove;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+/* CPU projectile (red) - starts near right and moves left */
+.projectile.cpu {
+    right: 90px;
+    top: 20px;
+    background: radial-gradient(circle at 65% 35%, #ffffff, #ff4736 60%);
+    box-shadow: 0 0 12px rgba(255, 65, 51, 0.95);
+    animation-name: projectileMove;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+/* CPU secondary Quantum Torpedo (silver-ish gradient, slightly warmer/redder) */
+.projectile.cpu.silver {
+    right: 90px;
+    top: 32px;
+    width: 10px;
+    height: 10px;
+    background: radial-gradient(circle at 65% 35%, #ffffff, #ffc1bb 60%);
+    box-shadow: 0 0 10px rgba(255, 193, 186, 0.9);
+    animation-name: projectileMove;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+
+/* CPU second projectile */
+.projectile.cpu.cpu-2 {
+    right: 90px;
+    top: 32px;
+    width: 10px;
+    height: 10px;
+    background: radial-gradient(circle at 65% 35%, #ffffff, #ff0000 60%);
+    box-shadow: 0 0 10px rgba(255,0,0,0.9);
+    animation-name: projectileMove;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+/* Single keyframe that uses the CSS var set by JS for full-width travel.
+   JS sets --travel to a positive px value for player (move right) or negative for cpu (move left). */
+@keyframes projectileMove {
+    0%   { transform: translateX(0); opacity: 1; }
+    85%  { transform: translateX(var(--travel)); opacity: 1; }
+    100% { transform: translateX(var(--travel)); opacity: 0; }
+}
+
+
 /* Particle explosion effect */
 .explosion {
     position: fixed;
