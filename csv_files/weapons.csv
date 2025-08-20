@@ -10,7 +10,7 @@ weapon_id,name,description,damage,shields_multiplier,hull_multiplier,special_eff
 8,Large Disruptor,"Heavy disruptor cannons; devastating alpha strike against shields, moderate on hull.",110,1.5,0.875,,99999
 9,Phased Polaron Beams,Dominion beam weapon; ignores a percentage of shield capacity before dealing damage.,130,0.875,1.125,Partial Shield Bypass,99999
 10,Spatial Charges,"Experimental Federation ordnance; massive area effect, huge shield impact but fragile casing.",110,1.75,0.75,Area Damage,3
-11,Tricobalt Warheads,Extremely destructive; banned in the Federation; massive explosive yield against structures and ships.,150,0.5,2.125,,2
+11,Tricobalt Warheads,Extremely destructive; banned in the Federation; massive explosive yield against structures and ships.,160,0.5,2.125,,2
 12,Energy Dissipater,"Special Breen weapon; disables enemy shields, reduces enemy energy weapon power by 80%, and doubles all enemy weapon cooldowns, all for 3 turns.",0,1,1,Power Drain,1
 13,Heavy Phaser Arrays,Advanced phaser systems capable of delivering sustained high-energy fire by drawing power from a powerful energy source.,85,1.25,1,,99999
 14,Large Phaser Cannons,"Oversied, high output pulse phaser cannons with a low firing rate, but powerful destructive force.",90,1.25,1,,99999
