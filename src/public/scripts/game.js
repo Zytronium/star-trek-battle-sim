@@ -47,14 +47,21 @@ function renderWeaponButtons(weapons, onClick) {
     btn.className = 'weapon-button';
     btn.textContent = w.name ?? `Weapon ${w.weapon_id}`;
     btn.title = [
-      w.special_effects ? `✨ ${w.special_effects}` : '',
-      w.damage != null ? `💥 Damage: ${w.damage * w.damage_multiplier ?? 1}` : '',
-      w.hull_multiplier != null ? `🛠 Hull x${w.hull_multiplier}` : '',
-      w.shields_multiplier != null ? `🛡 Shields x${w.shields_multiplier}` : ''
+      w.special_effects ? `✨ Special FX: ${w.special_effects}` : '',
+      w.damage != null ? `💥 Damage: ${fmt(w.damage * (w.damage_multiplier ?? 1))}` : '',
+      w.hull_multiplier != null ? `🛠 Hull x${fmt(w.hull_multiplier)}` : '',
+      w.shields_multiplier != null ? `🛡 Shields x${fmt(w.shields_multiplier)}` : ''
     ].filter(Boolean).join(' • ');
     btn.addEventListener('click', () => onClick(w));
     bar.appendChild(btn);
   });
+}
+
+// Helper function to format numbers
+function fmt(num, decimals = 4) {
+  if (num == null)
+    return '--';
+  return Number(Number(num).toFixed(decimals));
 }
 
 // ================ Main live page logic ================ \\
@@ -216,6 +223,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       });
     });
+  });
+
+  socket.on('errorMessage', (errorMessage) => {
+    alert(`Game Error: ${errorMessage}`);
   });
 
 });

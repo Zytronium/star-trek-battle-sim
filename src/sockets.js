@@ -94,8 +94,8 @@ module.exports = function registerSockets(io) {
 
           } catch (cpuError) {
             // Handle errors specifically from CPU turn processing
-            console.error('Failed to process CPU turn:', cpuError);
-            socket.emit('errorMessage', debugMode ? cpuError : cpuError.message);
+            console.error('Failed to process CPU turn:', debugMode ? cpuError : cpuError.message);
+            socket.emit('errorMessage', cpuError.message);
           } finally {
             // Unlock CPU processing for this game so player can act next
             cpuProcessingLock.delete(gameId);
@@ -109,8 +109,8 @@ module.exports = function registerSockets(io) {
 
       } catch (playerError) {
         // Handle errors from the player's turn processing
-        console.error('Failed to process player intent:', playerError);
-        socket.emit('errorMessage', debugMode ? playerError : playerError.message);
+        console.error('Failed to process player intent:', debugMode ? playerError : playerError.message);
+        socket.emit('errorMessage', playerError.message);
       }
 
       // Helper function to end and cleanup game
