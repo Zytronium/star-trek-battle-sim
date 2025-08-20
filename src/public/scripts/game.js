@@ -26,6 +26,8 @@
     qs(`#${prefix}-owner`).textContent = data.baseStats.owner ?? '—';
     qs(`#${prefix}-registry`).textContent = data.baseStats.registry ?? '—';
 
+    console.log(data);
+
     const shieldsNow = data.state?.shield_hp ?? 0;
     const shieldsMax = data.baseStats?.shield_strength ?? 1000;
 

@@ -448,9 +448,15 @@ class GameEngine {
     // Armor mitigation (after shields)
     for (const defense of target.state.defenses) {
       if (defense.type === 'Armor' && (defense.hit_points ?? 0) > 0) {
-        const absorbed = damageToHull * 0.8; // or defense.effectiveness
-        damageToHull -= absorbed;
-        defense.hit_points = Math.max(0, defense.hit_points - absorbed / 3);
+        const absorbed = damageToHull * 0.75;           // Absorb 80% of hull damage (or defense.effectiveness if it was in target.state)
+        damageToHull -= absorbed;                       // Negate the absorbed damage from hull damage
+        let damageToArmor = absorbed * (2 / 3);         // Negate 1/3rd of damage to armor because armor is strong
+        defense.hit_points -= damageToArmor;            // Deal remaining damage to armor
+        if (defense.hit_points < 0) {                   // If armor is now down and there is more damage to be dealt...
+          damageToHull -= defense.hit_points * (3 / 2); // Un-negate the 1/3rd of remaining damage and apply it to the hull
+          damageToArmor += defense.hit_points;          // Update how much damage armor actually took for later reference (remember defense hp is negative so we're subtracting from damageToArmor)
+          defense.hit_points = 0;                       // Set armor hp to 0 (because it was negative)
+        }
       }
     }
 
