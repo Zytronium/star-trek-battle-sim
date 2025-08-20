@@ -1,4 +1,4 @@
-const {v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require('uuid');
 const { activeGames, getIO } = require('./gameState');
 const { inspect } = require("node:util");
 const AppService = require('../controllers/appService');
@@ -317,7 +317,7 @@ class GameEngine {
   }
 
   // ======== Get game event logs ======== \\
-  static async getEvents(gameId, turn=0) {
+  static async getEvents(gameId, turn = 0) {
     // Returns all events if `turn` is 0 (default), else, returns event for given turn
 
     // Ensure turn number is a valid positive number
@@ -441,21 +441,23 @@ class GameEngine {
     if (target.state.shield_hp <= 0) {
       const remainder = Math.max(0, baseDamage * (1 - Sm));
       if (remainder > 0) {
-        damageToHull += remainder * Hm; // << fix: multiply remainder by Hm
+        damageToHull += remainder * Hm;
       }
     }
+
+    let damageToArmor;
 
     // Armor mitigation (after shields)
     for (const defense of target.state.defenses) {
       if (defense.type === 'Armor' && (defense.hit_points ?? 0) > 0) {
-        const absorbed = damageToHull * 0.75;           // Absorb 80% of hull damage (or defense.effectiveness if it was in target.state)
-        damageToHull -= absorbed;                       // Negate the absorbed damage from hull damage
-        let damageToArmor = absorbed * (2 / 3);         // Negate 1/3rd of damage to armor because armor is strong
-        defense.hit_points -= damageToArmor;            // Deal remaining damage to armor
-        if (defense.hit_points < 0) {                   // If armor is now down and there is more damage to be dealt...
-          damageToHull -= defense.hit_points * (3 / 2); // Un-negate the 1/3rd of remaining damage and apply it to the hull
-          damageToArmor += defense.hit_points;          // Update how much damage armor actually took for later reference (remember defense hp is negative so we're subtracting from damageToArmor)
-          defense.hit_points = 0;                       // Set armor hp to 0 (because it was negative)
+        const absorbed = damageToHull * 0.8;         // Absorb 80% of hull damage (or defense.effectiveness if it was in target.state)
+        damageToHull -= absorbed;                    // Negate the absorbed damage from hull damage
+        damageToArmor = Math.max(0, absorbed - 25);  // Negate 25 points of damage to armor because armor is strong
+        defense.hit_points -= damageToArmor;         // Deal remaining damage to armor
+        if (defense.hit_points < 0) {                // If armor is now down and there is more damage to be dealt...
+          damageToHull += -defense.hit_points;       // Apply overshoot damage to damageToHull
+          damageToArmor -= -defense.hit_points;      // Update how much damage armor actually took for later reference
+          defense.hit_points = 0;                    // Set armor hp to 0 (because it was negative)
         }
       }
     }
@@ -475,13 +477,22 @@ class GameEngine {
     }
 
     const damageToShields = Math.max(0, originalShieldHp - target.state.shield_hp);
-    const totalDamage = damageToShields + damageToHull;
+    const totalDamage = damageToShields + damageToHull + (damageToArmor ?? 0);
 
     // Log the action
-    game.turn ++;
+    game.turn++;
     const weapon = await AppService.getWeaponByID(intent.weapon_id);
-    const logMessage = `${attacker.baseStats.name} fired ${weapon.name} at ${target.baseStats.name}, dealing ${Number(totalDamage.toFixed(3))} total damage${target.state.hull_hp === 0 ? ` and destroying ${target.baseStats.name}!` : "."}`;
-    game.logs.push({ player: intent.attacker, action: intent, message: logMessage });
+    const logMessage = `${attacker.baseStats.name} fired ${weapon.name} at ${target.baseStats.name}, dealing ${Number(totalDamage.toFixed(1))} total damage${target.state.hull_hp === 0 ? ` and destroying ${target.baseStats.name}!` : "."}`;
+    game.logs.push({
+      player: intent.attacker,
+      action: intent,
+      damage: {
+        shields: damageToShields,
+        hull: damageToHull,
+        armor: damageToArmor ?? 0
+      },
+      message: logMessage
+    });
     if (target.state.hull_hp <= 0) {
       game.winner = intent.attacker;
     }
