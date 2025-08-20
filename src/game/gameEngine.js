@@ -377,33 +377,72 @@ class GameEngine {
     console.log(`Starting turn ${game.turn}`);
 
     // ================ Damage calculations ================ \\
-    const baseDamage = weaponBase.damage * parseFloat(weaponBase.damage_multiplier);
+    const baseDamage = weaponBase.damage * parseFloat(weaponBase.damage_multiplier ?? 1);
     const Sm = parseFloat(weaponBase.shields_multiplier ?? 1);
     const Hm = parseFloat(weaponBase.hull_multiplier ?? 1);
     const bypass = weaponBase.special_effects === 'Partial Shield Bypass' ? 0.6 : 0; // 0..1
 
     // Portion that goes toward shields, portion that bypasses directly
     const originalShieldHp = target.state.shield_hp;
-    let toShields = baseDamage * Sm * (1 - bypass);
-    let damageToHull = baseDamage * Sm * bypass; // bypass hull damage
 
+    // We'll accumulate hull damage here (always multiply by Hm whenever damage actually hits hull)
+    let damageToHull = 0;
+
+    // Damage that bypasses shields goes straight to hull and gets the hull multiplier
+    if (bypass > 0) {
+      damageToHull += baseDamage * bypass * Hm;
+    }
+
+    // Damage that is intended to hit shields (reduced by bypass)
+    const toShields = baseDamage * Sm * (1 - bypass);
+
+    // Apply shield absorption with effectiveness + low-HP degradation
     for (const defense of target.baseStats.defenses) {
       if (defense.type === 'Shield') {
-        const shieldEff = parseFloat(defense.effectiveness ?? 1);
-        const absorb = Math.min(target.state.shield_hp, toShields * shieldEff);
+        // Base effectiveness (e.g., 0.95)
+        let eff = parseFloat(defense.effectiveness ?? 1);
 
+        // Low-HP degradation rule:
+        // Degrade when <=10% of max.
+        // Otherwise, fall back to "10 HP and below" model.
+        const maxShieldHp = target.baseStats.shield_strength;
+
+        if (Number.isFinite(maxShieldHp) && maxShieldHp > 0) {
+          const pct = target.state.shield_hp / maxShieldHp; // 0..1
+          if (pct <= 0.10) {
+            const penalty = Math.min(1, (0.10 - pct) * 10); // 10% less effectiveness per 1% below 10%
+            eff *= Math.max(0, 1 - penalty);
+          }
+        } else {
+          if (target.state.shield_hp <= 10) {
+            const penalty = Math.min(1, (10 - target.state.shield_hp) * 0.10); // 10% per HP below 10
+            eff *= Math.max(0, 1 - penalty);
+          }
+        }
+
+        // Shields absorb up to (toShields * eff), also capped by remaining shield HP
+        const absorb = Math.min(target.state.shield_hp, toShields * eff);
+
+        // Reduce shield HP by what they actually absorbed
         target.state.shield_hp -= absorb;
-        const unabsorbed = toShields - absorb;
 
-        // any part that shields couldn't handle bleeds into hull
-        damageToHull += unabsorbed;
+        // Anything not absorbed leaks through to hull AND should get the hull multiplier
+        const unabsorbed = toShields - absorb;
+        if (unabsorbed > 0) {
+          damageToHull += unabsorbed * Hm;
+        }
       }
     }
 
-    // If shields are *down*, add the hull-multiplier portion
+    // If shields are *down* after absorption, apply the "hull-only" remainder too.
+    //    IMPORTANT FIX: Any damage that reaches hull should get Hm. This includes:
+    //    - the remainder portion (baseDamage * (1 - Sm)) when shields are down
+    //    - previously added bypass + leakage already multiplied by Hm above
     if (target.state.shield_hp <= 0) {
-      const remainderOfD = Math.max(0, baseDamage - (baseDamage * Sm));
-      damageToHull += remainderOfD * Hm;
+      const remainder = Math.max(0, baseDamage * (1 - Sm));
+      if (remainder > 0) {
+        damageToHull += remainder * Hm; // << fix: multiply remainder by Hm
+      }
     }
 
     // Armor mitigation (after shields)
@@ -435,10 +474,12 @@ class GameEngine {
     // Log the action
     game.turn ++;
     const weapon = await AppService.getWeaponByID(intent.weapon_id);
-    game.logs.push({ player: intent.attacker, action: intent, message: `${attacker.baseStats.name} fired ${weapon.name} at ${target.baseStats.name}, dealing ${Number(totalDamage.toFixed(3))} total damage${target.state.hull_hp === 0 ? ` and destroying ${target.baseStats.name}!` : "."}` });
+    const logMessage = `${attacker.baseStats.name} fired ${weapon.name} at ${target.baseStats.name}, dealing ${Number(totalDamage.toFixed(3))} total damage${target.state.hull_hp === 0 ? ` and destroying ${target.baseStats.name}!` : "."}`;
+    game.logs.push({ player: intent.attacker, action: intent, message: logMessage });
     if (target.state.hull_hp <= 0) {
       game.winner = intent.attacker;
     }
+    console.log(`Turn ${game.turn - 1}: ${logMessage}`);
     console.log(`Turn completed. Next turn: ${game.turn}`);
 
     return game;
