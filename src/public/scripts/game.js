@@ -28,15 +28,38 @@
 
     const shieldsNow = data.state?.shield_hp ?? 0;
     const shieldsMax = data.baseStats?.shield_strength ?? 1000;
+
     const hullNow = data.state?.hull_hp ?? 0;
     const hullMax = data.baseStats?.hull_strength ?? 1000;
 
-    qs(`#${prefix}-shields-val`).textContent = `${Math.max(0, Math.floor(shieldsNow))}/${Math.floor(shieldsMax)}`;
-    qs(`#${prefix}-hull-val`).textContent = `${Math.max(0, Math.floor(hullNow))}/${Math.floor(hullMax)}`;
+    // find the defense whose special_effects contains "Hull Armor"
+    const hullArmorBase = data.baseStats?.defenses?.find(
+      def => def.type?.includes("Armor")
+    );
+    const hullArmorState = data.state?.defenses?.find(
+      def => def.type?.includes("Armor")
+    );
+
+    const armorNow = hullArmorState?.hit_points ?? 0;
+    const armorMax = hullArmorBase?.hit_points ?? 500;
+
+    qs(`#${prefix}-shields-val`).textContent = `${Math.max(0, Math.ceil(shieldsNow))}/${Math.floor(shieldsMax)}`;
+    qs(`#${prefix}-hull-val`).textContent = `${Math.max(0, Math.ceil(hullNow))}/${Math.floor(hullMax)}`;
+
+    // show/hide and update the armor bar
+    const armorContainer = qs(`#${prefix}-armor-container`);
+    if (hullArmorBase) {
+      armorContainer.classList.remove("hidden");
+      qs(`#${prefix}-armor-val`).textContent = `${Math.max(0, Math.ceil(armorNow))}/${Math.floor(armorMax)}`;
+      qs(`#${prefix}-armor-fill`).style.width = `${pct(armorNow, armorMax)}%`;
+    } else {
+      armorContainer.classList.add("hidden");
+    }
 
     qs(`#${prefix}-shields-fill`).style.width = `${pct(shieldsNow, shieldsMax)}%`;
     qs(`#${prefix}-hull-fill`).style.width = `${pct(hullNow, hullMax)}%`;
   }
+
 
   // Build weapon buttons for the player's ship
   function renderWeaponButtons(weapons, onClick) {

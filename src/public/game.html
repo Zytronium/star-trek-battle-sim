@@ -48,13 +48,17 @@
         <div class="stat-line"><span class="label">Owner:</span> <span id="p-owner">--</span></div>
         <div class="stat-line"><span class="label">Registry:</span> <span id="p-registry">--</span></div>
         <div class="bars">
-          <div class="bar">
+          <div id="p-shields-container" class="bar">
             <div class="bar-head"><span>Shields</span><span id="p-shields-val">--/--</span></div>
             <div class="bar-track shield"><div id="p-shields-fill" class="bar-fill"></div></div>
           </div>
-          <div class="bar">
+          <div id="p-hull-container" class="bar">
             <div class="bar-head"><span>Hull</span><span id="p-hull-val">--/--</span></div>
             <div class="bar-track hull"><div id="p-hull-fill" class="bar-fill"></div></div>
+          </div>
+          <div id="p-armor-container" class="bar hidden">
+            <div class="bar-head"><span>Hull Armor</span><span id="p-armor-val">--/--</span></div>
+            <div class="bar-track armor"><div id="p-armor-fill" class="bar-fill"></div></div>
           </div>
         </div>
       </div>
@@ -86,13 +90,17 @@
         <div class="stat-line"><span class="label">Owner:</span> <span id="c-owner">--</span></div>
         <div class="stat-line"><span class="label">Registry:</span> <span id="c-registry">--</span></div>
         <div class="bars">
-          <div class="bar">
+          <div id="c-shields-container" class="bar">
             <div class="bar-head"><span>Shields</span><span id="c-shields-val">--/--</span></div>
             <div class="bar-track shield"><div id="c-shields-fill" class="bar-fill"></div></div>
           </div>
-          <div class="bar">
+          <div id="c-hull-container" class="bar">
             <div class="bar-head"><span>Hull</span><span id="c-hull-val">--/--</span></div>
             <div class="bar-track hull"><div id="c-hull-fill" class="bar-fill"></div></div>
+          </div>
+          <div id="c-armor-container" class="bar hidden">
+            <div class="bar-head"><span>Hull Armor</span><span id="c-armor-val">--/--</span></div>
+            <div class="bar-track armor"><div id="c-armor-fill" class="bar-fill"></div></div>
           </div>
         </div>
       </div>

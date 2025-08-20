@@ -123,6 +123,7 @@ nav.side-nav {
 }
 .bar-track.shield { box-shadow: 0 0 10px rgba(0,212,255,0.15) inset; }
 .bar-track.hull   { box-shadow: 0 0 10px rgba(255,0,0,0.15) inset; }
+.bar-track.armor   { box-shadow: 0 0 10px rgba(255, 182, 38, 0.15) inset; }
 
 .bar-fill {
     height: 100%;
@@ -132,6 +133,13 @@ nav.side-nav {
 }
 .bar-track.hull .bar-fill {
     background: linear-gradient(90deg, rgba(255,0,0,0.85), rgba(255,80,80,0.6));
+}
+.bar-track.armor .bar-fill {
+    background: linear-gradient(90deg, rgba(255, 183, 38, 0.85), rgba(255, 201, 102, 0.6));
+}
+
+.hidden {
+    display: none !important;
 }
 
 /* Center arena */

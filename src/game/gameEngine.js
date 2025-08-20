@@ -446,7 +446,7 @@ class GameEngine {
     }
 
     // Armor mitigation (after shields)
-    for (const defense of target.baseStats.defenses) {
+    for (const defense of target.state.defenses) {
       if (defense.type === 'Armor' && (defense.hit_points ?? 0) > 0) {
         const absorbed = damageToHull * 0.8; // or defense.effectiveness
         damageToHull -= absorbed;
