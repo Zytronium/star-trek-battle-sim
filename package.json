@@ -9,7 +9,8 @@
     "debug-server": "DEBUG=true nodemon src/app.js",
     "create-db-new": "node src/scripts/create_db_new.js",
     "reset-db": "node src/scripts/reset_db.js",
-    "etl": "node etl/etlscript.js"
+    "etl": "node etl/etlscript.js",
+    "update-db": "node src/scripts/reset_db.js; node etl/etlscript.js"
   },
   "private": true,
   "dependencies": {
