@@ -99,6 +99,8 @@ function updateSidePanel(prefix, data, gameOver = false) {
 // Build weapon buttons for the player's ship
 function renderWeaponButtons(playerShip, onClick, disableAll = false) {
   const bar = qs('#weapon-buttons');
+  if (!bar)
+    return;
   bar.innerHTML = '';
 
   if (!playerShip || !playerShip.baseStats) return;
