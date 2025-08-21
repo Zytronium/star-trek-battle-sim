@@ -1,7 +1,4 @@
-# Star Trek Battle Simulator API
-Name not final
-
-WIP readme
+# Star Trek Battle Engine
 
 **Visit online here: https://startrekbattlesim.zytronium.dev/**
 
@@ -152,7 +149,13 @@ This runs create_db_new after resetting
 npm run reset-db
 ```
 
+You can also update the database by resetting it
+and rerunning the ETL script with this script:
+```bash
+npm run update-db
+```
 
+---
 
 ## Authors
 
