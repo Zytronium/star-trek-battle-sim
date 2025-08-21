@@ -140,6 +140,7 @@ nav.side-nav .nav-link:hover{
 .ship-stats .stat-line{
     display:flex; justify-content:space-between; padding:8px 6px; align-items:center;
     border-bottom: 1px dashed rgba(255,255,255,0.02);
+    text-align: right;
 }
 .ship-stats .label { color: var(--cyan); font-weight:700; }
 .ship-stats .stat-line span:last-child { color: #fff; font-weight:600; }
