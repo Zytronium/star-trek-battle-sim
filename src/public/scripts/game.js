@@ -33,6 +33,26 @@ let latestGameState = null;
 let latestPlayerShip = null;
 let latestCpuShip = null;
 
+// ================ Play Again button ================ \\
+let playAgainBtn = null; // DOM element
+function ensurePlayAgainButton() {
+  if (playAgainBtn) return playAgainBtn;
+
+  // create button and insert into top-right area
+  const topRight = qs('.top-right') || document.body;
+  playAgainBtn = document.createElement('button');
+  playAgainBtn.id = 'play-again';
+  playAgainBtn.type = 'button';
+  playAgainBtn.textContent = 'Play Again';
+  playAgainBtn.className = 'spectate-btn'; // reuse spectate style for sizing; feel free to add separate styles
+  playAgainBtn.style.display = 'none';
+  playAgainBtn.style.marginLeft = '8px';
+
+  // click handler will be attached later when available
+  topRight.appendChild(playAgainBtn);
+  return playAgainBtn;
+}
+
 // Helper to send intent using the latest snapshot (avoids stale closures)
 function sendIntentUsingLatest(w) {
   if (!latestGameState || !latestPlayerShip || !latestCpuShip) return;
@@ -248,6 +268,60 @@ document.addEventListener('DOMContentLoaded', async () => {
     gameId = getQueryParam('id');
   }
 
+  // Create Play Again button (hidden until game over)
+  ensurePlayAgainButton();
+
+  // Play Again click handler: create a new game with the same starting ships
+  playAgainBtn.addEventListener('click', () => {
+    if (!latestPlayerShip || !latestCpuShip) return;
+    // prevent double-clicks
+    playAgainBtn.disabled = true;
+    playAgainBtn.textContent = 'Starting...';
+
+    // prefer explicit ship_id on baseStats but fall back to ship object id
+    const playerShipId = latestPlayerShip.baseStats?.ship_id ?? latestPlayerShip.ship_id;
+    const cpuShipId = latestCpuShip.baseStats?.ship_id ?? latestCpuShip.ship_id;
+
+    // fallback check
+    if (!playerShipId || !cpuShipId) {
+      console.error('Unable to determine ship IDs for Play Again', latestPlayerShip, latestCpuShip);
+      playAgainBtn.disabled = false;
+      playAgainBtn.textContent = 'Play Again';
+      return;
+    }
+
+    // Use the same pilots that the current game had if present; fall back to P1/COM1
+    const playerPilot = latestPlayerShip.pilot ?? 'P1';
+    const cpuPilot = latestCpuShip.pilot ?? 'COM1';
+
+    const setup = {
+      type: "PLAYER V AI",
+      ships: [
+        { ship_id: playerShipId, pilot: playerPilot, is_boss: false },
+        { ship_id: cpuShipId,    pilot: cpuPilot,    is_boss: false }
+      ]
+    };
+
+    // ask server to create new game
+    socket.emit('createGame', setup, (response) => {
+      if (!response) {
+        console.error('Play Again: no response from server');
+        playAgainBtn.disabled = false;
+        playAgainBtn.textContent = 'Play Again';
+        return;
+      }
+      if (response.error) {
+        console.error('Play Again error:', response.error);
+        playAgainBtn.disabled = false;
+        playAgainBtn.textContent = 'Play Again';
+        return;
+      }
+
+      // Redirect to the new game
+      window.location.href = `game.html?gameId=${response.gameId}`;
+    });
+  });
+
   // Spectate link copy
   const copyBtn = qs('#copy-spectate');
   if (copyBtn) {
@@ -356,6 +430,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     renderWeaponButtons(playerShip, sendIntentUsingLatest, gameOver);
+
+    // show/hide Play Again button based on game state
+    const btn = ensurePlayAgainButton();
+    if (gameOver) {
+      btn.style.display = ''; // show
+      btn.disabled = false;
+      btn.textContent = 'Play Again';
+    } else {
+      btn.style.display = 'none';
+    }
 
     // We'll update side panels when the explosion/bounce is played.
     // If no animation will play, update them now.
