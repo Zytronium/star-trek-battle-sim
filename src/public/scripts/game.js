@@ -57,8 +57,11 @@ function updateSidePanel(prefix, data, gameOver = false) {
   const pilotLabel = (data?.pilot ?? '').toUpperCase() === 'P1' ? '(P1)' : '(CPU1)';
   if (header) header.textContent = `${shipName} ${pilotLabel}`;
 
-  // keep the small info table below the image from duplicating name: show pilot instead
-  qs(`#${prefix}-name`).textContent = data?.pilot ?? '--';
+  console.log(data);
+  console.log(shipName);
+  console.log(`${shipName} ${pilotLabel}`)
+  console.log(header);
+
   qs(`#${prefix}-class`).textContent = data?.baseStats?.class ?? '—';
   qs(`#${prefix}-owner`).textContent = data?.baseStats?.owner ?? '—';
   qs(`#${prefix}-registry`).textContent = data?.baseStats?.registry ?? '—';
