@@ -55,23 +55,6 @@ body {
     padding: 0 0 40px 0;
 }
 
-.battle-messages {
-    background: rgba(0, 0, 0, 0.8);
-    border: 2px solid rgba(255, 107, 53, 0.6);
-    border-radius: 15px;
-    box-shadow: 
-        0 0 20px rgba(255, 107, 53, 0.4),
-        0 0 40px rgba(255, 107, 53, 0.2),
-        inset 0 0 20px rgba(255, 107, 53, 0.1);
-    margin-bottom: 20px;
-    width: 100%;
-    min-width: 475px;
-    height: 625px;
-    display: flex;
-    flex-direction: column;
-    animation: orangeGlow 3s ease-in-out infinite;
-}
-
 .ship-selection {
     width: 350px;
     flex-shrink: 0;
@@ -88,98 +71,6 @@ body {
     align-items: start;
     gap: 20px;
     width: 100%;
-}
-
-.message-header {
-    background: rgba(0, 212, 255, 0.2);
-    border-bottom: 2px solid #00d4ff;
-    padding: 15px 25px;
-    border-radius: 13px 13px 0 0;
-}
-
-.message-header h3 {
-    color: #00d4ff;
-    margin: 0;
-    font-size: 1.3em;
-    text-align: center;
-    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-}
-
-.message-content {
-    padding: 25px;
-    height: 500px;
-    overflow-y: auto;
-    line-height: 1.6;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-}
-
-.welcome-message {
-    color: #00d4ff;
-    font-style: italic;
-    text-align: center;
-    font-size: 1.1em;
-    padding: 20px;
-    background: rgba(0, 212, 255, 0.1);
-    border-radius: 10px;
-    margin-bottom: 20px;
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-}
-
-.battle-message {
-    margin-bottom: 15px;
-    padding: 15px 20px;
-    border-radius: 10px;
-    border-left: 4px solid;
-    background: rgba(0, 0, 0, 0.4);
-    animation: messageSlide 0.3s ease-out;
-    flex: 1;
-    min-height: 40px;
-    display: flex;
-    align-items: center;
-}
-
-.battle-message.battle-start {
-    border-left-color: #ff4757;
-    color: #ff4757;
-    font-weight: bold;
-    font-size: 1.1em;
-}
-
-.battle-message.turn-info {
-    border-left-color: #00d4ff;
-    color: #00d4ff;
-}
-
-.battle-message.attack {
-    border-left-color: #ff6b35;
-    color: #ff6b35;
-}
-
-.battle-message.defense {
-    border-left-color: #00ff00;
-    color: #00ff00;
-}
-
-.battle-message.info {
-    border-left-color: #f39c12;
-    color: #f39c12;
-}
-
-@keyframes messageSlide {
-    from {
-        opacity: 0;
-        transform: translateX(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
 }
 
 .battle-arena {
@@ -240,26 +131,6 @@ body {
     line-height: 1.4;
 }
 
-.battle-message-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 20px;
-    padding: 30px 60px 50px 60px;
-    background: rgba(0, 0, 0, 0.7);
-    border: 3px solid #00d4ff;
-    border-radius: 25px;
-    box-shadow:
-        0 0 30px rgba(0, 212, 255, 0.5),
-        inset 0 0 30px rgba(0, 212, 255, 0.1);
-    position: relative;
-    overflow: hidden;
-    height: 625px;
-    width: 500px;
-    flex-shrink: 0;
-}
-
 .battle-controls {
     display: flex;
     flex-direction: column;
@@ -303,84 +174,7 @@ body {
     z-index: -1;
 }
 
-.battle-message-box::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 50%, #0f0f23 100%);
-    z-index: -1;
-}
-
-.battle-message-box::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background:
-        radial-gradient(circle at 30% 30%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 70% 70%, rgba(255, 71, 87, 0.1) 0%, transparent 50%);
-    z-index: -1;
-}
-
-.battle-message-box .stars {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: -1;
-    overflow: hidden;
-}
-
-.battle-message-box .star {
-    position: absolute;
-    background: white;
-    border-radius: 50%;
-    animation: twinkle 3s ease-in-out infinite;
-}
-
-
-
-@keyframes twinkle {
-    0%, 100% { opacity: 0.3; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.2); }
-}
-
-.battle-message-box .grid-lines {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: -1;
-    opacity: 0.1;
-}
-
-.battle-message-box .grid-lines::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image:
-        linear-gradient(rgba(0, 212, 255, 0.3) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 212, 255, 0.3) 1px, transparent 1px);
-    background-size: 50px 50px;
-    animation: grid-move 20s linear infinite;
-}
-
-@keyframes grid-move {
-    0% { transform: translate(0, 0); }
-    100% { transform: translate(50px, 50px); }
-}
-
-.battle-message-box .energy-field {
+.energy-field {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -402,20 +196,6 @@ body {
         transform: translate(-50%, -50%) scale(1.2);
         border-color: rgba(0, 212, 255, 0.6);
     }
-}
-
-.battle-message-box::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background:
-        linear-gradient(45deg, transparent 30%, rgba(0, 212, 255, 0.05) 50%, transparent 70%),
-        linear-gradient(-45deg, transparent 30%, rgba(0, 212, 255, 0.05) 50%, transparent 70%);
-    z-index: -1;
-    animation: scan 4s linear infinite;
 }
 
 @keyframes scan {
@@ -663,7 +443,6 @@ body {
     position: fixed;
     left: 0;
     top: 0;
-    background: rgba(0, 0, 0, 0.8);
     border-right: 2px solid rgba(0, 212, 255, 0.6);
     border-bottom: 1px solid rgba(0, 212, 255, 0.5);
     border-radius: 0 0 20px 0;
@@ -674,6 +453,9 @@ body {
     flex-direction: column;
     text-align: center;
     align-items: center;
+    background-image: url(/images/space.png);
+    background-repeat: repeat;
+    background-size: 50vh;
 }
 
 .nav-links {

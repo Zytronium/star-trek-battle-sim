@@ -3,36 +3,39 @@
 .attack-bar {
     position: relative;
     height: 60px;
-    width: 650px;
+    width: 220%;
+    max-width: 900px;
     background: rgba(0, 0, 0, 0.4);
     z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 50px;
+    padding: 0 36px;
     margin: 0 auto;
+    border-radius: 8px;
 }
 
 .attack-bar.long {
-    width: 1150px !important;
+    max-width: 1400px !important;
 }
 
 .player-dot {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     position: relative;
+    align-self: center;
 }
 
 .player-dot.left {
     background: #00d4ff;
-    box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.9);
     animation: pulseBlue 2s ease-in-out infinite;
 }
 
 .player-dot.right {
-    background: #dc143c;
-    box-shadow: 0 0 20px rgba(220, 20, 60, 0.8);
+    background: #ff3b3b;
+    box-shadow: 0 0 30px rgba(255, 60, 60, 0.9);
     animation: pulseRed 2s ease-in-out infinite;
 }
 

@@ -10,7 +10,11 @@
 <body>
 <nav class="side-nav">
   <div class="nav-links">
-    <a href="/index.html" class="nav-link"><img src="/favicon.ico" style="width:100%">Home</a>
+    <a href="/" class="nav-link">
+      <img src="/favicon.ico" alt="Home" class="home-icon" />
+      <span class="nav-label">Home</span>
+    </a>
+
   </div>
 </nav>
 
@@ -36,14 +40,13 @@
   <div class="battle-layout">
     <!-- Player ship details -->
     <div class="ship-panel" id="player-panel">
-      <h2>Player Ship</h2>
+      <h2 id="p-name">Player Ship</h2>
       <div class="ship-display">
         <div class="ship-image-wrap">
           <img id="p-image" alt="Player Ship" />
         </div>
       </div>
       <div class="ship-stats" id="player-stats">
-        <div class="stat-line"><span class="label">Name:</span> <span id="p-name">--</span></div>
         <div class="stat-line"><span class="label">Class:</span> <span id="p-class">--</span></div>
         <div class="stat-line"><span class="label">Owner:</span> <span id="p-owner">--</span></div>
         <div class="stat-line"><span class="label">Registry:</span> <span id="p-registry">--</span></div>
@@ -78,14 +81,13 @@
 
     <!-- CPU ship details -->
     <div class="ship-panel" id="cpu-panel">
-      <h2>CPU Ship</h2>
+      <h2 id="c-name">CPU Ship</h2>
       <div class="ship-display">
         <div class="ship-image-wrap">
           <img id="c-image" alt="CPU Ship" />
         </div>
       </div>
       <div class="ship-stats" id="cpu-stats">
-        <div class="stat-line"><span class="label">Name:</span> <span id="c-name">--</span></div>
         <div class="stat-line"><span class="label">Class:</span> <span id="c-class">--</span></div>
         <div class="stat-line"><span class="label">Owner:</span> <span id="c-owner">--</span></div>
         <div class="stat-line"><span class="label">Registry:</span> <span id="c-registry">--</span></div>
