@@ -2,7 +2,7 @@
 
 ## Project Summary
 
-The **Star Trek Battle Simulator** is a comprehensive web-based tactical space combat game that brings the Star Trek universe to life through strategic battles, authentic ship designs, and immersive gameplay. This project demonstrates advanced web development skills, database design, and game engine development.
+The **Star Trek Battle Simulator** is a comprehensive web-based tactical space combat game that brings the Star Trek universe to life through strategic battles and immersive gameplay. This project demonstrates advanced web development skills, database design, API development, and game engine development.
 
 ## What We're Building
 
@@ -16,12 +16,7 @@ A turn-based tactical combat simulator where players command authentic Star Trek
 - **Scalable Architecture**: Modern web technologies for performance and maintainability
 
 ### Theme Alignment
-This project perfectly embodies the **space exploration and tactical combat** theme by:
-- **Space Setting**: Immersive space environment with realistic physics
-- **Strategic Thinking**: Complex combat requiring planning and resource management
-- **Technological Advancement**: Progressive weapon and defense systems
-- **Faction Warfare**: Classic Star Trek conflicts between different species
-- **Exploration**: Discovering new ships, weapons, and tactical combinations
+This project fits the **T.V. Shows & Movies** theme becuase Star Trek is a T.V. Show (and has several movies) and we're using data that's as close to canon as possible.
 
 ## Technology Stack
 
@@ -29,19 +24,19 @@ This project perfectly embodies the **space exploration and tactical combat** th
 - **HTML5**: Semantic markup and modern web standards
 - **CSS3**: Advanced styling, animations, and responsive design
 - **Vanilla JavaScript**: Pure JS for game logic and interactivity
-- **Canvas/SVG**: Battle animations and visual effects
 
 ### Backend
 - **Node.js**: Server-side JavaScript runtime
-- **Express.js**: Web application framework
-- **PostgreSQL**: Relational database for data persistence
-- **Socket.io**: Real-time communication (planned for multiplayer)
+- **Express.js**: Web application framework that powers the server 
+- **PostgreSQL**: Relational SQL database for data persistence that holds all the data on ships, weapons, defenses, etc.
+- **Socket.io**: Real-time communication (planned for multiplayer as well)
 
 ### Development Tools
 - **Git**: Version control and collaboration
 - **npm**: Package management and scripts
 - **ESLint**: Code quality and consistency
 - **Nodemon**: Development server with auto-reload
+- **Custom-made Debug Mode**: Enabled with an environment variable, it enables custom debugging features
 
 ### Database
 - **PostgreSQL**: Primary database system
@@ -52,14 +47,14 @@ This project perfectly embodies the **space exploration and tactical combat** th
 
 ### System Components
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend UI   │    │   Backend API   │    │   Database      │
-│                 │    │                 │    │                 │
-│ • Landing Page  │◄──►│ • Express Server│◄──►│ • PostgreSQL    │
-│ • Battle Interface│   │ • Game Engine  │    │ • Ships Table   │
-│ • Ship Selection│   │ • Battle Logic  │    │ • Weapons Table │
-│ • Responsive CSS│   │ • Data Endpoints│    │ • Defenses Table│
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌──────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend UI    │    │   Backend API   │    │   Database      │
+│                  │    │                 │    │                 │
+│ • Landing Page   │◄──►│ • Express Server│◄──►│ • PostgreSQL    │
+│ • Battle Interface│   │ • Game Engine   │    │ • Ships Table   │
+│ • Ship Selection │    │ • Battle Logic  │    │ • Weapons Table │
+│ • Responsive CSS │    │ • Data Endpoints│    │ • Defenses Table│
+└──────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
 ### Data Flow
@@ -75,10 +70,10 @@ This project perfectly embodies the **space exploration and tactical combat** th
 - **ships**: Starfleet and enemy vessel specifications
 - **weapons**: Various weapon systems and their properties
 - **defenses**: Shield and armor systems
-- **special_effects**: Special abilities and modifiers
+- **special_effects**: Special abilities and modifiers (mostly not yet implemented)
 - **ship_weapons**: Many-to-many relationship between ships and weapons
 - **ship_defenses**: Many-to-many relationship between ships and defenses
-- **boss_ships**: Special enemy vessels with enhanced capabilities
+- **boss_ships**: Special enemy vessels with enhanced capabilities (not yet implemented, but data is there)
 
 ### Key Relationships
 - Ships can have multiple weapons and defenses
@@ -90,17 +85,11 @@ This project perfectly embodies the **space exploration and tactical combat** th
 
 ### Combat System
 - **Turn-based**: Strategic gameplay with alternating turns
-- **Range-based**: Weapons have different effective ranges
-- **Damage Types**: Phaser, torpedo, and special weapon categories
-- **Shield Mechanics**: Energy-based defense systems
-- **Critical Hits**: Random chance for enhanced damage
-
-### Ship Classes
-- **Federation**: Starfleet vessels (Enterprise, Defiant, Voyager)
-- **Klingon**: Warrior race ships (Bird of Prey, Vor'cha)
-- **Romulan**: Stealth-focused vessels (Warbird, Scimitar)
-- **Borg**: Assimilation-focused cubes and spheres
-- **Boss Ships**: Unique vessels with special abilities
+- **Weapon Types**: Phasers, disruptors, torpedoes, etc.
+- **Shield Mechanics**: Energy-based defense systems that deflect 95% of damage until they are low on HP
+- **Damage Modifiers**: Different weapons are stronger or weaker against shields or hull
+- **Limited Usage**: Some weapons have limited supply, or may even only be used once
+- **Special Effects**: Three weapons have special effects such as partial shield bypass or energy disruption (only one is implemented)
 
 ## 📱 User Interface Design
 
@@ -108,19 +97,20 @@ This project perfectly embodies the **space exploration and tactical combat** th
 - **Futuristic Aesthetic**: Space-themed with glowing effects
 - **Immersive Experience**: Full-screen backgrounds and animations
 - **Intuitive Navigation**: Clear information hierarchy
-- **Responsive Design**: Works across all device sizes
+- ~~**Responsive Design**: Works across all device sizes~~ (Not yet ;)
 
 ### Key Pages
-1. **Landing Page**: Hero section with call-to-action
+1. **Landing Page**: Title screen with a battle button
 2. **Ship Selection**: Visual ship picker with details
-3. **Battle Interface**: Real-time combat with status displays
-4. **Results Screen**: Battle outcomes and statistics
+3. **Battle Interface**: Turn-based combat with display panels
+4. **Spectate Mode**: A sharable link allows users to spectate a live game with zero latency without controlling it
+5. ~~**Results Screen**: Battle outcomes and statistics~~ (Not yet ;)
 
 ### Visual Elements
 - **Color Palette**: Deep space blues with Starfleet accents
 - **Typography**: Clean, readable fonts with proper hierarchy
 - **Animations**: Smooth transitions and hover effects
-- **Icons**: Star Trek themed visual elements
+- **Icons**: Sci-fi themed visual elements
 
 ## 🔧 Development Timeline
 
@@ -134,7 +124,7 @@ This project perfectly embodies the **space exploration and tactical combat** th
 - [x] Battle simulation logic
 - [x] Turn-based combat system
 - [x] Weapon and defense calculations
-- [x] Basic AI opponent
+- [x] Somewhat advanced AI opponent
 
 ### Phase 3: User Interface ✅
 - [x] Main menu and ship selection
@@ -143,25 +133,17 @@ This project perfectly embodies the **space exploration and tactical combat** th
 - [x] Space-themed visual effects
 
 ### Phase 4: Enhanced Features 🚧
+- [ ] AI vs AI battles
 - [ ] Multiplayer support via WebSockets
-- [ ] Advanced AI strategies
-- [ ] Campaign mode
-- [ ] Ship customization system
-
-### Phase 5: Polish & Testing 📋
-- [ ] Performance optimization
-- [ ] Bug fixes and testing
-- [ ] User experience improvements
-- [ ] Documentation completion
-
-## 📚 API Documentation
+- [ ] Advanced AI strategies + easy, medium, & hard selection
+- [ ] Fleet battles
+- [ ] Fleet vs Boss battles
 
 ### Core Endpoints
 - **Health Check**: `/health` - System status
 - **Ships**: `/api/ships` - Available vessels
 - **Weapons**: `/api/weapons` - Weapon systems
 - **Defenses**: `/api/defenses` - Defense systems
-- **Battle Simulation**: `/api/simulate-battle` - Combat engine
 
 ### Response Format
 All API responses follow consistent JSON format with status, data, and error handling.
@@ -169,14 +151,16 @@ All API responses follow consistent JSON format with status, data, and error han
 ## 🎯 Success Metrics
 
 ### Technical Goals
-- **Performance**: Battle calculations complete in <100ms
-- **Scalability**: Support 100+ concurrent users
-- **Reliability**: 99.9% uptime for production deployment
+- **Performance**: Battle calculations complete in <10ms (already complete -- usually takes 1-3ms)
+- **Scalability**: Support many concurrent users
+- **Reliability**: 99.9% uptime for production deployment with low latency database in production
 
 ### User Experience Goals
-- **Engagement**: Average session length >15 minutes
+- **Engagement**: Average session length >5 minutes
 - **Retention**: 70% of users return within 7 days
 - **Satisfaction**: User rating >4.5/5 stars
+
+###### Okay I give up on trying to make this look less like AI at this point.
 
 ## 🚨 Risk Assessment
 
@@ -190,19 +174,22 @@ All API responses follow consistent JSON format with status, data, and error han
 - **Progressive Enhancement**: Core functionality works without advanced features
 - **Cross-browser Testing**: Regular testing across major browsers
 
-## 🔮 Future Enhancements
+## 🔮 Future Ideas
+- Player vs Player battles
+- AI vs AI battles
+- Fleet battles
+- Boss battles
+- Simulate replay of a battle
+- Play Again button that restarts the battle with same settings
+- Sound effects
+- Add player tokens for more secure connection in PvP battles
+- Add more ships (?)
+- Improved AI with option to pick between easy, medium, and hard AI
+- Visual ship selection grid
+- Boss vs Boss battles
+- Play as a boss
 
-### Short-term (3-6 months)
-- Mobile app development
-- Additional ship classes and weapons
-- Tournament system
-- Advanced AI opponents
-
-### Long-term (6-12 months)
-- Virtual reality support
-- Machine learning AI opponents
-- Community content creation tools
-- Integration with Star Trek Online
+###### Yes, *some* of this WILL be worked on in the future.
 
 ## 📁 Project Structure
 
@@ -216,7 +203,7 @@ star-trek-battle-sim/
 │   ├── middleware/        # Express middleware
 │   ├── public/            # Static assets
 │   ├── routes/            # API routes
-│   ├── scripts/           # Database scripts
+│   ├── scripts/           # Database & helper scripts
 │   └── sql/               # SQL files
 ├── csv_files/             # Data import files
 ├── etl/                   # ETL processes
@@ -235,7 +222,7 @@ star-trek-battle-sim/
 ### Installation
 ```bash
 # Clone the repository
-git clone [repository-url]
+git clone https://github.com/Zytronium/star-trek-battle-sim.git
 cd star-trek-battle-sim
 
 # Install dependencies
@@ -256,6 +243,7 @@ npm run etl
 
 # Start the server
 npm run start-server
+# or npm run debug-server
 ```
 
 ### Development Commands
@@ -265,13 +253,14 @@ npm run debug-server      # Start development server with nodemon
 npm run create-db-new     # Create database tables
 npm run etl               # Import CSV data
 npm run reset-db          # Reset database
+npm run update-db         # Reset database and re-import CSV data
 ```
 
 ## 👥 Team & Contributors
 
 - **Daniel Stelljes** | [GitHub](https://github.com/Zytronium)
-- **John Wilson** | [GitHub](https://github.com/Paintballskaguy)
-- **Tristian Davis** | [GitHub](https://github.com/TebariousBag)
+- **John Wilson**     | [GitHub](https://github.com/Paintballskaguy)
+- **Tristian Davis**  | [GitHub](https://github.com/TebariousBag)
 
 ## 📖 Documentation Index
 
