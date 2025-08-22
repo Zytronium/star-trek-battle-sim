@@ -315,7 +315,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       ? "NONE"
       : gameState.logs[gameState.logs.length - 1].action.target ?? "NONE";
 
-    const targetDot = (String(target).toUpperCase() === "P1" ? "left" : "right");
+    const targetDot = (target.toUpperCase() === "P1" ? "left" : "right");
     const lastLog = gameState.logs.length > 0 ? gameState.logs[gameState.logs.length - 1] : null;
     const weaponId = lastLog?.action?.weapon_id;
 
@@ -455,6 +455,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         triggerBounce(`.player-dot.${targetDot}`);
         createExplosionAtDot(`.player-dot.${targetDot}`);
 
+        // Trigger ship destructio animation if a ship is destroyed
+        if (gameState.winner && target.toUpperCase() !== gameState.winner.toUpperCase()) {
+          createShipDestruction(`.player-dot.${targetDot}`);
+        }
+
         // update side panels at the exact explosion moment (use latest server-provided states)
         updateSidePanel('p', latestPlayerShip, gameOver);
         updateSidePanel('c', latestCpuShip, gameOver);
@@ -577,4 +582,60 @@ function createExplosionAtDot(dotClass) {
   setTimeout(() => {
     document.body.removeChild(explosion);
   }, 2100);
+}
+
+// Ship destruction effect
+function createShipDestruction(dotClass) {
+  const dot = document.querySelector(dotClass);
+  if (!dot) return;
+
+  // Main destruction container
+  const destruction = document.createElement('div');
+  destruction.className = 'ship-destruction';
+
+  // Position destruction where the ship dot was
+  const rect = dot.getBoundingClientRect();
+  destruction.style.position = 'fixed';
+  destruction.style.left = rect.left + rect.width / 2 + 'px';
+  destruction.style.top = rect.top + rect.height / 2 + 'px';
+  destruction.style.transform = 'translate(-50%, -50%)';
+
+  document.body.appendChild(destruction);
+
+  // Burst of large fiery particles
+  for (let i = 0; i < 40; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'destruction-particle';
+
+    const colors = ['#ff4500', '#ff6b35', '#ff8c00', '#ffd700', '#ffffff'];
+    const selectedColor = colors[Math.floor(Math.random() * colors.length)];
+    particle.style.background = selectedColor;
+    particle.style.boxShadow = `0 0 12px ${selectedColor}`;
+
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 60 + Math.random() * 100;
+    const x = Math.cos(angle) * distance;
+    const y = Math.sin(angle) * distance;
+
+    particle.style.setProperty('--x', `${x}px`);
+    particle.style.setProperty('--y', `${y}px`);
+
+    destruction.appendChild(particle);
+  }
+
+  // Add shockwave ring
+  const shockwave = document.createElement('div');
+  shockwave.className = 'shockwave';
+  destruction.appendChild(shockwave);
+
+  // Add secondary explosion
+  setTimeout(() => {
+    createExplosionAtDot(dotClass);
+  }, 800)
+
+  // Fade out + cleanup
+  setTimeout(() => {
+    dot.classList.add("dot-flicker-out");
+  }, 1750);
+
 }
