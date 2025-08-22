@@ -16,7 +16,7 @@
 }
 
 .attack-bar.long {
-    max-width: 1400px !important;
+    max-width: 80% !important;
 }
 
 .player-dot {
