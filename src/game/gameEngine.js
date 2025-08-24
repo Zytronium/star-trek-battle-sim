@@ -1,13 +1,14 @@
 const { v4: uuidv4 } = require('uuid');
-const { activeGames, getIO } = require('./gameState');
+const { activeGames, waitingRooms, getIO } = require('./gameState');
 const { inspect } = require("node:util");
 const AppService = require('../controllers/appService');
 
+const io = getIO();
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 
 class GameEngine {
   static VALID_TYPES = ["AI V AI", "PLAYER V AI", "PLAYER V PLAYER", "AI V BOSS", "PLAYER V BOSS", "PLAYERS V BOSS"];
-  static IMPLEMENTED_TYPES = ["PLAYER V AI"];
+  static IMPLEMENTED_TYPES = ["PLAYER V AI", "PLAYER V PLAYER"];
 
   // ======== Create new game ======== \\
   static async createGame(setup) {
@@ -81,7 +82,7 @@ class GameEngine {
     activeGames[gameId] = gameState;
 
     // Broadcast initial game state
-    getIO().to(`game-${gameId}`).emit('gameUpdate', gameState);
+    io.to(`game-${gameId}`).emit('gameUpdate', gameState);
 
     return { success: true, gameId, playerTokens, gameState };
   }
@@ -308,6 +309,98 @@ class GameEngine {
     }
 
     return return_value;
+  }
+
+  // ======== Create waiting room for PvP game ======== \\
+  static async createWaitingRoom(spectateVis, joinVis, p1Ship, playerToken) {
+    // ---------- Validate spectateVis ---------- //
+    if (typeof spectateVis !== "string") {
+      throw new Error("Param 'spectateVis' must be a string.");
+    }
+    if (!["PUBLIC", "PRIVATE"].includes(spectateVis.toUpperCase())) {
+      throw new Error("Param 'spectateVis' is invalid. Must be 'PUBLIC' or 'PRIVATE'.");
+    }
+
+    // ---------- Validate joinVis ---------- //
+    if (typeof joinVis !== "string") {
+      throw new Error("Param 'joinVis' must be a string.");
+    }
+    if (!["PUBLIC", "PRIVATE"].includes(joinVis.toUpperCase())) {
+      throw new Error("Param 'joinVis' is invalid. Must be 'PUBLIC' or 'PRIVATE'.");
+    }
+
+    // ---------- Validate ship ---------- //
+    const shipsCheck = this.validateShips([p1Ship], "PLAYER V PLAYER");
+    if (shipsCheck.error) {
+      throw new Error(shipsCheck.reason);
+    }
+    if (!shipsCheck.valid) {
+      throw new Error(`Param 'p1Ship' is invalid: ${shipsCheck.reason}`);
+    }
+
+    // ---------- Validate playerToken ---------- //
+    if (typeof playerToken !== "string") {
+      throw new Error("Param 'playerToken' must be a string.");
+    }
+    if (!playerToken) {
+      throw new Error("Param 'playerToken' cannot be empty.");
+    }
+
+    // Create a unique game pin
+    let gamePin;
+    do {
+      gamePin = this.randomPin(4);
+    } while (waitingRooms[gamePin])
+
+
+    const waitingRoom = {
+      gamePin, // also used as the room ID
+      p1: { // p1 will be host. Read note below about what this means.
+        ship: p1Ship,
+        token: playerToken, // NOTE: NEVER send this token to the client!
+        ready: false,
+        connected: true // Set to false when player's client disconnects if we can even detect that
+      },
+      spectateVis: spectateVis.toUpperCase(),
+      joinVis: joinVis.toUpperCase()
+    };
+    // NOTE: P1 will always be the host. While game logic still runs on the
+    //       backend, some actions must be only done on one client, not both.
+    //       For certain actions, only the host will perform them. For example,
+    //       when both players signal they are ready to being the battle, the
+    //       host client will send the signal to create and start the game.
+
+    waitingRooms[gamePin] = waitingRoom;
+    // io.to(/* to do? */).emit('waitingRoomCreated', gamePin, spectateVis.toUpperCase(), joinVis.toUpperCase());
+
+    if (joinVis.toUpperCase() === "PUBLIC") {
+      this.searchWaitingRooms(waitingRoom);
+    }
+  }
+
+  // Helper function to generate a random pin
+  static randomPin(length) {
+    let max = Math.pow(10, length); // upper bound (exclusive)
+    let num = Math.floor(Math.random() * max);
+    return String(num).padStart(length, '0'); // keep leading zeros
+  }
+
+  // ======== Search for Waiting Rooms and Merge ======== \\
+  static searchWaitingRooms(waitingRoom) {
+    // Find a random waiting room whose joinVis = PUBLIC and doesn't have a p2.
+
+    // If one is found, merge this waiting room into that one, setting the
+    // other waiting room's p2 object to this one's p1 object.
+    // If no compatible waiting rooms were found, return a value to
+    // indicate to calling function that we're still waiting for another
+    // player to join.
+
+    // Delete the old waiting room as it as been merged with the other one.
+
+    // Note: make sure to update p2's game pin to match p1's original game pin.
+    // (p2 is `waitingRoom`'s p1)
+
+    // Create a new socket for this waiting room, I guess.
   }
 
   // ======== Get game from ID ======== \\
