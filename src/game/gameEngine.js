@@ -3,7 +3,6 @@ const { activeGames, waitingRooms, getIO } = require('./gameState');
 const { inspect } = require("node:util");
 const AppService = require('../controllers/appService');
 
-const io = getIO();
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 
 class GameEngine {
@@ -13,6 +12,7 @@ class GameEngine {
   // ======== Create new game ======== \\
   static async createGame(setup) {
     const { type, ships } = setup;
+    const io = getIO();
 
     // ---------- Validate type ---------- //
     if (!type) {
@@ -371,6 +371,7 @@ class GameEngine {
     //       host client will send the signal to create and start the game.
 
     waitingRooms[gamePin] = waitingRoom;
+    // const io = getIO();
     // io.to(/* to do? */).emit('waitingRoomCreated', gamePin, spectateVis.toUpperCase(), joinVis.toUpperCase());
 
     if (joinVis.toUpperCase() === "PUBLIC") {
