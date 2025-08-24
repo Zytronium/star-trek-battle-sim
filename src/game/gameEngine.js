@@ -12,7 +12,6 @@ class GameEngine {
   // ======== Create new game ======== \\
   static async createGame(setup) {
     const { type, ships } = setup;
-    const io = getIO();
 
     // ---------- Validate type ---------- //
     if (!type) {
@@ -82,7 +81,7 @@ class GameEngine {
     activeGames[gameId] = gameState;
 
     // Broadcast initial game state
-    io.to(`game-${gameId}`).emit('gameUpdate', gameState);
+    getIO().to(`game-${gameId}`).emit('gameUpdate', gameState);
 
     return { success: true, gameId, playerTokens, gameState };
   }
@@ -346,21 +345,26 @@ class GameEngine {
       throw new Error("Param 'playerToken' cannot be empty.");
     }
 
-    // Create a unique game pin
+    // Create a unique game pin and spectate pin
     let gamePin;
+    let spectatePin;
     do {
       gamePin = this.randomPin(4);
     } while (waitingRooms[gamePin])
+    do {
+      spectatePin = this.randomPin(5);
+    } while (Object.values(waitingRooms).some(r => r.spectatePin === spectatePin))
 
-
-    const waitingRoom = {
+    let waitingRoom = {
       gamePin, // also used as the room ID
+      spectatePin,
       p1: { // p1 will be host. Read note below about what this means.
         ship: p1Ship,
         token: playerToken, // NOTE: NEVER send this token to the client!
         ready: false,
         connected: true // Set to false when player's client disconnects if we can even detect that
       },
+      p2: null,
       spectateVis: spectateVis.toUpperCase(),
       joinVis: joinVis.toUpperCase()
     };
@@ -370,13 +374,23 @@ class GameEngine {
     //       when both players signal they are ready to being the battle, the
     //       host client will send the signal to create and start the game.
 
-    waitingRooms[gamePin] = waitingRoom;
-    // const io = getIO();
-    // io.to(/* to do? */).emit('waitingRoomCreated', gamePin, spectateVis.toUpperCase(), joinVis.toUpperCase());
+    // waitingRooms[gamePin] = waitingRoom;
 
+    let newHostRoom = null;
+
+    // If this is public, try to auto-match
     if (joinVis.toUpperCase() === "PUBLIC") {
-      this.searchWaitingRooms(waitingRoom);
+      newHostRoom = this.searchWaitingRooms(waitingRoom);
     }
+
+    // If this is still the host room, add it to waitingRooms
+    if (!newHostRoom) {
+      waitingRooms[gamePin] = waitingRoom;
+    } else {
+      waitingRoom = newHostRoom;
+    }
+
+    return waitingRoom;
   }
 
   // Helper function to generate a random pin
@@ -388,20 +402,28 @@ class GameEngine {
 
   // ======== Search for Waiting Rooms and Merge ======== \\
   static searchWaitingRooms(waitingRoom) {
-    // Find a random waiting room whose joinVis = PUBLIC and doesn't have a p2.
+    // Find all waiting rooms whose joinVis = PUBLIC and doesn't have a p2.
+    const availableRooms = Object.values(waitingRooms)
+      .filter(r => r.joinVis === "PUBLIC") // Anyone can join
+      .filter(r => r.p2 === null)          // Waiting for a p2
+      .filter(r => r.p1.connected);        // P1 is still there
 
-    // If one is found, merge this waiting room into that one, setting the
-    // other waiting room's p2 object to this one's p1 object.
-    // If no compatible waiting rooms were found, return a value to
-    // indicate to calling function that we're still waiting for another
-    // player to join.
+    // If no rooms are available, return null to indicate none were found
+    if (availableRooms.length === 0) {
+      return null;
+    }
 
-    // Delete the old waiting room as it as been merged with the other one.
+    // Pick a random available room
+    const hostRoom = availableRooms[Math.floor(Math.random() * availableRooms.length)];
 
-    // Note: make sure to update p2's game pin to match p1's original game pin.
-    // (p2 is `waitingRoom`'s p1)
+    // Merge: assign this waiting room's p1 as hostRoom.p2
+    hostRoom.p2 = waitingRoom.p1;
 
-    // Create a new socket for this waiting room, I guess.
+    // TODO: socket management
+    // We'll likely want to do something like:
+    // getIO().to(`room-${hostRoom.gamePin}`).emit('waitingRoomUpdated', hostRoom);
+
+    return hostRoom;
   }
 
   // ======== Get game from ID ======== \\
