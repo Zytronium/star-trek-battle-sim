@@ -38,10 +38,20 @@ let latestCpuShip = null;
 function sendIntentUsingLatest(weaponOrId) {
   if (!latestGameState) return;
 
-  // Determine local pilot again (keeps logic consistent)
+  // Determine local pilot: prefer the per-tab session marker (set by waiting-room when redirecting),
+  // fallback to localStorage token presence (legacy). This must match the logic used in gameUpdate.
+  const sessionPilot = sessionStorage.getItem(`playerPilot-${gameId}`) || null;
   const storedP1Token = localStorage.getItem(`playerToken-${gameId}-P1`);
   const storedP2Token = localStorage.getItem(`playerToken-${gameId}-P2`);
-  const myPilot = storedP2Token ? 'P2' : (storedP1Token ? 'P1' : null);
+
+  let myPilot = null;
+  if (sessionPilot === 'P1' || sessionPilot === 'P2') {
+    myPilot = sessionPilot;
+  } else {
+    myPilot = storedP2Token ? 'P2' : (storedP1Token ? 'P1' : null);
+  }
+
+  console.debug('[debug] sendIntentUsingLatest myPilot=', myPilot, 'sessionPilot=', sessionPilot, 'storedP1=', !!storedP1Token, 'storedP2=', !!storedP2Token);
 
   if (!myPilot) {
     showError('You are not a participant in this game.');
@@ -72,9 +82,11 @@ function sendIntentUsingLatest(weaponOrId) {
     weapon_id: weaponId
   };
 
-  // include the player's stored token for this player slot
+  // include the player's stored token for this player slot (token must match server-side player)
   const tokenKey = `playerToken-${gameId}-${myPilot}`;
   const token = localStorage.getItem(tokenKey) || null;
+
+  console.debug('[debug] sending intent', { gameId, attacker: intent.attacker, target: intent.target, weapon_id: intent.weapon_id, tokenKey, hasToken: !!token });
 
   // send intent
   socket.emit('playerIntent', { gameId, intent, token });
