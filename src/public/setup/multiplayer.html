@@ -1,117 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Setup - Star Trek Battle Engine</title>
-    <link rel="stylesheet" href="/css/setup.css">
-    <link rel="stylesheet" href="/css/weapons.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Setup - Star Trek Battle Engine</title>
+  <link rel="stylesheet" href="/css/setup.css">
+  <link rel="stylesheet" href="/css/weapons.css">
 </head>
 <body>
-    <nav class="side-nav">
-        <div class="nav-links">
-            <a href="/" class="nav-link"><img src="/favicon.ico" style="width: 100%">Home</a>
-        </div>
-    </nav>
+<nav class="side-nav">
+  <div class="nav-links">
+    <a href="/" class="nav-link">
+      <img src="/favicon.ico" class="nav-home-icon">Home
+    </a>
+  </div>
+</nav>
 
-    <!-- Attack Visualization Bar -->
-    <div class="attack-bar long">
-        <div class="player-dot left"></div>
+<!-- Attack Visualization Bar -->
+<div class="attack-bar long">
+  <div class="player-dot left"></div>
 
-        <!-- Player phaser fire - 2 blue + 1 silver -->
-        <div class="phaser-beam player-phaser blue-phaser"></div>
-        <div class="phaser-beam player-phaser blue-phaser" style="animation-delay: 0.2s;"></div>
-        <div class="phaser-beam player-phaser silver-phaser" style="animation-delay: 0.4s;"></div>
+  <!-- Player phaser fire - 2 blue + 1 silver -->
+  <div class="phaser-beam player-phaser blue-phaser"></div>
+  <div class="phaser-beam player-phaser blue-phaser phaser-delay-02"></div>
+  <div class="phaser-beam player-phaser silver-phaser phaser-delay-04"></div>
 
-        <!-- CPU phaser fire - 2 red lines -->
-        <div class="phaser-beam cpu-phaser cpu-phaser-1"></div>
-        <div class="phaser-beam cpu-phaser cpu-phaser-2" style="animation-delay: 0.3s;"></div>
+  <!-- CPU phaser fire - 2 red lines -->
+  <div class="phaser-beam cpu-phaser cpu-phaser-1"></div>
+  <div class="phaser-beam cpu-phaser cpu-phaser-2 phaser-delay-03"></div>
 
-        <div class="player-dot right"></div>
-    </div>
+  <div class="player-dot right"></div>
+</div>
 
-    <video class="background-video" autoplay loop muted playsinline>
-        <source src="/videos/space.webm" type="video/webm">
-    </video>
-    <div class="container">
+<video class="background-video" autoplay loop muted playsinline>
+  <source src="/videos/space.webm" type="video/webm">
+</video>
 
-        <div id="loading" class="loading">Loading ships from database...</div>
+<div class="container">
+  <div id="loading" class="loading">Loading ships from database...</div>
 
-      <!-- inside your existing page where battle-interface is shown -->
-      <div id="battle-interface" style="display:none;">
-        <div class="battle-container">
-          <div class="battle-arena">
+  <!-- inside your existing page where battle-interface is shown -->
+  <div id="battle-interface" class="hidden">
+    <div class="battle-container">
+      <div class="battle-arena">
 
-            <!-- PLAYER COLUMN (local view: "You (Player 1)") -->
-            <div class="player1-column">
-              <div id="player1-ship-selection" class="ship-selection">
-                <h2>You (Player 1)</h2>
-                <select id="player1-select" class="ship-dropdown">
-                  <option value="">-- Select a ship --</option>
-                </select>
+        <!-- PLAYER COLUMN (local view: "You (Player 1)") -->
+        <div class="player1-column">
+          <div id="player1-ship-selection" class="ship-selection">
+            <h2>You (Player 1)</h2>
+            <select id="player1-select" class="ship-dropdown">
+              <option value="">-- Select a ship --</option>
+            </select>
 
-                <div id="player1-ship-display" class="selected-ship-display" style="display:none"></div>
+            <div id="player1-ship-display"
+                 class="selected-ship-display hidden"></div>
 
-                <div id="local-ready-row" style="margin-top:16px; display:flex; gap:12px; align-items:center;">
-                  <button id="local-ready-btn" class="ready-button" disabled>Not Ready</button>
-                  <div id="local-ready-indicator" style="min-width:120px; text-align:center;"></div>
-                </div>
-              </div>
+            <div id="local-ready-row" class="ready-row">
+              <button id="local-ready-btn" class="ready-button" disabled>
+                Not Ready
+              </button>
+              <div id="local-ready-indicator" class="ready-indicator"></div>
             </div>
-
-            <!-- CENTER (waiting info, pins, start button) -->
-            <div class="battle-center-column">
-              <div class="battle-controls">
-                <div class="vs-display">Multiplayer Waiting Room</div>
-
-                <div id="pins" style="text-align:center; color:#cfefff;">
-                  <div id="join-pin-row" style="margin-bottom:8px;">
-                    <div style="font-size:.9em; opacity:.9">Join PIN:</div>
-                    <div id="join-pin" style="font-weight:bold; font-size:1.4em; color:#fff">—</div>
-                  </div>
-                  <div id="spectate-pin-row">
-                    <div style="font-size:.9em; opacity:.9">Spectate PIN:</div>
-                    <div id="spectate-pin" style="font-weight:bold; font-size:1.1em; color:#fff">—</div>
-                  </div>
-                </div>
-
-                <div style="margin-top:18px; width:100%;">
-                  <button id="battle-btn" class="battle-button" disabled>START BATTLE</button>
-                  <div style="font-size:0.85em; opacity:0.9; margin-top:8px;">Only enabled after both players join and both are ready.</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- OPPONENT COLUMN (shows other player or waiting message) -->
-            <div class="player2-column">
-              <div id="player2-ship-selection" class="ship-selection">
-                <h2>Opponent</h2>
-
-                <!-- The dropdown for player2 is disabled — they will normally select their own ship on their client;
-                     this shows the selection the opponent made (read-only for this client) -->
-                <select id="player2-select" class="ship-dropdown" disabled aria-disabled="true">
-                  <option value="">-- Not Selected Yet --</option>
-                </select>
-
-                <div id="player2-ship-display" class="selected-ship-display" style="display:none"></div>
-
-                <div id="remote-ready-row" style="margin-top:16px;">
-                  <div id="remote-ready-indicator" style="text-align:center; min-width:150px;">Waiting for player to join...</div>
-                </div>
-              </div>
-            </div>
-
           </div>
         </div>
+
+        <!-- CENTER (waiting info, pins, start button) -->
+        <div class="battle-center-column">
+          <div class="battle-controls">
+            <div class="vs-display">Multiplayer Waiting Room</div>
+
+            <div id="pins" class="pin-box">
+              <div id="join-pin-row" class="pin-row">
+                <div class="pin-label">Join PIN:</div>
+                <div id="join-pin" class="join-pin">—</div>
+              </div>
+              <div id="spectate-pin-row" class="pin-row">
+                <div class="pin-label">Spectate PIN:</div>
+                <div id="spectate-pin" class="spectate-pin">—</div>
+              </div>
+            </div>
+
+            <div>
+              <button id="battle-btn" class="battle-button" disabled>
+                START BATTLE
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- OPPONENT COLUMN -->
+        <div class="player2-column">
+          <div id="player2-ship-selection" class="ship-selection">
+            <h2>Opponent</h2>
+            <select id="player2-select" class="ship-dropdown" disabled
+                    aria-disabled="true">
+              <option value="">-- Not Selected Yet --</option>
+            </select>
+
+            <div id="player2-ship-display"
+                 class="selected-ship-display hidden"></div>
+
+            <div id="remote-ready-row" class="remote-ready-row">
+              <div id="remote-ready-indicator" class="remote-ready-indicator">
+                Waiting for player to join...
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
-
-
-        <div id="error" class="error" style="display: none;"></div>
     </div>
+  </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-<!--    <script src="/scripts/startGame.js"></script>-->
-    <script src="/scripts/waiting_room_setup.js"></script>
+  <div id="error" class="error hidden"></div>
+</div>
 
+<script src="/socket.io/socket.io.js"></script>
+<script src="/scripts/waiting_room_setup.js"></script>
 </body>
 </html>

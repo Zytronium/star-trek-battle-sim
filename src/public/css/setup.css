@@ -354,9 +354,8 @@ body {
     animation: pulsateCircleSmall 4s ease-in-out infinite reverse;
 }
 
-/* Add animated gradient glow effect ONLY on hover */
-.ready-button:not(:disabled):hover {
-    transform: translateY(-3px) scale(1.05);
+/* Add animated gradient glow effect on hover or on ready */
+.ready-button:not(:disabled):hover, .ready-button.ready {
     background: linear-gradient(60deg, #ff6b35, #f7931e, #ffbc35, #ff6b35);
     background-size: 300% 300%;
     animation: gradientShift 6s ease infinite;
@@ -366,6 +365,10 @@ body {
             0 0 60px rgba(255, 107, 53, 0.4),
             0 0 90px rgba(255, 107, 53, 0.2);
     color: white;
+}
+
+.ready-button:not(:disabled):hover {
+    transform: translateY(-3px) scale(1.05);
 }
 
 /* Disabled state overrides everything */
@@ -597,8 +600,8 @@ body {
 }
 
 .selected-ship-display .shield-bar {
-    background: rgba(0, 255, 0, 0.2);
-    border: 1px solid #00ff00;
+    background: rgba(0, 234, 255, 0.2);
+    border: 1px solid #00eaff;
     border-radius: 8px;
     height: 20px;
     position: relative;
@@ -606,7 +609,7 @@ body {
 }
 
 .selected-ship-display .shield-fill {
-    background: linear-gradient(90deg, #00ff00, #00cc00);
+    background: linear-gradient(90deg, #00eaff, #00bbcc);
     height: 100%;
     border-radius: 7px;
     transition: width 0.3s ease;
@@ -735,6 +738,78 @@ body {
     padding: 5px 8px;
     border-radius: 5px;
     text-align: center;
+}
+
+.nav-home-icon {
+    width: 100%;
+}
+
+/* Phaser animation delays */
+.phaser-delay-02 {
+    animation-delay: 0.2s;
+}
+
+.phaser-delay-03 {
+    animation-delay: 0.3s;
+}
+
+.phaser-delay-04 {
+    animation-delay: 0.4s;
+}
+
+/* Hidden elements */
+.hidden {
+    display: none;
+}
+
+/* Ready rows */
+.ready-row {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.ready-indicator {
+    min-width: 120px;
+    text-align: center;
+}
+
+/* Pins */
+.pin-box {
+    text-align: center;
+    color: #cfefff;
+}
+
+.pin-row {
+    margin-bottom: 8px;
+}
+
+.pin-label {
+    font-size: .9em;
+    opacity: .9;
+}
+
+.join-pin {
+    font-weight: bold;
+    font-size: 1.4em;
+    color: #fff;
+}
+
+.spectate-pin {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #fff;
+}
+
+/* Remote indicator */
+.remote-ready-row {
+    margin-top: 16px;
+}
+
+.remote-ready-indicator {
+    text-align: center;
+    min-width: 150px;
 }
 
 /* Missing keyframe animations */
