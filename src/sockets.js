@@ -1,11 +1,268 @@
-const { activeGames } = require('./game/gameState');
+const { activeGames, waitingRooms, setIO } = require('./game/gameState');
 const GameEngine = require('./game/gameEngine');
 
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 
 module.exports = function registerSockets(io) {
+  // Ensure other modules that expect getIO() have the socket server reference
+  try {
+    if (typeof setIO === 'function') {
+      setIO(io);
+    } else {
+      console.warn('gameState.setIO not available; GameEngine.getIO() may fail.');
+    }
+  } catch (e) {
+    console.warn('Failed to set IO on gameState:', e);
+  }
+
   io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
+
+    // Helper: produce safe copy of waitingRoom (remove tokens)
+    function sanitizeWaitingRoom(room) {
+      if (!room) return null;
+      const clone = {
+        gamePin: room.gamePin,
+        spectatePin: room.spectatePin,
+        spectateVis: room.spectateVis,
+        joinVis: room.joinVis,
+        // p1 and p2 will include non-secret metadata only
+        p1: room.p1 ? {
+          ship: room.p1.ship,
+          ready: !!room.p1.ready,
+          connected: !!room.p1.connected,
+          // include a short token fingerprint so clients can identify their own slot without receiving the token
+          token_hidden_id: String(room.p1.token || '').slice(0,8)
+        } : null,
+        p2: room.p2 ? {
+          ship: room.p2.ship,
+          ready: !!room.p2.ready,
+          connected: !!room.p2.connected,
+          token_hidden_id: String(room.p2.token || '').slice(0,8)
+        } : null
+      };
+      return clone;
+    }
+
+    // Helper: find which slot corresponds to a token (server-side full-token comparison)
+    function getSlotForToken(room, token) {
+      if (!room) return null;
+      if (room.p1 && room.p1.token === token) return 'p1';
+      if (room.p2 && room.p2.token === token) return 'p2';
+      return null;
+    }
+
+    // --- create waiting room ---
+    socket.on('createWaitingRoom', async (payload, callback) => {
+      try {
+        const { spectateVis = 'PUBLIC', joinVis = 'PUBLIC', p1Ship, playerToken } = payload || {};
+
+        // create room using GameEngine helper
+        const waitingRoom = await GameEngine.createWaitingRoom(spectateVis, joinVis, p1Ship, playerToken);
+
+        // IMPORTANT: GameEngine.createWaitingRoom may return an existing host room
+        // (auto-match). The caller might be p1 (host) or p2 (joined guest). Determine
+        // the correct slot for this player by comparing the stored tokens.
+        const slotForCaller = getSlotForToken(waitingRoom, playerToken) || 'p1';
+
+        // join socket.io room for updates for the correct gamePin (use the returned room.gamePin)
+        const sockRoom = `waiting-${waitingRoom.gamePin}`;
+        socket.join(sockRoom);
+
+        // mark socket's association with correct slot
+        socket.data.gamePin = waitingRoom.gamePin;
+        socket.data.playerSlot = slotForCaller;
+        socket.data.playerToken = playerToken;
+
+        // The GameEngine returns a waitingRoom that includes the p1.token (server-only). Do NOT send token to clients.
+        // But we'll return a sanitized copy to clients that includes token_hidden_id fingerprints.
+        const publicRoom = sanitizeWaitingRoom(waitingRoom);
+
+        // send callback containing the sanitized room and pins
+        if (typeof callback === 'function') {
+          callback({ gamePin: waitingRoom.gamePin, spectatePin: waitingRoom.spectatePin, room: publicRoom });
+        }
+
+        // Broadcast to the room that it was created/updated
+        io.to(sockRoom).emit('waitingRoomUpdated', publicRoom);
+
+      } catch (err) {
+        console.error('createWaitingRoom error', debugMode ? err : err.message);
+        if (typeof callback === 'function') callback({ error: err.message });
+      }
+    });
+
+    // --- join waiting room ---
+    socket.on('joinWaitingRoom', (payload, callback) => {
+      try {
+        const { gamePin, playerToken, p2Ship } = payload || {};
+        const room = waitingRooms[gamePin];
+        if (!room) {
+          return callback && callback({ error: 'Waiting room not found' });
+        }
+
+        if (room.p2) {
+          // Already has a second player
+          return callback && callback({ error: 'Room already full' });
+        }
+
+        // Attach p2 — store the token server-side ONLY
+        room.p2 = {
+          ship: p2Ship,
+          token: playerToken,
+          ready: false,
+          connected: true
+        };
+
+        // join socket to the room
+        const sockRoom = `waiting-${gamePin}`;
+        socket.join(sockRoom);
+        socket.data.gamePin = gamePin;
+        socket.data.playerSlot = 'p2';
+        socket.data.playerToken = playerToken;
+
+        // Build sanitized copy and broadcast
+        const publicRoom = sanitizeWaitingRoom(room);
+
+        // If both players present we hide the join pin in the public representation (client will remove join-pin)
+        // NOTE: sanitizeWaitingRoom already returns gamePin — client will hide it when p2 exists
+
+        // Respond to the joining client with the sanitized room and pins
+        callback && callback({ room: publicRoom, spectatePin: room.spectatePin });
+
+        io.to(sockRoom).emit('waitingRoomUpdated', publicRoom);
+      } catch (err) {
+        console.error('joinWaitingRoom error', debugMode ? err : err.message);
+        callback && callback({ error: err.message });
+      }
+    });
+
+    // --- ship selection broadcast (player updates their ship) ---
+    socket.on('selectShip', (payload) => {
+      try {
+        const { gamePin, playerToken, ship } = payload || {};
+        const room = waitingRooms[gamePin];
+        if (!room) return socket.emit('errorMessage', 'Waiting room not found');
+
+        const slot = getSlotForToken(room, playerToken);
+        if (!slot) return socket.emit('errorMessage', 'Invalid player token');
+
+        // Update server-side room state (store full ship object to show on both clients)
+        room[slot].ship = ship;
+        room[slot].connected = true;
+
+        // Broadcast sanitized update
+        io.to(`waiting-${gamePin}`).emit('waitingRoomUpdated', sanitizeWaitingRoom(room));
+      } catch (err) {
+        console.error('selectShip error', debugMode ? err : err.message);
+        socket.emit('errorMessage', err.message);
+      }
+    });
+
+    // --- toggle ready ---
+    socket.on('toggleReady', (payload, callback) => {
+      try {
+        const { gamePin, playerToken, ready } = payload || {};
+        const room = waitingRooms[gamePin];
+        if (!room) return callback && callback({ error: 'Waiting room not found' });
+
+        const slot = getSlotForToken(room, playerToken);
+        if (!slot) return callback && callback({ error: 'Invalid player token' });
+
+        room[slot].ready = !!ready;
+
+        // Broadcast sanitized update
+        const publicRoom = sanitizeWaitingRoom(room);
+        io.to(`waiting-${gamePin}`).emit('waitingRoomUpdated', publicRoom);
+
+        // If both players present and both ready, emit bothReady
+        if (room.p1 && room.p2 && room.p1.ready && room.p2.ready) {
+          io.to(`waiting-${gamePin}`).emit('bothReady', { gamePin: room.gamePin });
+        }
+
+        callback && callback({ ok: true });
+      } catch (err) {
+        console.error('toggleReady error', debugMode ? err : err.message);
+        callback && callback({ error: err.message });
+      }
+    });
+
+    // --- start game (host-only action) ---
+    // This is the server-side verification gate: only allow start if both players exist and both ready.
+    socket.on('startGame', async (payload, callback) => {
+      try {
+        const { gamePin, playerToken } = payload || {};
+        const room = waitingRooms[gamePin];
+        if (!room) return callback && callback({ error: 'Waiting room not found' });
+
+        // Verify caller is host (p1)
+        if (!room.p1 || room.p1.token !== playerToken) {
+          return callback && callback({ error: 'Only the host (p1) can start the game' });
+        }
+
+        // Verify both players present and both ready
+        if (!room.p2) return callback && callback({ error: 'Waiting for opponent' });
+        if (!room.p1.ready || !room.p2.ready) {
+          return callback && callback({ error: 'Both players must be ready' });
+        }
+
+        // Build ships array in the format expected by GameEngine.createGame
+        const ships = [
+          {
+            ship_id: room.p1.ship.ship_id,
+            pilot: 'P1',
+            is_boss: false,
+          },
+          {
+            ship_id: room.p2.ship.ship_id,
+            pilot: 'P2',
+            is_boss: false,
+          },
+        ];
+
+        // Call GameEngine to set up the game
+        const result = await GameEngine.createGame({
+          type: 'PLAYER V PLAYER',
+          ships,
+        });
+
+        if (result.error || !result.success) {
+          return callback && callback({ error: result.message || 'Failed to create game' });
+        }
+
+        const { gameId } = result;
+
+        // cleanup waiting room
+        delete waitingRooms[gamePin];
+
+        // inform clients that game is starting and give them the gameId
+        io.to(`waiting-${gamePin}`).emit('gameStarted', { gameId });
+
+        // optionally join sockets to `game-${gameId}` if desired
+        callback && callback({ ok: true, gameId });
+      } catch (err) {
+        console.error('startGame error', debugMode ? err : err.message);
+        callback && callback({ error: err.message });
+      }
+    });
+
+
+    // Handle disconnects — set connected=false for that player's slot and broadcast update
+    socket.on('disconnect', () => {
+      try {
+        const pin = socket.data.gamePin;
+        if (!pin) return;
+        const room = waitingRooms[pin];
+        if (!room) return;
+        if (socket.data.playerSlot && room[socket.data.playerSlot]) {
+          room[socket.data.playerSlot].connected = false;
+          // broadcast updated state
+          io.to(`waiting-${pin}`).emit('waitingRoomUpdated', sanitizeWaitingRoom(room));
+        }
+      } catch (err) {
+        console.warn('disconnect handling error', err);
+      }
+    });
 
     // Player joins a game (or spectates)
     socket.on('joinGame', (gameId) => {
@@ -44,8 +301,7 @@ module.exports = function registerSockets(io) {
       try {
         // Retrieve the current game from the game engine
         const game = GameEngine.getGame(gameId);
-        if (!game)
-          throw new Error(`Game ${gameId} not found.`);
+        if (!game) throw new Error(`Game ${gameId} not found.`);
 
         // Reject intents if game is already over
         if (game.winner) {
@@ -73,25 +329,17 @@ module.exports = function registerSockets(io) {
         if (!updatedGame.winner && game.type.toUpperCase() === "PLAYER V AI") {
           try {
             const cpuStart = Date.now();
-
-            // Generate the CPU's intent based on the current game state
             const cpuIntent = await GameEngine.getAiIntent(gameId, "COM1");
-
-            // Process the CPU's turn intent, updating the game state again
             const nextGameUpdate = await GameEngine.processTurnIntent(game, cpuIntent);
-
             const cpuElapsed = Date.now() - cpuStart;
             console.log(`CPU intent generation and processing took ${cpuElapsed} ms`);
 
-            // Calculate delay to ensure at least 2 seconds after player update
-            const delay = Math.max(2000 - cpuElapsed, 0);
-
             // Wait before sending CPU update
+            const delay = Math.max(2000 - cpuElapsed, 0);
             await new Promise(resolve => setTimeout(resolve, delay));
 
             // Broadcast the updated game state after the CPU turn
             io.to(`game-${gameId}`).emit('gameUpdate', nextGameUpdate);
-
           } catch (cpuError) {
             // Handle errors specifically from CPU turn processing
             console.error('Failed to process CPU turn:', debugMode ? cpuError : cpuError.message);

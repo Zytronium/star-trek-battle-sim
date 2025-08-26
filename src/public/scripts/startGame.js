@@ -2,19 +2,6 @@ const socket = io(); // Connect to server
 
 let gameId = null;
 
-// Listen for game updates
-socket.on("gameUpdate", (gameState) => {
-  console.log("Game update:", gameState);
-  // Update your UI: logs, health bars, etc.
-});
-
-// Example: send player action
-function sendPlayerIntent(intent) {
-  if (!gameId)
-    return;
-  socket.emit("playerIntent", { gameId, intent });
-}
-
 // Start battle on battle button click
 document.getElementById('battle-btn').addEventListener('click', () => {
   if (selectedShips.player1 && selectedShips.player2) {
@@ -36,7 +23,7 @@ document.getElementById('battle-btn').addEventListener('click', () => {
       socket.emit("joinGame", gameId);
 
       // Redirect to game page with gameId
-      window.location.href = `game.html?gameId=${response.gameId}`;
+      window.location.href = `/game?gameId=${response.gameId}`;
     });
   }
 });

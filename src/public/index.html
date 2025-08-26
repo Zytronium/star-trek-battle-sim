@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Star Trek Battle Simulator</title>
+  <title>Star Trek Battle Engine</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -18,8 +18,63 @@
 <div class="content">
   <h1>Star Trek Battle Engine</h1>
   <p>Command your starship, engage enemy vessels, and experience epic space battles in the Star Trek universe.</p>
-  <a href="setup.html" class="btn">Prepare for Battle!</a>
-</div>
 
+  <!-- Mode selection -->
+  <div class="mode-container" aria-hidden="false">
+    <div id="modeGrid" class="mode-grid" role="radiogroup" aria-label="Choose game mode">
+      <!-- Player vs AI card -->
+      <div class="mode-card" id="mode-single" data-mode="singleplayer" role="radio" tabindex="0" aria-checked="true">
+        <div class="mode-top">
+          <div class="mode-title">Player vs AI</div>
+          <div class="mode-sub">Fight a smart CPU — great for practice.</div>
+        </div>
+
+        <!-- Toggles: spectate only -->
+        <div class="toggles row">
+          <label class="toggle" for="spectate-single">
+            <span class="switch" id="switch-spectate-single" aria-hidden="true">
+              <span class="knob"></span>
+            </span>
+            <input type="checkbox" id="spectate-single" name="spectate-single" checked>
+            <span>Allow anyone to spectate</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Player vs Player card -->
+      <div class="mode-card" id="mode-multi" data-mode="multiplayer" role="radio" tabindex="0" aria-checked="false">
+        <div class="mode-top">
+          <div class="mode-title">Player vs Player</div>
+          <div class="mode-sub">Match with another human (waiting room flow).</div>
+        </div>
+
+        <!-- Toggles: Private Match + Spectate side-by-side -->
+        <div class="toggles row">
+          <label class="toggle" for="spectate-multi" style="flex:1;">
+            <span class="switch" id="switch-spectate-multi" aria-hidden="true">
+              <span class="knob"></span>
+            </span>
+            <input type="checkbox" id="spectate-multi" name="spectate-multi" checked>
+            <span>Allow anyone to spectate</span>
+          </label>
+
+          <label class="toggle" for="private-multi" style="flex:1;">
+            <span class="switch" id="switch-private-multi" aria-hidden="true">
+              <span class="knob"></span>
+            </span>
+            <input type="checkbox" id="private-multi" name="private-multi">
+            <span>Private Match</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="prepare-row">
+      <!-- Prepare button: uses your existing .btn style -->
+      <button id="prepare-btn" class="btn" type="button" aria-label="Prepare for Battle">Prepare for Battle!</button>
+    </div>
+  </div>
+</div>
+<script src="/scripts/index.js"></script>
 </body>
 </html>

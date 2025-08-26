@@ -1,7 +1,5 @@
 let ships = [];
 let selectedShips = { player1: null, player2: null };
-let shipWeapons = {};
-let shipDefenses = {};
 let weapons = {};
 let defenses = {};
 
@@ -48,96 +46,6 @@ function populateDropdowns() {
   });
 }
 
-// Get weapons for a specific ship
-function getShipWeapons(shipId) {
-  return shipWeapons
-    .filter(sw => sw.ship_id == shipId)
-    .map(sw => {
-      const weapon = weapons.find(w => w.weapon_id == sw.weapon_id);
-      return {
-        ...weapon,
-        damage_multiplier: sw.damage_multiplier,
-        max_per_turn: sw.max_per_turn,
-        cooldown_turns: sw.cooldown_turns,
-        max_usage: sw.max_usage
-      };
-    })
-    .filter(w => w.name); // Only return weapons that exist
-}
-
-// Get defenses for a specific ship
-function getShipDefenses(shipId) {
-  return shipDefenses
-    .filter(sd => sd.ship_id == shipId)
-    .map(sd => {
-      const defense = defenses.find(d => d.defense_id == sd.defense_id);
-      return defense;
-    })
-    .filter(d => d && d.name); // Only return defenses that exist
-}
-
-// Create weapons section HTML
-function createWeaponsSection(shipWeaponsList) {
-  return `
-                <div class="weapons-section">
-                    <h3>⚔️ Weapons (${shipWeaponsList.length})</h3>
-                    ${shipWeaponsList.map(weapon => `
-                        <div class="weapon-item">
-                            <div class="weapon-name">${weapon.name}</div>
-                            <div class="weapon-stats">
-                                <div class="weapon-stat">
-                                    <div>💥 Damage</div>
-                                    <div>${weapon.damage}</div>
-                                </div>
-                                <div class="weapon-stat">
-                                    <div>🛡️ Shield Multiplier</div>
-                                    <div>${weapon.shields_multiplier}</div>
-                                </div>
-                                <div class="weapon-stat">
-                                    <div>🛠️ Hull Multiplier</div>
-                                    <div>${weapon.hull_multiplier}</div>
-                                </div>
-                                <div class="weapon-stat">
-                                    <div>⚡ Damage Multiplier</div>
-                                    <div>${weapon.damage_multiplier || 1.0}</div>
-                                </div>
-                            </div>
-                            ${weapon.special_effects ? `<div style="margin-top: 8px; font-size: 0.8em; color: #ffa500;">✨ ${weapon.special_effects}</div>` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-}
-
-// Create defenses section HTML
-function createDefensesSection(shipDefensesList) {
-  return `
-                <div class="weapons-section">
-                    <h3>🛡️ Defenses (${shipDefensesList.length})</h3>
-                    ${shipDefensesList.map(defense => `
-                        <div class="weapon-item">
-                            <div class="weapon-name">${defense.name}</div>
-                            <div class="weapon-stats">
-                                <div class="weapon-stat">
-                                    <div>🛡️ Type</div>
-                                    <div>${defense.type || 'N/A'}</div>
-                                </div>
-                                <div class="weapon-stat">
-                                    <div>❤️ Hit Points</div>
-                                    <div>${defense.hit_points || 'N/A'}</div>
-                                </div>
-                                <div class="weapon-stat">
-                                    <div>📊 Effectiveness</div>
-                                    <div>${defense.effectiveness || 'N/A'}</div>
-                                </div>
-                            </div>
-                            ${defense.special_effects ? `<div style="margin-top: 8px; font-size: 0.8em; color: #ffa500;">✨ ${defense.special_effects}</div>` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-}
-
 // Create ship display card
 function createShipDisplay(ship) {
   const shieldPercentage = Math.min(100, Math.max(0, (ship.shield_strength / 1000) * 100));
@@ -167,7 +75,7 @@ function createShipDisplay(ship) {
                     </div>
                 </div>
                 <div class="ship-image">
-                    ${ship.image_src ? `<img src="${ship.image_src}" alt="${ship.name}">` : '🚀'}
+                    <img src="${ship.image_src.startsWith('/') ? ship.image_src : `/${ship.image_src}`}" alt="${ship.name}">
                 </div>
                 <div class="ship-name">${ship.name}</div>
                 <div class="ship-details">
@@ -209,26 +117,37 @@ function updateBattleButton() {
   battleBtn.disabled = !(selectedShips.player1 && selectedShips.player2);
 }
 
-// Message display functions
-function addBattleMessage(message, type = 'info') {
-    const battleLog = document.getElementById('battle-log');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `battle-message ${type}`;
-    messageDiv.innerHTML = message;
-
-    // Remove welcome message if it exists
-    const welcomeMsg = battleLog.querySelector('.welcome-message');
-    if (welcomeMsg)
-      welcomeMsg.remove();
-
-    // Add message log and auto-scroll to bottom
-    battleLog.appendChild(messageDiv);
-    battleLog.scrollTop = battleLog.scrollHeight;
+/**
+ * Generate a cryptographically-secure random token (hex).
+ * length: number of random bytes (default 32 bytes => 64 hex chars)
+ */
+function generatePlayerToken(length = 32) {
+  if (window.crypto && window.crypto.getRandomValues) {
+    const arr = new Uint8Array(length);
+    window.crypto.getRandomValues(arr);
+    // Convert to hex
+    return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+  } else {
+    console.warn('Secure crypto unavailable. Falling back to less secure randomness.');
+    let s = '';
+    for (let i = 0; i < length; i++) {
+      s += Math.floor(Math.random() * 256).toString(16).padStart(2, '0');
+    }
+    return s;
+  }
 }
 
-function clearBattleMessages() {
-    const battleLog = document.getElementById('battle-log');
-    battleLog.innerHTML = '<div class="welcome-message">Welcome to the Star Trek Battle Engine! Select your ships and prepare for battle.</div>';
+// Get or create a persistent player token in localStorage.
+function getPlayerToken() {
+  let token = localStorage.getItem('playerToken');
+  if (!token) {
+    token = generatePlayerToken();
+    localStorage.setItem('playerToken', token);
+    console.log('[Token] Generated new player token and stored in localStorage');
+  } else {
+    console.log('[Token] Loaded existing player token from localStorage');
+  }
+  return token;
 }
 
 // Load ships and add change event listeners for dropdowns

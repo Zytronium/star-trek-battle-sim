@@ -1,5 +1,4 @@
-/* Star Trek Battle Simulator Styles */
-/* Extracted from setup.html */
+/* Star Trek Battle Simulator Setup Styles */
 
 * {
     margin: 0;
@@ -292,6 +291,85 @@ body {
 
 /* Disabled state overrides everything */
 .battle-button:disabled {
+    background: linear-gradient(45deg, #444, #333);
+    border-color: #555;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    animation: none;
+}
+
+.ready-button {
+    display: block;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto;
+    padding: 12px 12px;
+    background: linear-gradient(45deg, #00d4ff, #0099cc);
+    color: white;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 100%;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+    position: relative;
+    z-index: 2;
+    text-transform: uppercase;
+    animation: healthGlow 2.5s ease-in-out infinite alternate;
+}
+
+/* Disable pointer hitbox on glowing rings */
+.ready-button::before,
+.ready-button::after {
+    pointer-events: none;
+}
+
+.ready-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    border: 2px solid rgba(0, 212, 255, 0.3);
+    border-radius: 50%;
+    z-index: -1;
+    animation: pulsateCircleSmall 3s ease-in-out infinite;
+}
+
+.ready-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 300px;
+    border: 2px solid rgba(255, 107, 53, 0.6);
+    border-radius: 50%;
+    z-index: -2;
+    animation: pulsateCircleSmall 4s ease-in-out infinite reverse;
+}
+
+/* Add animated gradient glow effect ONLY on hover */
+.ready-button:not(:disabled):hover {
+    transform: translateY(-3px) scale(1.05);
+    background: linear-gradient(60deg, #ff6b35, #f7931e, #ffbc35, #ff6b35);
+    background-size: 300% 300%;
+    animation: gradientShift 6s ease infinite;
+    border-color: #ff6b35;
+    box-shadow:
+            0 0 30px rgba(255, 107, 53, 0.8),
+            0 0 60px rgba(255, 107, 53, 0.4),
+            0 0 90px rgba(255, 107, 53, 0.2);
+    color: white;
+}
+
+/* Disabled state overrides everything */
+.ready-button:disabled {
     background: linear-gradient(45deg, #444, #333);
     border-color: #555;
     cursor: not-allowed;
@@ -696,6 +774,21 @@ body {
     }
     100% {
         transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0.8;
+    }
+}
+
+@keyframes pulsateCircleSmall {
+    0% {
+        transform: translate(-50%, -50%) scale(0.2);
+        opacity: 0.8;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(0.3);
+        opacity: 0.4;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(0.2);
         opacity: 0.8;
     }
 }
