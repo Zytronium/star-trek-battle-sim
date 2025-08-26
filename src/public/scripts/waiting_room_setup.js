@@ -403,15 +403,30 @@ function initSocket() {
   socket.on('gameStarted', (payload) => {
     if (payload && payload.gameId) {
       let t = getPlayerToken();
+
+      // Persist permanent token so other devices can authenticate later (existing behavior)
       localStorage.setItem(`playerToken-${payload.gameId}-${isHost ? 'P1' : 'P2'}`, t);
+
+      // IMPORTANT: mark this specific browser tab/window as the pilot for the upcoming game.
+      // sessionStorage is per-tab, so it won't confuse other tabs on the same device.
+      try {
+        sessionStorage.setItem(`playerPilot-${payload.gameId}`, isHost ? 'P1' : 'P2');
+      } catch (e) {
+        console.warn('Failed to set sessionPilot marker', e);
+      }
+
+      // cleanup token used for waiting-room (optional)
       try {
         localStorage.removeItem(`playerToken-${gamePin}-${isHost ? 'P1' : 'P2'}`);
       } catch(e) {}
+
+      // navigate into the game page
       window.location.href = `/game?gameId=${payload.gameId}`;
-    }
-    else
+    } else {
       console.warn('gameStarted without gameId');
+    }
   });
+
 }
 
 // ---------------- Client → Server actions ----------------
