@@ -42,7 +42,8 @@ function sendIntentUsingLatest(w) {
       attacker: latestPlayerShip.pilot,
       weapon_id: w.weapon_id,
       target: latestCpuShip.pilot
-    }
+    },
+    token: localStorage.getItem(`playerToken-${gameId}-${latestPlayerShip.pilot.toUpperCase()}`)
   });
 }
 
@@ -501,6 +502,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // We still ensure anything else is disabled
     if (gameState.winner) {
       document.querySelectorAll('.weapon-button').forEach(b => b.disabled = true);
+      localStorage.removeItem(`playerToken-${gameId}-${latestPlayerShip.pilot.toUpperCase()}`);
     }
   });
 

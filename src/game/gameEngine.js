@@ -10,9 +10,7 @@ class GameEngine {
   static IMPLEMENTED_TYPES = ["PLAYER V AI", "PLAYER V PLAYER"];
 
   // ======== Create new game ======== \\
-  static async createGame(setup) {
-    const { type, ships } = setup;
-
+  static async createGame(type, ships, playerTokens, spectatePin, spectateRequiresPin) {
     // ---------- Validate type ---------- //
     if (!type) {
       return { error: true, message: "Missing param 'type'" };
@@ -58,15 +56,31 @@ class GameEngine {
       const runtimeShip = await this.createRuntimeShip(s.ship_id, s.pilot, s.is_boss);
       runtimeShips.push(runtimeShip);
     }
+
     // ---------- Create game ---------- //
     const gameId = uuidv4();
-    const playerTokens = ships // todo: change this to client side logic so each player can only see their own token without te server needing to manage multiple sockets per game.
-      .filter(s => !s.is_boss && s.pilot.toUpperCase().at(0) === "P")
-      .reduce((acc, s, i) => {
-        acc[`P${i + 1}`] = uuidv4();
+
+    // If caller supplied playerTokens (e.g. from waiting room), use them.
+    // Otherwise generate new tokens for player pilots (P1, P2, ...).
+    /*let tokens = {};
+    const players = ships.filter(s => !s.is_boss && String(s.pilot || '').toUpperCase().startsWith('P'));
+
+    if (playerTokens && typeof playerTokens === 'object' && Object.keys(playerTokens).length > 0) {
+      // Use provided tokens where available, otherwise generate
+      for (const p of players) {
+        const key = p.pilot.toUpperCase(); // e.g. 'P1' or 'P2'
+        tokens[key] = playerTokens[key] || uuidv4();
+      }
+    } else {
+      // Generate fresh tokens
+      tokens = players.reduce((acc, p) => {
+        const key = p.pilot.toUpperCase();
+        acc[key] = uuidv4();
         return acc;
       }, {});
+    }*/
 
+    console.log(`Creating game ${gameId} with tokens ${playerTokens}`);
     const gameState = {
       gameId,
       type,
@@ -74,16 +88,25 @@ class GameEngine {
       logs: [`Game created: ${type}`],
       turn: 1,
       winner: null,
-      playerTokens // todo: remove this when client-side logic generates their player tokens; replace with saving the player token instead.
+      playerTokens/*: tokens*/,
+      spectatePin,
+      spectateRequiresPin
     };
 
     // Save game in activeGames (retrieve with await GameEngine.getGame(gameId);)
     activeGames[gameId] = gameState;
 
-    // Broadcast initial game state
-    getIO().to(`game-${gameId}`).emit('gameUpdate', gameState);
+    // Create a sanitized copy to send to clients (remove any sensitive token info)
+    // Shallow clone is fine here because we don't modify nested objects for sanitization,
+    // but ensure playerTokens is removed.
+    const sanitizedGameState = Object.assign({}, gameState);
+    if (sanitizedGameState.playerTokens) delete sanitizedGameState.playerTokens;
 
-    return { success: true, gameId, playerTokens, gameState };
+    // Broadcast initial (sanitized) game state
+    getIO().to(`game-${gameId}`).emit('gameUpdate', sanitizedGameState);
+
+    // Return success including the tokens so server-side caller (controller) can forward the right tokens to the right clients
+    return { success: true, gameId, playerTokens/*: tokens*/, sanitizedGameState };
   }
 
   // Helper function for creating ships in memory at start of createGame()
@@ -460,8 +483,16 @@ class GameEngine {
   }
 
   // ======== Process game logic for new turn ======== \\
-  static async processTurnIntent(game, intent) {
+  static async processTurnIntent(game, intent, token) {
     if (!game) throw new Error("Game object is required");
+
+    if (intent.attacker.toUpperCase().startsWith("P") && (!token || token !== game.playerTokens[intent.attacker.toUpperCase()])) {
+      console.warn(
+        'UNAUTHORIZED INTENT DETECTED.',
+        `Attacker: ${intent.attacker} | Token Supplied: ${token}`
+      ); // Aw, don't cry (;
+      throw new Error("Unauthorized: Player token is invalid or missing.");
+    }
 
 /*    console.log(inspect(game, {
       colors: true, // enable ANSI colors

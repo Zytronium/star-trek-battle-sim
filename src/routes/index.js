@@ -3,6 +3,8 @@ const router = express.Router();
 const AppController = require("../controllers/appController");
 
 router.get('/status', AppController.getStatus);          // API Status
+router.get('/rooms', AppController.getWaitingRooms);     // Get all current pvp waiting rooms
+router.get('/games', AppController.getGames);            // Get all current games
 
 // ========================== DATABASE ========================== \\
 router.get('/database', AppController.getDatabase);      // Get (almost) all the database

@@ -1,5 +1,6 @@
 const { pool } = require("../config/database");
 const AppService = require("./appService");
+const { activeGames, waitingRooms } = require("../game/gameState");
 const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 
 class AppController {
@@ -10,6 +11,15 @@ class AppController {
       timestamp: new Date().toISOString(),
       version: '1.0.0'
     });
+  }
+
+  // GET /api/rooms (temp)
+  static getWaitingRooms(req, res) {
+    res.status(200).json(waitingRooms);
+  }
+  // GET /api/games (temp)
+  static getGames(req, res) {
+    res.status(200).json(activeGames);
   }
 
   // GET /api/health

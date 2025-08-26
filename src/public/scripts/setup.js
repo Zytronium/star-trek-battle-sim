@@ -117,39 +117,6 @@ function updateBattleButton() {
   battleBtn.disabled = !(selectedShips.player1 && selectedShips.player2);
 }
 
-/**
- * Generate a cryptographically-secure random token (hex).
- * length: number of random bytes (default 32 bytes => 64 hex chars)
- */
-function generatePlayerToken(length = 32) {
-  if (window.crypto && window.crypto.getRandomValues) {
-    const arr = new Uint8Array(length);
-    window.crypto.getRandomValues(arr);
-    // Convert to hex
-    return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
-  } else {
-    console.warn('Secure crypto unavailable. Falling back to less secure randomness.');
-    let s = '';
-    for (let i = 0; i < length; i++) {
-      s += Math.floor(Math.random() * 256).toString(16).padStart(2, '0');
-    }
-    return s;
-  }
-}
-
-// Get or create a persistent player token in localStorage.
-function getPlayerToken() {
-  let token = localStorage.getItem('playerToken');
-  if (!token) {
-    token = generatePlayerToken();
-    localStorage.setItem('playerToken', token);
-    console.log('[Token] Generated new player token and stored in localStorage');
-  } else {
-    console.log('[Token] Loaded existing player token from localStorage');
-  }
-  return token;
-}
-
 // Load ships and add change event listeners for dropdowns
 document.addEventListener('DOMContentLoaded', () => {
   loadShips();

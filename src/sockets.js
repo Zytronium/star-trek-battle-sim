@@ -21,7 +21,7 @@ module.exports = function registerSockets(io) {
     // Helper: produce safe copy of waitingRoom (remove tokens)
     function sanitizeWaitingRoom(room) {
       if (!room) return null;
-      const clone = {
+      return {
         gamePin: room.gamePin,
         spectatePin: room.spectatePin,
         spectateVis: room.spectateVis,
@@ -32,16 +32,15 @@ module.exports = function registerSockets(io) {
           ready: !!room.p1.ready,
           connected: !!room.p1.connected,
           // include a short token fingerprint so clients can identify their own slot without receiving the token
-          token_hidden_id: String(room.p1.token || '').slice(0,8)
+          token_hidden_id: String(room.p1.token || '').slice(0, 6)
         } : null,
         p2: room.p2 ? {
           ship: room.p2.ship,
           ready: !!room.p2.ready,
           connected: !!room.p2.connected,
-          token_hidden_id: String(room.p2.token || '').slice(0,8)
+          token_hidden_id: String(room.p2.token || '').slice(0, 6)
         } : null
       };
-      return clone;
     }
 
     // Helper: find which slot corresponds to a token (server-side full-token comparison)
@@ -221,10 +220,16 @@ module.exports = function registerSockets(io) {
         ];
 
         // Call GameEngine to set up the game
-        const result = await GameEngine.createGame({
-          type: 'PLAYER V PLAYER',
+        const result = await GameEngine.createGame(
+          'PLAYER V PLAYER',
           ships,
-        });
+          {
+            P1: room.p1.token,
+            P2: room.p2.token
+          },
+          room.spectatePin,
+          room.spectateVis.toUpperCase() === 'PRIVATE'
+        );
 
         if (result.error || !result.success) {
           return callback && callback({ error: result.message || 'Failed to create game' });
@@ -279,11 +284,11 @@ module.exports = function registerSockets(io) {
     socket.on('createGame', async (setup, callback) => {
       try {
         console.log("Creating new game...");
-        const result = await GameEngine.createGame(setup);
+        const result = await GameEngine.createGame(setup.type, setup.ships, { "P1": setup.playerToken });
 
         if (!result.error) {
           console.log("Game created.");
-          callback({ gameId: result.gameId, playerTokens: result.playerTokens });
+          callback({ gameId: result.gameId });
         } else {
           console.log("Game failed to create:", result.message);
           callback({ error: result.message });
@@ -297,25 +302,59 @@ module.exports = function registerSockets(io) {
     const cpuProcessingLock = new Set();
 
     // Player sends an intent
-    socket.on('playerIntent', async ({ gameId, intent }) => {
+    socket.on('playerIntent', async ({ gameId, intent, token }) => {
       try {
         // Retrieve the current game from the game engine
         const game = GameEngine.getGame(gameId);
-        if (!game) throw new Error(`Game ${gameId} not found.`);
+        if (!game) {
+          console.warn(`[WARNING] Invalid intent from socket ${socket.id}: Game ${gameId} not found.`);
+          return socket.emit('errorMessage', 'Game not found or no longer active.');
+        }
 
         // Reject intents if game is already over
         if (game.winner) {
-          endGame(gameId)
-          return socket.emit('errorMessage', `Game over. Winner: ${game.winner}`);
+          console.info(`[GAME] Socket ${socket.id} tried to act in finished game ${gameId}. Winner: ${game.winner}`);
+          endGame(gameId);
+          return socket.emit('errorMessage', `This game is already over. Winner: ${game.winner}`);
         }
 
         // Reject intents if CPU is still processing (except on turn 1)
         if (cpuProcessingLock.has(gameId)) {
-          return socket.emit('errorMessage', 'Please wait for the CPU to take its turn before submitting another action.');
+          console.warn(`[SECURITY] Socket ${socket.id} tried to act while CPU was processing in game ${gameId}.`);
+          return socket.emit('errorMessage', 'Please wait for the CPU to finish its turn.');
+        }
+
+        // Validate attacker
+        const attacker = (intent.attacker || "").toUpperCase();
+        const attackerShip = game.ships.find(s => s.pilot.toUpperCase() === attacker);
+
+        if (!attackerShip || !attacker.startsWith("P")) {
+          console.warn(`[SECURITY] Invalid attacker from socket ${socket.id} in game ${gameId}: ${attacker}`);
+          return socket.emit('errorMessage', 'Invalid action.');
+        }
+
+        // Prevent controlling CPU ships explicitly
+        if (attacker.startsWith("COM")) {
+          console.warn(`[SECURITY] Socket ${socket.id} tried to act as CPU ship in game ${gameId}.`);
+          return socket.emit('errorMessage', 'Invalid action.');
+        }
+
+        // Validate target
+        const target = (intent.target || "").toUpperCase();
+        const targetShip = game.ships.find(s => s.pilot.toUpperCase() === target);
+
+        if (!targetShip) {
+          console.warn(`[SECURITY] Invalid target from socket ${socket.id} in game ${gameId}: ${target}`);
+          return socket.emit('errorMessage', 'Invalid target specified.');
+        }
+
+        if (attacker === target) {
+          console.warn(`[SECURITY] Socket ${socket.id} attempted self-targeting in game ${gameId}. Attacker/Target: ${attacker}`);
+          return socket.emit('errorMessage', 'You cannot fire on yourself.');
         }
 
         // Process the player's turn intent
-        const updatedGame = await GameEngine.processTurnIntent(game, intent);
+        const updatedGame = await GameEngine.processTurnIntent(game, intent, token);
 
         // Lock CPU processing for this game if player turn succeeded
         if (game.type.toUpperCase() === "PLAYER V AI") {

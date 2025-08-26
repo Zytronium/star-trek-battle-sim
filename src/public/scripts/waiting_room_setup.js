@@ -6,9 +6,9 @@ let selectedShips = { player1: null, player2: null };
 let socket = null;
 let gamePin = null;
 let spectatePin = null;
-let isHost = false;       // true if server assigns this client to p1
-let joinedRoom = false;   // true after createWaitingRoom/joinWaitingRoom success
-let localSlot = null;     // 'p1' or 'p2' once determined from server
+let isHost = false;         // true if server assigns this client to p1
+let joinedRoom = false;     // true after createWaitingRoom/joinWaitingRoom success
+let localSlot = null;       // 'p1' or 'p2' once determined from server
 let serverRoomState = null; // latest sanitized waiting room from server
 
 // ---------------- Ships API & UI helpers ----------------
@@ -132,26 +132,39 @@ function generatePlayerToken(length = 32) {
     window.crypto.getRandomValues(arr);
     return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
   } else {
-    console.warn('Secure crypto unavailable — falling back to Math.random.');
+    console.warn('Secure crypto unavailable. Falling back to less secure method.');
     let s = '';
-    for (let i=0;i<length;i++) s += Math.floor(Math.random()*256).toString(16).padStart(2,'0');
+    for (let i=0;i<length;i++) {
+      s += Math.floor(Math.random() * 256).toString(16).padStart(2, '0');
+    }
     return s;
   }
 }
 
 function getPlayerToken() {
-  let t = localStorage.getItem('playerToken');
-  if (!t) {
-    t = generatePlayerToken();
-    localStorage.setItem('playerToken', t);
+  let token;
+  if (gamePin)
+    token = localStorage.getItem(`playerToken-${gamePin}-${isHost ? 'P1' : 'P2'}`);
+  else if (playerToken)
+    token = playerToken;
+  else
+    token = generatePlayerToken();
+
+  console.log(`[token - debug] gamePin: ${gamePin}`);
+
+  if (!token) { // gamePin exists but item was not found in localStorage
+    token = playerToken ?? generatePlayerToken();
+    localStorage.setItem(`playerToken-${gamePin}-${isHost ? 'P1' : 'P2'}`, token);
     console.log('[token] generated and saved');
   }
-  return t;
+  return token;
 }
-const playerToken = getPlayerToken();
+
+let playerToken; // Define later; getPlayerToken() requires playerToken must be at least declared, even if undefined
+playerToken = getPlayerToken();
 
 function token_hidden_identifier(token) {
-  return String(token).slice(0,8);
+  return String(token).slice(0,6);
 }
 
 function getPlayerSlotForToken(room, token) {
@@ -159,12 +172,6 @@ function getPlayerSlotForToken(room, token) {
   if (room.p1 && room.p1.token_hidden_id === token_hidden_identifier(token)) return 'p1';
   if (room.p2 && room.p2.token_hidden_id === token_hidden_identifier(token)) return 'p2';
   return null;
-}
-
-function getOtherSlot(room, myToken) {
-  const mine = getPlayerSlotForToken(room, myToken);
-  if (!mine) return null;
-  return mine === 'p1' ? 'p2' : 'p1';
 }
 
 // ---------------- UI helpers ----------------
@@ -261,13 +268,12 @@ function renderSlotToSide(room, slotName, uiSide) {
   }
 }
 
-
 function updateReadyIndicators(room) {
   const localReadyBtn = document.getElementById('local-ready-btn');
   const localIndicator = document.getElementById('local-ready-indicator');
   const remoteIndicator = document.getElementById('remote-ready-indicator');
 
-  const mySlot = getPlayerSlotForToken(room, playerToken);
+  const mySlot = getPlayerSlotForToken(room, getPlayerToken());
   const localReady = room && mySlot && room[mySlot] ? room[mySlot].ready : false;
   const otherSlot = mySlot === 'p1' ? 'p2' : 'p1';
   const remoteReady = room && otherSlot && room[otherSlot] ? room[otherSlot].ready : false;
@@ -337,8 +343,14 @@ function initSocket() {
     if (errEl) { errEl.style.display = 'block'; errEl.textContent = msg; }
   });
   socket.on('gameStarted', (payload) => {
-    if (payload && payload.gameId) window.location.href = `/game?gameId=${payload.gameId}`;
-    else console.warn('gameStarted without gameId');
+    if (payload && payload.gameId) {
+      let t = getPlayerToken();
+      localStorage.setItem(`playerToken-${payload.gameId}-${isHost ? 'P1' : 'P2'}`, t);
+      localStorage.removeItem(`playerToken-${gamePin}-${isHost ? 'P1' : 'P2'}`);
+      window.location.href = `/game?gameId=${payload.gameId}`;
+    }
+    else
+      console.warn('gameStarted without gameId');
   });
 }
 
@@ -464,6 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (joinPinParam) {
             try {
               await joinWaitingRoomOnServer(joinPinParam, shipObj);
+              playerToken = getPlayerToken();
             } catch (err) {
               console.error('Failed to join waiting room:', err);
               const errEl = document.getElementById('error');
