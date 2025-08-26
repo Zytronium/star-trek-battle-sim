@@ -56,6 +56,11 @@ module.exports = function registerSockets(io) {
       try {
         const { spectateVis = 'PUBLIC', joinVis = 'PUBLIC', p1Ship, playerToken } = payload || {};
 
+        // Prevent a socket from creating a new waiting room while it's already associated with one
+        if (socket.data.gamePin) {
+          return callback && callback({ error: 'You are already in a waiting room. Leave it first to create a new one.' });
+        }
+
         // create room using GameEngine helper
         const waitingRoom = await GameEngine.createWaitingRoom(spectateVis, joinVis, p1Ship, playerToken);
 
@@ -95,6 +100,12 @@ module.exports = function registerSockets(io) {
     socket.on('joinWaitingRoom', (payload, callback) => {
       try {
         const { gamePin, playerToken, p2Ship } = payload || {};
+
+        // Prevent joining if this socket is already associated with a different waiting room
+        if (socket.data.gamePin && socket.data.gamePin !== gamePin) {
+          return callback && callback({ error: 'You are already in a waiting room. Leave it first to join another.' });
+        }
+
         const room = waitingRooms[gamePin];
         if (!room) {
           return callback && callback({ error: 'Waiting room not found' });
@@ -132,6 +143,62 @@ module.exports = function registerSockets(io) {
         io.to(sockRoom).emit('waitingRoomUpdated', publicRoom);
       } catch (err) {
         console.error('joinWaitingRoom error', debugMode ? err : err.message);
+        callback && callback({ error: err.message });
+      }
+    });
+
+    // --- leave waiting room ---
+    socket.on('leaveWaitingRoom', (payload, callback) => {
+      try {
+        // Prefer socket.data.gamePin if available; otherwise accept payload.gamePin
+        const pin = socket.data.gamePin || (payload && payload.gamePin);
+        if (!pin) {
+          return callback && callback({ error: 'No waiting room specified.' });
+        }
+        const room = waitingRooms[pin];
+        if (!room) {
+          // Nothing to do — maybe already cleaned up
+          return callback && callback({ ok: true });
+        }
+
+        // Determine which slot this socket corresponds to (server-side token check)
+        const slot = socket.data.playerSlot || getSlotForToken(room, socket.data.playerToken);
+        if (!slot || !room[slot]) {
+          return callback && callback({ error: 'You are not a participant in that waiting room.' });
+        }
+
+        // Remove player's presence from the room
+        // If the leaving slot is the host (p1) and p2 exists, promote p2 -> p1.
+        const leavingSlot = slot;
+        if (leavingSlot === 'p1') {
+          if (room.p2) {
+            // promote p2 to p1
+            room.p1 = {
+              ship: room.p2.ship,
+              token: room.p2.token,
+              ready: !!room.p2.ready,
+              connected: !!room.p2.connected
+            };
+            delete room.p2;
+            // Note: socket.data for the other client isn't changed here; their client will remap to p1 via token_hidden_id on the next sanitized broadcast.
+          } else {
+            // no other player — remove the p1 entry
+            delete room.p1;
+          }
+        } else {
+          // leaving p2 (or other) — remove p2
+          delete room[leavingSlot];
+        }
+
+        // Ensure socket leaves the socket.io room and clear socket-associated fields
+        try { socket.leave(`waiting-${pin}`); } catch (e) {}
+        socket.data.gamePin = null;
+        socket.data.playerSlot = null;
+        socket.data.playerToken = null;
+
+        callback && callback({ ok: true });
+      } catch (err) {
+        console.error('leaveWaitingRoom error', debugMode ? err : err.message);
         callback && callback({ error: err.message });
       }
     });

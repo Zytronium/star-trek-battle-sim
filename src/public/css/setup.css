@@ -220,6 +220,17 @@ body {
     text-align: center;
 }
 
+/* Simple visual for join button loading state */
+#join-pin-join-button[data-loading="true"] {
+    opacity: 0.7;
+    cursor: wait;
+}
+#join-pin-join-button[data-loading="true"]::after {
+    content: ' ⏳';
+    margin-left: 6px;
+}
+
+/* Battle, join, and ready buttons */
 .battle-button {
     display: block;
     width: 220px;
@@ -247,7 +258,7 @@ body {
     pointer-events: none;
 }
 
-.battle-button::before {
+.battle-button:not(.small)::before {
     content: '';
     position: absolute;
     top: 50%;
@@ -261,7 +272,7 @@ body {
     animation: pulsateCircle 3s ease-in-out infinite;
 }
 
-.battle-button::after {
+.battle-button:not(.small)::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -379,6 +390,40 @@ body {
     transform: none;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     animation: none;
+}
+
+/* Join PIN input helpers */
+.join-input-row {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.join-pin-input {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    color: #fff;
+    min-width: 170px;
+    font-size: 0.95em;
+}
+
+.battle-button.small {
+    width: auto;
+    padding: 10px 14px;
+    font-size: 1em;
+    height: auto;
+    border-radius: 10px;
+}
+
+.join-input-row .dialogue {
+    width: 100%;
+    margin-top: 8px;
+    font-size: 0.9em;
 }
 
 /* Gradient animation definition */

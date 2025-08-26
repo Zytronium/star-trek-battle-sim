@@ -51,6 +51,14 @@
             <select id="player1-select" class="ship-dropdown">
               <option value="">-- Select a ship --</option>
             </select>
+            
+            <!-- JOIN PIN ENTRY (appears when user has not yet selected a ship) -->
+            <div id="join-pin-input-row" class="join-input-row">
+              <input id="join-pin-input" class="join-pin-input" type="text" placeholder="Enter join PIN (optional)" aria-label="Join PIN">
+              <button id="join-pin-join-button" class="battle-button small">Join</button>
+              <button id="join-pin-cancel-button" class="battle-button small hidden">Cancel</button>
+              <div id="join-note" class="dialogue hidden" aria-live="polite"></div>
+            </div>
 
             <div id="player1-ship-display"
                  class="selected-ship-display hidden"></div>

@@ -1,4 +1,3 @@
-// waiting_room_setup.js — fixed duplicate `params` declarations
 // NOTE: Requires socket.io client lib already loaded on page
 
 let ships = []; // fetched from /api/ships
@@ -10,6 +9,9 @@ let isHost = false;         // true if server assigns this client to p1
 let joinedRoom = false;     // true after createWaitingRoom/joinWaitingRoom success
 let localSlot = null;       // 'p1' or 'p2' once determined from server
 let serverRoomState = null; // latest sanitized waiting room from server
+
+// Pending join PIN entered before selecting a ship
+let pendingJoinPin = null;
 
 // ---------------- Ships API & UI helpers ----------------
 
@@ -32,6 +34,9 @@ async function loadShips() {
       if (errEl) { errEl.style.display = 'block'; errEl.textContent = 'No ships found in database.'; }
       console.warn('[ships] No ships found');
     }
+
+    // ensure join input visibility gets set after ships populate
+    updateJoinInputVisibility();
 
     return ships;
   } catch (err) {
@@ -111,6 +116,8 @@ function selectShip(player, shipId) {
   if (!shipId) {
     selectedShips[player] = null;
     if (displayEl) displayEl.style.display = 'none';
+    // toggling join input now that no ship selected
+    updateJoinInputVisibility();
     return;
   }
 
@@ -121,6 +128,38 @@ function selectShip(player, shipId) {
   if (displayEl) {
     displayEl.innerHTML = createShipDisplay(ship);
     displayEl.style.display = 'block';
+  }
+
+  // If user had a pending join PIN, attempt join immediately after they pick ship
+  if (pendingJoinPin && !joinedRoom) {
+    (async () => {
+      const pin = pendingJoinPin;
+      // Show the pending note (already shown by updateJoinInputVisibility), but make it explicit
+      showJoinNote(`Attempting to join room ${pin}...`, false);
+
+      // disable join button while auto-joining (if present)
+      const joinBtn = document.getElementById('join-pin-join-button');
+      if (joinBtn) { joinBtn.disabled = true; joinBtn.dataset.loading = 'true'; }
+
+      try {
+        await joinWaitingRoomOnServer(pin, ship);
+        // success -> consume pending PIN and clear UI
+        pendingJoinPin = null;
+        if (joinBtn) { joinBtn.disabled = false; delete joinBtn.dataset.loading; }
+        clearJoinPendingNote();
+        updateJoinInputVisibility();
+      } catch (err) {
+        // keep pending PIN so user can cancel or retry; show server error
+        const msg = (err && err.message) ? err.message : String(err);
+        showJoinNote(msg, true);
+        console.error('Auto-join failed after selecting ship:', err);
+        if (joinBtn) { joinBtn.disabled = false; delete joinBtn.dataset.loading; }
+        // leave pendingJoinPin intact so user can cancel
+      }
+    })();
+  } else {
+    // If not joining, keep join input hidden since user selected a ship
+    updateJoinInputVisibility();
   }
 }
 
@@ -192,6 +231,13 @@ function setSpectatePin(pin) {
 function showWaitingForPlayer() {
   const remoteIndicator = document.getElementById('remote-ready-indicator');
   if (remoteIndicator) remoteIndicator.textContent = 'Waiting for player to join...';
+}
+
+function showError(msg) {
+  const errEl = document.getElementById('error');
+  if (!errEl) return;
+  errEl.textContent = msg;
+  errEl.style.display = 'block';
 }
 
 // Helper — populate a <select> with all ships, optionally select a given id
@@ -313,6 +359,15 @@ function applyWaitingRoomUpdate(room) {
   setSpectatePin(room.spectatePin);
   setJoinPin(room.p2 ? null : room.gamePin);
 
+  // When user becomes assigned a slot, persist the token into localStorage for future visits
+  if (joinedRoom && gamePin && playerToken && localSlot) {
+    try {
+      localStorage.setItem(`playerToken-${gamePin}-${localSlot === 'p1' ? 'P1' : 'P2'}`, playerToken);
+    } catch (e) {
+      console.warn('Failed to store player token locally', e);
+    }
+  }
+
   let leftSlot, rightSlot;
   if (localSlot === 'p1') { leftSlot = 'p1'; rightSlot = 'p2'; }
   else if (localSlot === 'p2') { leftSlot = 'p2'; rightSlot = 'p1'; }
@@ -322,6 +377,9 @@ function applyWaitingRoomUpdate(room) {
   renderSlotToSide(room, rightSlot, 'right');
 
   updateReadyIndicators(room);
+
+  // join input visibility might change once the room updates (e.g. if p2 auto-joined)
+  updateJoinInputVisibility();
 }
 
 // ---------------- Socket handlers ----------------
@@ -346,7 +404,9 @@ function initSocket() {
     if (payload && payload.gameId) {
       let t = getPlayerToken();
       localStorage.setItem(`playerToken-${payload.gameId}-${isHost ? 'P1' : 'P2'}`, t);
-      localStorage.removeItem(`playerToken-${gamePin}-${isHost ? 'P1' : 'P2'}`);
+      try {
+        localStorage.removeItem(`playerToken-${gamePin}-${isHost ? 'P1' : 'P2'}`);
+      } catch(e) {}
       window.location.href = `/game?gameId=${payload.gameId}`;
     }
     else
@@ -398,6 +458,7 @@ async function joinWaitingRoomOnServer(pin, p2ShipObj) {
   return new Promise((resolve, reject) => {
     if (!socket) return reject(new Error('Socket not initialized'));
     if (!p2ShipObj) return reject(new Error('No ship provided'));
+    if (!pin) return reject(new Error('No join PIN provided'));
 
     const minimal = toWaitingRoomShipDescriptor(p2ShipObj, 'P2');
 
@@ -451,11 +512,219 @@ function requestStartGame() {
   });
 }
 
+// ---------------- Join PIN UI helpers ----------------
+
+function updateJoinInputVisibility() {
+  const joinRow = document.getElementById('join-pin-input-row');
+  const player1Select = document.getElementById('player1-select');
+  const joinCancelBtn = document.getElementById('join-pin-cancel-button');
+  const joinNote = document.getElementById('join-note');
+  if (!joinRow || !player1Select || !joinNote) return;
+
+  // Show join input if:
+  //  - user has not selected a ship AND hasn't joined a room
+  //  OR
+  //  - there is an active pendingJoinPin (we keep input visible until the pending join resolves)
+  const noShipSelected = !player1Select.value;
+  const showBecausePending = !!pendingJoinPin && !joinedRoom;
+  if ((noShipSelected && !joinedRoom) || showBecausePending) {
+    joinRow.classList.remove('hidden');
+  } else {
+    joinRow.classList.add('hidden');
+  }
+
+  // Show/hide cancel button when we have a pending PIN or if already joined (allow leaving)
+  if (joinCancelBtn) {
+    if ((pendingJoinPin && !joinedRoom) || joinedRoom) joinCancelBtn.classList.remove('hidden');
+    else joinCancelBtn.classList.add('hidden');
+  }
+
+  // Update join-note text if a pending PIN exists
+  if (pendingJoinPin && !joinedRoom) {
+    joinNote.textContent = `Pending join for room ${pendingJoinPin}. Select a ship to join.`;
+    joinNote.classList.remove('hidden');
+    joinNote.classList.remove('error');
+  } else {
+    // leave join-note visible for explicit messages only (error/success)
+    if (!joinNote.classList.contains('error')) {
+      joinNote.textContent = '';
+      joinNote.classList.add('hidden');
+    }
+  }
+}
+
+function setPendingJoinPin(pin) {
+  pendingJoinPin = pin ? String(pin).trim() : null;
+  // show a note for the user if they haven't selected a ship yet
+  updateJoinInputVisibility();
+}
+
+function showJoinNote(message, isError = false) {
+  const joinNote = document.getElementById('join-note');
+  if (!joinNote) return;
+  joinNote.textContent = message || '';
+  joinNote.classList.remove('hidden');
+  if (isError) {
+    joinNote.classList.add('error');
+    // also mirror into main #error for visibility (optional)
+    const errEl = document.getElementById('error');
+    if (errEl) { errEl.textContent = message; errEl.style.display = 'block'; }
+  } else {
+    joinNote.classList.remove('error');
+  }
+}
+
+function clearJoinPendingNote() {
+  const joinNote = document.getElementById('join-note');
+  if (joinNote) {
+    joinNote.textContent = '';
+    joinNote.classList.add('hidden');
+    joinNote.classList.remove('error');
+  }
+  // Also clear global error box
+  const errEl = document.getElementById('error');
+  if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
+}
+
+
 // ---------------- UI wiring (single-time bindings) ----------------
 
 document.addEventListener('DOMContentLoaded', () => {
   initSocket();
 
+  // Grab join UI elements early
+  const joinInput = document.getElementById('join-pin-input');
+  const joinBtn = document.getElementById('join-pin-join-button');
+  const joinCancelBtn = document.getElementById('join-pin-cancel-button');
+  const player1Select = document.getElementById('player1-select');
+  const player2Select = document.getElementById('player2-select');
+
+  // Wire join input/button behavior
+  if (joinInput) {
+    joinInput.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        if (joinBtn) joinBtn.click();
+      }
+    });
+  }
+
+  if (joinBtn) {
+    joinBtn.addEventListener('click', async () => {
+      const raw = (joinInput && joinInput.value) ? joinInput.value.trim() : '';
+      if (!raw) {
+        showJoinNote('Please enter a join PIN first.', true);
+        return;
+      }
+
+      // Set pending PIN and show immediate pending UI
+      setPendingJoinPin(raw);
+      showJoinNote(`Pending join for room ${raw}. Select a ship to join.`, false);
+      updateJoinInputVisibility();
+
+      // disable join button while we attempt the join
+      joinBtn.disabled = true;
+      joinBtn.dataset.loading = 'true';
+      const prevText = joinBtn.textContent;
+      joinBtn.textContent = 'Joining...';
+
+      try {
+        const shipId = player1Select ? player1Select.value : null;
+
+        if (shipId) {
+          // attempt immediate join
+          const shipObj = ships.find(s => String(s.ship_id) === String(shipId));
+          if (!shipObj) throw new Error('Selected ship not found.');
+          await joinWaitingRoomOnServer(raw, shipObj);
+          // success
+          setPendingJoinPin(null);
+          clearJoinPendingNote();
+          if (joinInput) joinInput.value = '';
+        } else {
+          // No ship selected yet: keep pending state and UI, user will pick a ship to auto-join
+          showJoinNote(`Pending join for room ${raw}. Select your ship to complete join.`, false);
+        }
+      } catch (err) {
+        const msg = (err && err.message) ? err.message : String(err);
+        // persistent error shown inside join-note (so user can cancel or retry)
+        showJoinNote(msg, true);
+        console.error('Join attempt failed:', err);
+        // keep pendingJoinPin so user can cancel/try again
+      } finally {
+        // re-enable join button and restore text
+        joinBtn.disabled = false;
+        delete joinBtn.dataset.loading;
+        joinBtn.textContent = prevText;
+        // show/hide inputs according to new state
+        updateJoinInputVisibility();
+      }
+    });
+  }
+
+
+  if (joinCancelBtn) {
+    joinCancelBtn.addEventListener('click', async () => {
+      // If we are already joined to a waiting room, leave it server-side
+      if (joinedRoom && gamePin) {
+        try {
+          await new Promise((resolve, reject) => {
+            socket.emit('leaveWaitingRoom', { gamePin }, (resp) => {
+              if (!resp) return reject(new Error('No response from server'));
+              if (resp.error) return reject(new Error(resp.error));
+              resolve(resp);
+            });
+          });
+        } catch (err) {
+          const msg = (err && err.message) ? err.message : String(err);
+          showJoinNote(msg, true);
+          return;
+        }
+
+        // left successfully: clear local room state so user can create another room
+        // remove stored playerToken for the old room BEFORE clearing gamePin
+        try {
+          localStorage.removeItem(`playerToken-${gamePin}-${isHost ? 'P1' : 'P2'}`);
+        } catch (e) { /* ignore */ }
+
+        joinedRoom = false;
+        gamePin = null;
+        localSlot = null;
+        serverRoomState = null;
+
+        // clear pending PIN and UI
+        setPendingJoinPin(null);
+        clearJoinPendingNote();
+        updateJoinInputVisibility();
+        return;
+      }
+
+      // If not joined yet: cancel pending pin and, if a ship is selected, create your own room
+      const shipId = player1Select ? player1Select.value : null;
+      setPendingJoinPin(null);
+      clearJoinPendingNote();
+      if (joinInput) joinInput.value = '';
+
+      if (!joinedRoom && shipId) {
+        // Create own room now (user cancelled attempting to join)
+        const shipObj = ships.find(s => String(s.ship_id) === String(shipId));
+        if (shipObj) {
+          try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const spectate = urlParams.get('spectateVis') ?? 'PUBLIC';
+            const joinVis = urlParams.get('joinVis') ?? 'PRIVATE';
+            await createWaitingRoomOnServer(spectate, joinVis, shipObj);
+          } catch (err) {
+            showJoinNote(err.message || String(err), true);
+            console.error('Failed to create waiting room after cancelling join:', err);
+          }
+        }
+      } else {
+        updateJoinInputVisibility();
+      }
+    });
+  }
+
+  // main flow after ships load
   loadShips().then(() => {
     const player1Select = document.getElementById('player1-select');
     const player2Select = document.getElementById('player2-select');
@@ -470,7 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectShip('player1', shipId);
         const shipObj = ships.find(s => String(s.ship_id) === String(shipId));
         if (!joinedRoom) {
-          // If URL includes a join pin, attempt join flow first
+          // If there's a pending join PIN in the query string (legacy), keep that behavior
           const joinPinParams = new URLSearchParams(window.location.search);
           const joinPinParam = joinPinParams.get('join') || joinPinParams.get('gamePin');
           if (joinPinParam) {
@@ -479,28 +748,32 @@ document.addEventListener('DOMContentLoaded', () => {
               playerToken = getPlayerToken();
             } catch (err) {
               console.error('Failed to join waiting room:', err);
-              const errEl = document.getElementById('error');
-              if (errEl) { errEl.style.display = 'block'; errEl.textContent = err.message; }
+              showError(err.message || String(err));
             }
             return;
           }
 
-          const urlParams = new URLSearchParams(window.location.search);
-          const spectate = urlParams.get('spectateVis') ?? 'PUBLIC';
-          const joinVis = urlParams.get('joinVis') ?? 'PRIVATE';
-          try {
-            await createWaitingRoomOnServer(spectate, joinVis, shipObj);
-          } catch (err) {
-            console.error('Failed to create waiting room:', err);
-            const errEl = document.getElementById('error');
-            if (errEl) { errEl.style.display = 'block'; errEl.textContent = err.message; }
+          // If user previously pasted a PIN into the join input, pendingJoinPin is set and join will be attempted automatically by selectShip()
+          // Otherwise create a waiting room (host)
+          if (!pendingJoinPin) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const spectate = urlParams.get('spectateVis') ?? 'PUBLIC';
+            const joinVis = urlParams.get('joinVis') ?? 'PRIVATE';
+            try {
+              await createWaitingRoomOnServer(spectate, joinVis, shipObj);
+            } catch (err) {
+              console.error('Failed to create waiting room:', err);
+              showError(err.message || String(err));
+            }
           }
         } else {
+          // already in a room — broadcast change
           sendSelectShipToServer(shipObj);
         }
       });
     }
 
+    // Ready button wiring
     const localReadyBtn = document.getElementById('local-ready-btn');
     if (localReadyBtn) {
       localReadyBtn.addEventListener('click', () => {
@@ -517,9 +790,15 @@ document.addEventListener('DOMContentLoaded', () => {
       battleBtn.addEventListener('click', () => requestStartGame());
     }
 
+    // If URL includes join pin, prefill join input and set pending join (but do not auto-join until ship is selected)
     const joinPinParamsOuter = new URLSearchParams(window.location.search);
     const joinPinParamOuter = joinPinParamsOuter.get('join') || joinPinParamsOuter.get('gamePin');
     if (joinPinParamOuter) {
+      setPendingJoinPin(joinPinParamOuter);
+      const joinInputEl = document.getElementById('join-pin-input');
+      if (joinInputEl) joinInputEl.value = joinPinParamOuter;
+      updateJoinInputVisibility();
+      // show a small note to the user
       const leftSection = document.querySelector('#player1-ship-selection');
       if (leftSection) {
         const note = document.createElement('div');
@@ -530,6 +809,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (player2Select) player2Select.disabled = true;
+    // initial join input visibility
+    updateJoinInputVisibility();
 
   }).catch(err => {
     console.warn('loadShips() failed:', err);
