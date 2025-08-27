@@ -568,22 +568,22 @@ class GameEngine {
         // Reduce shield HP by what they actually absorbed
         target.state.shield_hp -= absorb;
 
-        // Anything not absorbed leaks through to hull AND should get the hull multiplier
+        // Anything not absorbed leaks through to hull
         const unabsorbed = toShields - absorb;
         if (unabsorbed > 0) {
-          damageToHull += unabsorbed * Hm;
+          // Convert back to baseDamage units by undoing the shield multiplier
+          const leakBase = unabsorbed / Sm;
+          damageToHull += leakBase * Hm;
         }
       }
     }
 
-    // If shields are *down* after absorption, apply the "hull-only" remainder too.
-    //    IMPORTANT FIX: Any damage that reaches hull should get Hm. This includes:
-    //    - the remainder portion (baseDamage * (1 - Sm)) when shields are down
-    //    - previously added bypass + leakage already multiplied by Hm above
-    if (target.state.shield_hp <= 0) {
-      const remainder = Math.max(0, baseDamage * (1 - Sm));
-      if (remainder > 0) {
-        damageToHull += remainder * Hm;
+    // Snap shields to 0 if <1% of max capacity
+    if (target.baseStats.shield_strength > 0) {
+      const minThreshold = target.baseStats.shield_strength * 0.01;
+      if (target.state.shield_hp > 0 && target.state.shield_hp < minThreshold) {
+        // Count the tiny leftover as extra shield damage
+        target.state.shield_hp = 0;
       }
     }
 
