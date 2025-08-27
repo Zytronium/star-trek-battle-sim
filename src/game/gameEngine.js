@@ -1,5 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
-const { activeGames, getIO } = require('./gameState');
+const { activeGames, waitingRooms, getIO } = require('./gameState');
 const { inspect } = require("node:util");
 const AppService = require('../controllers/appService');
 
@@ -7,12 +7,10 @@ const debugMode = process.env.DEBUG?.toLowerCase() === 'true';
 
 class GameEngine {
   static VALID_TYPES = ["AI V AI", "PLAYER V AI", "PLAYER V PLAYER", "AI V BOSS", "PLAYER V BOSS", "PLAYERS V BOSS"];
-  static IMPLEMENTED_TYPES = ["PLAYER V AI"];
+  static IMPLEMENTED_TYPES = ["PLAYER V AI", "PLAYER V PLAYER"];
 
   // ======== Create new game ======== \\
-  static async createGame(setup) {
-    const { type, ships } = setup;
-
+  static async createGame(type, ships, playerTokens, spectatePin, spectateRequiresPin) {
     // ---------- Validate type ---------- //
     if (!type) {
       return { error: true, message: "Missing param 'type'" };
@@ -52,38 +50,54 @@ class GameEngine {
       };
     }
 
+    // Generate spectate pin if not specified
+    if (!spectatePin) {
+      do {
+        spectatePin = this.randomPin(5);
+      } while (
+        Object.values(waitingRooms).some(r => r.spectatePin === spectatePin) ||
+        Object.values(activeGames).some(g => g.spectatePin === spectatePin)
+        );
+    }
+
     // ---------- Build runtime ships ---------- //
     const runtimeShips = [];
     for (const s of ships) {
       const runtimeShip = await this.createRuntimeShip(s.ship_id, s.pilot, s.is_boss);
       runtimeShips.push(runtimeShip);
     }
+
     // ---------- Create game ---------- //
     const gameId = uuidv4();
-    const playerTokens = ships // todo: change this to client side logic so each player can only see their own token without te server needing to manage multiple sockets per game.
-      .filter(s => !s.is_boss && s.pilot.toUpperCase().at(0) === "P")
-      .reduce((acc, s, i) => {
-        acc[`P${i + 1}`] = uuidv4();
-        return acc;
-      }, {});
 
+    console.log(`Creating game ${gameId} with tokens ${playerTokens}`);
     const gameState = {
       gameId,
       type,
       ships: runtimeShips,
       logs: [`Game created: ${type}`],
       turn: 1,
+      playerTurn: 'P1',
       winner: null,
-      playerTokens // todo: remove this when client-side logic generates their player tokens; replace with saving the player token instead.
+      playerTokens,
+      spectatePin,
+      spectateRequiresPin
     };
 
     // Save game in activeGames (retrieve with await GameEngine.getGame(gameId);)
     activeGames[gameId] = gameState;
 
-    // Broadcast initial game state
-    getIO().to(`game-${gameId}`).emit('gameUpdate', gameState);
+    // Create a sanitized copy to send to clients (remove any sensitive token info)
+    // Shallow clone is fine here because we don't modify nested objects for sanitization,
+    // but ensure playerTokens is removed.
+    const sanitizedGameState = Object.assign({}, gameState);
+    if (sanitizedGameState.playerTokens) delete sanitizedGameState.playerTokens;
 
-    return { success: true, gameId, playerTokens, gameState };
+    // Broadcast initial (sanitized) game state
+    getIO().to(`game-${gameId}`).emit('gameUpdate', sanitizedGameState);
+
+    // Return success including the tokens so server-side caller (controller) can forward the right tokens to the right clients
+    return { success: true, gameId, playerTokens, sanitizedGameState };
   }
 
   // Helper function for creating ships in memory at start of createGame()
@@ -310,6 +324,126 @@ class GameEngine {
     return return_value;
   }
 
+  // ======== Create waiting room for PvP game ======== \\
+  static async createWaitingRoom(spectateVis, joinVis, p1Ship, playerToken) {
+    // ---------- Validate spectateVis ---------- //
+    if (typeof spectateVis !== "string") {
+      throw new Error("Param 'spectateVis' must be a string.");
+    }
+    if (!["PUBLIC", "PRIVATE"].includes(spectateVis.toUpperCase())) {
+      throw new Error("Param 'spectateVis' is invalid. Must be 'PUBLIC' or 'PRIVATE'.");
+    }
+
+    // ---------- Validate joinVis ---------- //
+    if (typeof joinVis !== "string") {
+      throw new Error("Param 'joinVis' must be a string.");
+    }
+    if (!["PUBLIC", "PRIVATE"].includes(joinVis.toUpperCase())) {
+      throw new Error("Param 'joinVis' is invalid. Must be 'PUBLIC' or 'PRIVATE'.");
+    }
+
+    // ---------- Validate ship ---------- //
+    const shipsCheck = this.validateShips([p1Ship], "PLAYER V PLAYER");
+    if (shipsCheck.error) {
+      throw new Error(shipsCheck.reason);
+    }
+    if (!shipsCheck.valid) {
+      throw new Error(`Param 'p1Ship' is invalid: ${shipsCheck.reason}`);
+    }
+
+    // ---------- Validate playerToken ---------- //
+    if (typeof playerToken !== "string") {
+      throw new Error("Param 'playerToken' must be a string.");
+    }
+    if (!playerToken) {
+      throw new Error("Param 'playerToken' cannot be empty.");
+    }
+
+    // Create a unique game pin and spectate pin
+    let gamePin;
+    let spectatePin;
+    do {
+      gamePin = this.randomPin(4);
+    } while (waitingRooms[gamePin])
+    do {
+      spectatePin = this.randomPin(5);
+    } while (
+      Object.values(waitingRooms).some(r => r.spectatePin === spectatePin) ||
+      Object.values(activeGames).some(g => g.spectatePin === spectatePin)
+      );
+
+
+    let waitingRoom = {
+      gamePin, // also used as the room ID
+      spectatePin,
+      p1: { // p1 will be host. Read note below about what this means.
+        ship: p1Ship,
+        token: playerToken, // NOTE: NEVER send this token to the client!
+        ready: false,
+        connected: true // Set to false when player's client disconnects if we can even detect that
+      },
+      p2: null,
+      spectateVis: spectateVis.toUpperCase(),
+      joinVis: joinVis.toUpperCase()
+    };
+    // NOTE: P1 will always be the host. While game logic still runs on the
+    //       backend, some actions must be only done on one client, not both.
+    //       For certain actions, only the host will perform them. For example,
+    //       when both players signal they are ready to being the battle, the
+    //       host client will send the signal to create and start the game.
+
+    // waitingRooms[gamePin] = waitingRoom;
+
+    let newHostRoom = null;
+
+    // If this is public, try to auto-match
+    if (joinVis.toUpperCase() === "PUBLIC") {
+      newHostRoom = this.searchWaitingRooms(waitingRoom);
+    }
+
+    // If this is still the host room, add it to waitingRooms
+    if (!newHostRoom) {
+      waitingRooms[gamePin] = waitingRoom;
+    } else {
+      waitingRoom = newHostRoom;
+    }
+
+    return waitingRoom;
+  }
+
+  // Helper function to generate a random pin
+  static randomPin(length) {
+    let max = Math.pow(10, length); // upper bound (exclusive)
+    let num = Math.floor(Math.random() * max);
+    return String(num).padStart(length, '0'); // keep leading zeros
+  }
+
+  // ======== Search for Waiting Rooms and Merge ======== \\
+  static searchWaitingRooms(waitingRoom) {
+    // Find all waiting rooms whose joinVis = PUBLIC and doesn't have a p2.
+    const availableRooms = Object.values(waitingRooms)
+      .filter(r => r.joinVis === "PUBLIC") // Anyone can join
+      .filter(r => r.p2 === null)          // Waiting for a p2
+      .filter(r => r.p1.connected);        // P1 is still there
+
+    // If no rooms are available, return null to indicate none were found
+    if (availableRooms.length === 0) {
+      return null;
+    }
+
+    // Pick a random available room
+    const hostRoom = availableRooms[Math.floor(Math.random() * availableRooms.length)];
+
+    // Merge: assign this waiting room's p1 as hostRoom.p2
+    hostRoom.p2 = waitingRoom.p1;
+
+    // TODO: socket management
+    // We'll likely want to do something like:
+    // getIO().to(`room-${hostRoom.gamePin}`).emit('waitingRoomUpdated', hostRoom);
+
+    return hostRoom;
+  }
+
   // ======== Get game from ID ======== \\
   static getGame(gameId) {
     return activeGames[gameId];
@@ -344,8 +478,16 @@ class GameEngine {
   }
 
   // ======== Process game logic for new turn ======== \\
-  static async processTurnIntent(game, intent) {
+  static async processTurnIntent(game, intent, token) {
     if (!game) throw new Error("Game object is required");
+
+    if (intent.attacker.toUpperCase().startsWith("P") && (!token || token !== game.playerTokens[intent.attacker.toUpperCase()])) {
+      console.warn(
+        'UNAUTHORIZED INTENT DETECTED.',
+        `Attacker: ${intent.attacker} | Token Supplied: ${token}`
+      ); // Aw, don't cry (;
+      throw new Error("Unauthorized: Player token is invalid or missing.");
+    }
 
 /*    console.log(inspect(game, {
       colors: true, // enable ANSI colors
@@ -481,6 +623,7 @@ class GameEngine {
 
     // Log the action
     game.turn++;
+    game.playerTurn = intent.target; // Only works when we're 100% sure attacker & target are not the same and the game is a 1v1 (which should always be the case currently)
     const weapon = await AppService.getWeaponByID(intent.weapon_id);
     const logMessage = `${attacker.baseStats.name} fired ${weapon.name} at ${target.baseStats.name}, dealing ${Number(totalDamage.toFixed(1))} total damage${target.state.hull_hp === 0 ? ` and destroying ${target.baseStats.name}!` : "."}`;
     game.logs.push({
@@ -499,7 +642,13 @@ class GameEngine {
     console.log(`Turn ${game.turn - 1}: ${logMessage}`);
     console.log(`Turn completed. Next turn: ${game.turn}`);
 
-    return game;
+    // Create a sanitized copy to send to clients (remove any sensitive token info)
+    // Shallow clone is fine here because we don't modify nested objects for sanitization,
+    // but ensure playerTokens is removed.
+    const sanitizedGame = Object.assign({}, game);
+    if (sanitizedGame.playerTokens) delete sanitizedGame.playerTokens;
+
+    return sanitizedGame;
   }
 
   // ======== CPU Turn ======== \\

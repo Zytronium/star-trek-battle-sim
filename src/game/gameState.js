@@ -1,5 +1,6 @@
 // Store active games in memory for now
 const activeGames = {};
+const waitingRooms = {};
 let io;
 
 function setIO(socketServer) {
@@ -11,4 +12,4 @@ function getIO() {
   return io;
 }
 
-module.exports = { activeGames, setIO, getIO };
+module.exports = { activeGames, waitingRooms, setIO, getIO };

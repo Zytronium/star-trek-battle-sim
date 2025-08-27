@@ -33,18 +33,65 @@ let latestGameState = null;
 let latestPlayerShip = null;
 let latestCpuShip = null;
 
-// Helper to send intent using the latest snapshot (avoids stale closures)
-function sendIntentUsingLatest(w) {
-  if (!latestGameState || !latestPlayerShip || !latestCpuShip) return;
-  socket.emit('playerIntent', {
-    gameId: latestGameState.gameId,
-    intent: {
-      attacker: latestPlayerShip.pilot,
-      weapon_id: w.weapon_id,
-      target: latestCpuShip.pilot
-    }
-  });
+// Ensure this function uses the local pilot (P1/P2) when sending intents.
+// Accepts either a weapon object OR a weapon_id number.
+function sendIntentUsingLatest(weaponOrId) {
+  if (!latestGameState) return;
+
+  // Determine local pilot: prefer the per-tab session marker (set by waiting-room when redirecting),
+  // fallback to localStorage token presence (legacy). This must match the logic used in gameUpdate.
+  const sessionPilot = sessionStorage.getItem(`playerPilot-${gameId}`) || null;
+  const storedP1Token = localStorage.getItem(`playerToken-${gameId}-P1`);
+  const storedP2Token = localStorage.getItem(`playerToken-${gameId}-P2`);
+
+  let myPilot = null;
+  if (sessionPilot === 'P1' || sessionPilot === 'P2') {
+    myPilot = sessionPilot;
+  } else {
+    myPilot = storedP2Token ? 'P2' : (storedP1Token ? 'P1' : null);
+  }
+
+  console.debug('[debug] sendIntentUsingLatest myPilot=', myPilot, 'sessionPilot=', sessionPilot, 'storedP1=', !!storedP1Token, 'storedP2=', !!storedP2Token);
+
+  if (!myPilot) {
+    showError('You are not a participant in this game.');
+    return;
+  }
+
+  const myShip = latestGameState.ships.find(s => String(s.pilot).toUpperCase() === myPilot);
+  const targetShip = latestGameState.ships.find(s => String(s.pilot).toUpperCase() !== myPilot);
+
+  if (!myShip || !targetShip) {
+    showError('Game state incomplete — cannot send action.');
+    return;
+  }
+
+  // accept either a weapon object or simple id
+  const weaponId = (typeof weaponOrId === 'object' && weaponOrId !== null) ? Number(weaponOrId.weapon_id) : Number(weaponOrId);
+
+  if (!Number.isFinite(weaponId)) {
+    showError('Invalid weapon selection.');
+    return;
+  }
+
+  // Build intent payload the server expects — attacker MUST equal myPilot
+  const intent = {
+    attacker: myPilot,
+    target: targetShip.pilot,
+    action: 'attack',
+    weapon_id: weaponId
+  };
+
+  // include the player's stored token for this player slot (token must match server-side player)
+  const tokenKey = `playerToken-${gameId}-${myPilot}`;
+  const token = localStorage.getItem(tokenKey) || null;
+
+  console.debug('[debug] sending intent', { gameId, attacker: intent.attacker, target: intent.target, weapon_id: intent.weapon_id, tokenKey, hasToken: !!token });
+
+  // send intent
+  socket.emit('playerIntent', { gameId, intent, token });
 }
+
 
 // ================ UI Updaters ================ \\
 
@@ -54,13 +101,14 @@ function updateSidePanel(prefix, data, gameOver = false) {
   // header: show ship name with pilot suffix on H2
   const header = qs(`#${prefix === 'p' ? 'player-panel' : 'cpu-panel'} h2`);
   const shipName = data?.baseStats?.name ?? `Ship ${data?.ship_id ?? '?'}`;
-  const pilotLabel = (data?.pilot ?? '').toUpperCase() === 'P1' ? '(P1)' : '(CPU1)';
-  if (header) header.textContent = `${shipName} ${pilotLabel}`;
+  const pilotId = String(data?.pilot ?? '').toUpperCase();
+  let pilotLabel = '';
+  if (pilotId === 'P1') pilotLabel = '(P1)';
+  else if (pilotId === 'P2') pilotLabel = '(P2)';
+  else if (pilotId.startsWith('COM')) pilotLabel = '(CPU)';
+  else pilotLabel = `(${pilotId || '??'})`;
 
-  console.log(data);
-  console.log(shipName);
-  console.log(`${shipName} ${pilotLabel}`)
-  console.log(header);
+  if (header) header.textContent = `${shipName} ${pilotLabel}`;
 
   qs(`#${prefix}-class`).textContent = data?.baseStats?.class ?? '—';
   qs(`#${prefix}-owner`).textContent = data?.baseStats?.owner ?? '—';
@@ -220,10 +268,30 @@ function renderWeaponButtons(playerShip, onClick, disableAll = false) {
               return;
             }
 
-            // Normal unlock path
+            // Re-evaluate turn-lock at unlock time (so we don't accidentally re-enable when it's not our turn)
+            const sessionPilot = sessionStorage.getItem(`playerPilot-${gameId}`) || null;
+            const storedP1TokenNow = localStorage.getItem(`playerToken-${gameId}-P1`);
+            const storedP2TokenNow = localStorage.getItem(`playerToken-${gameId}-P2`);
+            let myPilotNow = null;
+            if (sessionPilot === 'P1' || sessionPilot === 'P2') {
+              myPilotNow = sessionPilot;
+            } else {
+              myPilotNow = storedP2TokenNow ? 'P2' : (storedP1TokenNow ? 'P1' : null);
+            }
+
+            // keep socket._lastKnownPlayerTurn up-to-date if playerTurn appeared meanwhile
+            const playerTurnRawNow = (latestGameState?.playerTurn || '').toString().trim().toUpperCase();
+            if (playerTurnRawNow) socket._lastKnownPlayerTurn = playerTurnRawNow;
+            const effectivePlayerTurnNow = socket._lastKnownPlayerTurn || '';
+
+            const serverReportedErrorNow = !!(latestGameState && latestGameState.error);
+            const isMyTurnNow = effectivePlayerTurnNow ? (effectivePlayerTurnNow === String(myPilotNow).toUpperCase()) : true;
+            const disableDueToTurnNow = effectivePlayerTurnNow && !isMyTurnNow && !serverReportedErrorNow;
+
+            // Normal unlock path (but account for turn lock)
             weaponButtonsLockedUntil = 0;
             // re-render using the latest snapshot so cooldown labels reflect server state
-            renderWeaponButtons(latestPlayerShip || playerShip, onClick, false);
+            renderWeaponButtons(latestPlayerShip || playerShip, onClick, (latestGameState && latestGameState.winner) || disableDueToTurnNow);
           }, remaining);
         }
         // re-render immediately to reflect the locked UI using the latest snapshot
@@ -242,26 +310,31 @@ function renderWeaponButtons(playerShip, onClick, disableAll = false) {
 // ================ Main live page logic ================ \\
 
 let gameId = null;
-let playerToken = null; // if/when you enforce tokens, you can thread it in here
+let playerToken = null;
+let spectatePin = null;
 
 // If this page is opened with `?gameId=...`, treat it as spectate/join.
 // Otherwise, you can programmatically navigate from the selection page.
 document.addEventListener('DOMContentLoaded', async () => {
   gameId = getQueryParam('gameId');
-  if (!gameId) {
-    // For spectate links using `/spectate?id=`, support that too:
-    gameId = getQueryParam('id');
+  spectatePin = getQueryParam('pin');
+
+  // If we only have a spectate pin, don't try to join yet.
+  // We'll wait until the first gameUpdate tells us the gameId.
+  if (gameId) {
+    socket.emit('joinGame', gameId);
+    socket._joinedGame = true;
   }
 
   // Spectate link copy
   const copyBtn = qs('#copy-spectate');
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
-      if (!gameId) {
-        alert('Unable to generate spectate link: No game ID found');
+      if (!spectatePin) {
+        alert('Unable to generate spectate link: No spectate pin found');
         return;
       }
-      const url = `${window.location.origin}/game/spectate?id=${gameId}`;
+      const url = `${window.location.origin}/game/spectate?pin=${spectatePin}`;
       try {
         navigator.clipboard.writeText(url).then(() => {
           alert("Spectate link copied to clipboard.");
@@ -296,27 +369,115 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Join the Socket.IO room as soon as possible
   if (gameId) {
     socket.emit('joinGame', gameId);
+    socket._joinedGame = true;
+  } else if (spectatePin) {
+    // Ask the server to resolve the pin and join the corresponding game room.
+    // If server knows the pin it should add us to that room (so we get subsequent gameUpdate),
+    // and ideally send an immediate gameUpdate to this socket so we see initial state.
+    socket.emit('joinByPin', { pin: spectatePin });
+    socket._joinedByPin = true;
   }
+
+  // Listen for server ack when joining by pin (optional, but helpful)
+  socket.on('joinByPinResult', (res) => {
+    // res: { success: boolean, gameId?: string, message?: string, gameState?: {...} }
+    if (res && res.success) {
+      if (!gameId && res.gameId) {
+        gameId = res.gameId;
+      }
+      // server may include an immediate snapshot:
+      if (res.gameState) {
+        // server sent initial state directly — process it as normal
+        // emulate the same path as a pushed gameUpdate (so UI updates)
+        socket.emit && socket.emit('noop'); // noop to keep some old code paths happy; not required
+        // optionally call your gameUpdate handler directly if you expose it; or simply let the server
+        // also send a 'gameUpdate' event after joining (recommended).
+      }
+    } else {
+      alert(res && res.message ? `Spectate failed: ${res.message}` : 'Spectate pin not found.');
+    }
+  });
 
   // Listen for server pushes
   socket.on('gameUpdate', (gameState) => {
     // update latest snapshot references first (so render/send use newest data)
     latestGameState = gameState;
-    latestPlayerShip = gameState.ships.find(s => s.pilot === 'P1');
-    latestCpuShip = gameState.ships.find(s => s.pilot !== 'P1');
 
-    const playerShip = latestPlayerShip;
-    const cpuShip = latestCpuShip;
+    // If we came in with only a pin, fill in gameId when we see it in gameState.
+    if (!gameId && gameState.gameId) {
+      gameId = gameState.gameId;
+      if (!socket._joinedGame) {
+        socket.emit('joinGame', gameId);
+        socket._joinedGame = true;
+      }
+    }
+
+    // Always track the current spectatePin from server
+    if (!spectatePin && gameState.spectatePin) {
+      spectatePin = gameState.spectatePin;
+    }
+
+    console.debug("[DEBUG] gameState:", gameState);
+
+    // --- Determine which pilot is this client (P1 or P2) ---
+    // Preferred (and reliable) source: sessionStorage marker set by the waiting-room tab when it redirected to /game.
+    // Fallback: localStorage tokens (older behavior) — but localStorage may contain both tokens on the same device,
+    // so sessionStorage avoids ambiguous same-device/multi-tab issues.
+    const sessionPilot = sessionStorage.getItem(`playerPilot-${gameId}`) || null;
+
+    const storedP1Token = localStorage.getItem(`playerToken-${gameId}-P1`);
+    const storedP2Token = localStorage.getItem(`playerToken-${gameId}-P2`);
+
+    let myPilot = null;
+    if (sessionPilot === 'P1' || sessionPilot === 'P2') {
+      myPilot = sessionPilot;
+    } else {
+      // backwards-compatible fallback to token presence
+      // prefer P2 if only P2 present, otherwise P1 if present, otherwise spectator
+      myPilot = storedP2Token ? 'P2' : (storedP1Token ? 'P1' : null);
+    }
+
+    console.debug('[debug] gameUpdate myPilot=', myPilot, 'sessionPilot=', sessionPilot, 'storedP1=', !!storedP1Token, 'storedP2=', !!storedP2Token);
+
+    // If we don't have a stored token for this game, treat the client as a spectator:
+    // disable interactive controls by rendering weapon buttons with gameOver=true
+    if (!myPilot) {
+      // locate ships for rendering (best-effort)
+      latestPlayerShip = gameState.ships[0] || null;
+      latestCpuShip = gameState.ships[1] || null;
+
+      renderWeaponButtons(null, () => {}, true); // disable buttons
+      updateSidePanel('p', latestPlayerShip, !!gameState.winner);
+      updateSidePanel('c', latestCpuShip, !!gameState.winner);
+      updateTopBar(gameState);
+      return;
+    }
+
+    // --- Find "my" ship and the opponent ship from server state ---
+    const myShip = gameState.ships.find(s => String(s.pilot).toUpperCase() === myPilot) || null;
+    const otherShip = gameState.ships.find(s => String(s.pilot).toUpperCase() !== myPilot) || null;
+
+    latestPlayerShip = myShip;
+    latestCpuShip = otherShip;
 
     // protect against missing data
-    if (!playerShip || !cpuShip) return;
+    if (!myShip || !otherShip) {
+      // still update UI minimally
+      updateTopBar(gameState);
+      return;
+    }
 
-    const target = gameState.logs.length === 1
-      ? "NONE"
-      : gameState.logs[gameState.logs.length - 1].action.target ?? "NONE";
+    // determine last action's declared target (if any)
+    const lastLog = gameState.logs && gameState.logs.length > 0 ? gameState.logs[gameState.logs.length - 1] : null;
+    const target = lastLog ? (lastLog.action?.target ?? "NONE") : "NONE";
 
-    const targetDot = (target.toUpperCase() === "P1" ? "left" : "right");
-    const lastLog = gameState.logs.length > 0 ? gameState.logs[gameState.logs.length - 1] : null;
+    // For visuals: map which side is the *target*
+    // We'll treat the left side as the local player's side.
+    // If local player is P1, left = P1. If local player is P2, left = P2.
+    // targetDot should be 'left' when target === myPilot, otherwise 'right'
+    const targetDot = (String(target).toUpperCase() === myPilot) ? "left" : "right";
+
+    // weapon id from last log (if any)
     const weaponId = lastLog?.action?.weapon_id;
 
     // categorize weapons manually
@@ -360,7 +521,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       weaponButtonsLockedUntil = Infinity;
     }
 
-    renderWeaponButtons(playerShip, sendIntentUsingLatest, gameOver);
+    // --- Robust turn-checking (persist last known playerTurn to avoid transient missing fields)
+    // prefer the most recent non-empty playerTurn; if absent in this update, keep previous
+    const playerTurnRaw = (gameState.playerTurn || '').toString().trim().toUpperCase();
+    if (typeof socket._lastKnownPlayerTurn === 'undefined' || socket._lastKnownPlayerTurn === null) socket._lastKnownPlayerTurn = '';
+    if (playerTurnRaw) socket._lastKnownPlayerTurn = playerTurnRaw;
+    // If the game ended, clear the last known turn (so future games won't reuse it)
+    if (gameState.winner) socket._lastKnownPlayerTurn = '';
+    const effectivePlayerTurn = socket._lastKnownPlayerTurn || '';
+
+    // If server included an explicit error in gameState, do not disable weapons due to turn (best-effort)
+    const serverReportedError = !!(gameState.error);
+
+    const isMyTurn = effectivePlayerTurn ? (effectivePlayerTurn === String(myPilot).toUpperCase()) : true;
+    const disableDueToTurn = effectivePlayerTurn && !isMyTurn && !serverReportedError;
+
+    console.debug('[debug] turn-check', { playerTurnRaw, effectivePlayerTurn, serverReportedError, myPilot, isMyTurn, disableDueToTurn });
 
     // We'll update side panels when the explosion/bounce is played.
     // If no animation will play, update them now.
@@ -478,21 +654,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     // load images if missing
     const playerShipImg = document.getElementById('p-image');
     const cpuShipImg = document.getElementById('c-image');
-    if (!playerShipImg.src) {
-      // Fetch and set player ship image
-      fetch(`/api/shipImg/${playerShip.ship_id}`)
+
+    if (playerShipImg && latestPlayerShip && !playerShipImg.src) {
+      fetch(`/api/shipImg/${latestPlayerShip.ship_id}`)
         .then(res => res.json())
         .then(data => {
-          if (data.src) playerShipImg.src = `/${data.src}`;
+          if (data && data.src) playerShipImg.src = `/${data.src}`;
         })
         .catch(err => console.error("Failed to load player ship image:", err));
     }
-    if (!cpuShipImg.src) {
-      // Fetch and set CPU ship image
-      fetch(`/api/shipImg/${cpuShip.ship_id}`)
+
+    if (cpuShipImg && latestCpuShip && !cpuShipImg.src) {
+      fetch(`/api/shipImg/${latestCpuShip.ship_id}`)
         .then(res => res.json())
         .then(data => {
-          if (data.src) cpuShipImg.src = `/${data.src}`;
+          if (data && data.src) cpuShipImg.src = `/${data.src}`;
         })
         .catch(err => console.error("Failed to load CPU ship image:", err));
     }
@@ -501,7 +677,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     // We still ensure anything else is disabled
     if (gameState.winner) {
       document.querySelectorAll('.weapon-button').forEach(b => b.disabled = true);
+      // remove local player's stored token for this game (if any)
+      const storedP1 = localStorage.getItem(`playerToken-${gameId}-P1`);
+      const storedP2 = localStorage.getItem(`playerToken-${gameId}-P2`);
+      if (storedP1) localStorage.removeItem(`playerToken-${gameId}-P1`);
+      if (storedP2) localStorage.removeItem(`playerToken-${gameId}-P2`);
+
+      // cleanup per-tab pilot marker for this game, since game ended
+      try {
+        sessionStorage.removeItem(`playerPilot-${gameId}`);
+      } catch (e) {}
+
     }
+
+    // Re-render weapon buttons once, using the turn-check result (preserve gameOver locking)
+    renderWeaponButtons(myShip, sendIntentUsingLatest, gameOver || disableDueToTurn);
   });
 
   socket.on('errorMessage', (errorMessage) => {

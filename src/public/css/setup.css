@@ -1,5 +1,4 @@
-/* Star Trek Battle Simulator Styles */
-/* Extracted from setup.html */
+/* Star Trek Battle Simulator Setup Styles */
 
 * {
     margin: 0;
@@ -221,6 +220,17 @@ body {
     text-align: center;
 }
 
+/* Simple visual for join button loading state */
+#join-pin-join-button[data-loading="true"] {
+    opacity: 0.7;
+    cursor: wait;
+}
+#join-pin-join-button[data-loading="true"]::after {
+    content: ' ⏳';
+    margin-left: 6px;
+}
+
+/* Battle, join, and ready buttons */
 .battle-button {
     display: block;
     width: 220px;
@@ -248,7 +258,7 @@ body {
     pointer-events: none;
 }
 
-.battle-button::before {
+.battle-button:not(.small)::before {
     content: '';
     position: absolute;
     top: 50%;
@@ -262,7 +272,7 @@ body {
     animation: pulsateCircle 3s ease-in-out infinite;
 }
 
-.battle-button::after {
+.battle-button:not(.small)::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -298,6 +308,122 @@ body {
     transform: none;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     animation: none;
+}
+
+.ready-button {
+    display: block;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto;
+    padding: 12px 12px;
+    background: linear-gradient(45deg, #00d4ff, #0099cc);
+    color: white;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 100%;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+    position: relative;
+    z-index: 2;
+    text-transform: uppercase;
+    animation: healthGlow 2.5s ease-in-out infinite alternate;
+}
+
+/* Disable pointer hitbox on glowing rings */
+.ready-button::before,
+.ready-button::after {
+    pointer-events: none;
+}
+
+.ready-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    border: 2px solid rgba(0, 212, 255, 0.3);
+    border-radius: 50%;
+    z-index: -1;
+    animation: pulsateCircleSmall 3s ease-in-out infinite;
+}
+
+.ready-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 300px;
+    border: 2px solid rgba(255, 107, 53, 0.6);
+    border-radius: 50%;
+    z-index: -2;
+    animation: pulsateCircleSmall 4s ease-in-out infinite reverse;
+}
+
+/* Add animated gradient glow effect on hover or on ready */
+.ready-button:not(:disabled):hover, .ready-button.ready {
+    background: linear-gradient(60deg, #ff6b35, #f7931e, #ffbc35, #ff6b35);
+    background-size: 300% 300%;
+    animation: gradientShift 6s ease infinite;
+    border-color: #ff6b35;
+    box-shadow:
+            0 0 30px rgba(255, 107, 53, 0.8),
+            0 0 60px rgba(255, 107, 53, 0.4),
+            0 0 90px rgba(255, 107, 53, 0.2);
+    color: white;
+}
+
+.ready-button:not(:disabled):hover {
+    transform: translateY(-3px) scale(1.05);
+}
+
+/* Disabled state overrides everything */
+.ready-button:disabled {
+    background: linear-gradient(45deg, #444, #333);
+    border-color: #555;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    animation: none;
+}
+
+/* Join PIN input helpers */
+.join-input-row {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.join-pin-input {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    color: #fff;
+    min-width: 170px;
+    font-size: 0.95em;
+}
+
+.battle-button.small {
+    width: auto;
+    padding: 10px 14px;
+    font-size: 1em;
+    height: auto;
+    border-radius: 10px;
+}
+
+.join-input-row .dialogue {
+    width: 100%;
+    margin-top: 8px;
+    font-size: 0.9em;
 }
 
 /* Gradient animation definition */
@@ -519,8 +645,8 @@ body {
 }
 
 .selected-ship-display .shield-bar {
-    background: rgba(0, 255, 0, 0.2);
-    border: 1px solid #00ff00;
+    background: rgba(0, 234, 255, 0.2);
+    border: 1px solid #00eaff;
     border-radius: 8px;
     height: 20px;
     position: relative;
@@ -528,7 +654,7 @@ body {
 }
 
 .selected-ship-display .shield-fill {
-    background: linear-gradient(90deg, #00ff00, #00cc00);
+    background: linear-gradient(90deg, #00eaff, #00bbcc);
     height: 100%;
     border-radius: 7px;
     transition: width 0.3s ease;
@@ -659,6 +785,78 @@ body {
     text-align: center;
 }
 
+.nav-home-icon {
+    width: 100%;
+}
+
+/* Phaser animation delays */
+.phaser-delay-02 {
+    animation-delay: 0.2s;
+}
+
+.phaser-delay-03 {
+    animation-delay: 0.3s;
+}
+
+.phaser-delay-04 {
+    animation-delay: 0.4s;
+}
+
+/* Hidden elements */
+.hidden {
+    display: none;
+}
+
+/* Ready rows */
+.ready-row {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.ready-indicator {
+    min-width: 120px;
+    text-align: center;
+}
+
+/* Pins */
+.pin-box {
+    text-align: center;
+    color: #cfefff;
+}
+
+.pin-row {
+    margin-bottom: 8px;
+}
+
+.pin-label {
+    font-size: .9em;
+    opacity: .9;
+}
+
+.join-pin {
+    font-weight: bold;
+    font-size: 1.4em;
+    color: #fff;
+}
+
+.spectate-pin {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #fff;
+}
+
+/* Remote indicator */
+.remote-ready-row {
+    margin-top: 16px;
+}
+
+.remote-ready-indicator {
+    text-align: center;
+    min-width: 150px;
+}
+
 /* Missing keyframe animations */
 @keyframes orangeGlow {
     0% {
@@ -696,6 +894,21 @@ body {
     }
     100% {
         transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0.8;
+    }
+}
+
+@keyframes pulsateCircleSmall {
+    0% {
+        transform: translate(-50%, -50%) scale(0.2);
+        opacity: 0.8;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(0.3);
+        opacity: 0.4;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(0.2);
         opacity: 0.8;
     }
 }
