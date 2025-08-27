@@ -3,8 +3,6 @@ const router = express.Router();
 const AppController = require("../controllers/appController");
 
 router.get('/status', AppController.getStatus);          // API Status
-router.get('/rooms', AppController.getWaitingRooms);     // Get all current pvp waiting rooms
-router.get('/games', AppController.getGames);            // Get all current games
 
 // ========================== DATABASE ========================== \\
 router.get('/database', AppController.getDatabase);      // Get (almost) all the database
@@ -24,7 +22,10 @@ router.get('/shipImg/:id', AppController.getShipImage);  // Get a ship image src
 
 // =========================== WEAPONS =========================== \\
 router.get('/weapon/:id', AppController.getWeapon);      // Get a weapon
-// router.get('/weapons', AppController.getWeapons);        // Get all weapons
+// router.get('/weapons', AppController.getWeapons);       // Get all weapons (not implemented)
 
+// ======================== DEBUG ROUTES ======================== \\
+// router.get('/rooms', AppController.getWaitingRooms);    // Get all current pvp waiting rooms
+// router.get('/games', AppController.getGames);           // Get all current games
 
 module.exports = router;

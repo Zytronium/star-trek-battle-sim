@@ -60,26 +60,6 @@ class GameEngine {
     // ---------- Create game ---------- //
     const gameId = uuidv4();
 
-    // If caller supplied playerTokens (e.g. from waiting room), use them.
-    // Otherwise generate new tokens for player pilots (P1, P2, ...).
-    /*let tokens = {};
-    const players = ships.filter(s => !s.is_boss && String(s.pilot || '').toUpperCase().startsWith('P'));
-
-    if (playerTokens && typeof playerTokens === 'object' && Object.keys(playerTokens).length > 0) {
-      // Use provided tokens where available, otherwise generate
-      for (const p of players) {
-        const key = p.pilot.toUpperCase(); // e.g. 'P1' or 'P2'
-        tokens[key] = playerTokens[key] || uuidv4();
-      }
-    } else {
-      // Generate fresh tokens
-      tokens = players.reduce((acc, p) => {
-        const key = p.pilot.toUpperCase();
-        acc[key] = uuidv4();
-        return acc;
-      }, {});
-    }*/
-
     console.log(`Creating game ${gameId} with tokens ${playerTokens}`);
     const gameState = {
       gameId,
@@ -87,8 +67,9 @@ class GameEngine {
       ships: runtimeShips,
       logs: [`Game created: ${type}`],
       turn: 1,
+      playerTurn: 'P1',
       winner: null,
-      playerTokens/*: tokens*/,
+      playerTokens,
       spectatePin,
       spectateRequiresPin
     };
@@ -106,7 +87,7 @@ class GameEngine {
     getIO().to(`game-${gameId}`).emit('gameUpdate', sanitizedGameState);
 
     // Return success including the tokens so server-side caller (controller) can forward the right tokens to the right clients
-    return { success: true, gameId, playerTokens/*: tokens*/, sanitizedGameState };
+    return { success: true, gameId, playerTokens, sanitizedGameState };
   }
 
   // Helper function for creating ships in memory at start of createGame()
@@ -628,6 +609,7 @@ class GameEngine {
 
     // Log the action
     game.turn++;
+    game.playerTurn = intent.target; // Only works when we're 100% sure attacker & target are not the same and the game is a 1v1 (which should always be the case currently)
     const weapon = await AppService.getWeaponByID(intent.weapon_id);
     const logMessage = `${attacker.baseStats.name} fired ${weapon.name} at ${target.baseStats.name}, dealing ${Number(totalDamage.toFixed(1))} total damage${target.state.hull_hp === 0 ? ` and destroying ${target.baseStats.name}!` : "."}`;
     game.logs.push({

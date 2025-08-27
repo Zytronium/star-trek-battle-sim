@@ -391,6 +391,12 @@ module.exports = function registerSockets(io) {
           return socket.emit('errorMessage', 'Please wait for the CPU to finish its turn.');
         }
 
+        // Reject intents if it's the other player's turn
+        if (game.playerTurn !== intent.attacker) {
+          console.warn(`[SECURITY] Socket ${socket.id} tried to act while it was not their turn in game ${gameId}.`);
+          return socket.emit('errorMessage', 'It is not your turn.');
+        }
+
         // Validate attacker
         const attacker = (intent.attacker || "").toUpperCase();
         const attackerShip = game.ships.find(s => s.pilot.toUpperCase() === attacker);

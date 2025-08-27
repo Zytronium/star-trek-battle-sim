@@ -13,11 +13,11 @@ class AppController {
     });
   }
 
-  // GET /api/rooms (temp)
+  // GET /api/rooms (debug)
   static getWaitingRooms(req, res) {
     res.status(200).json(waitingRooms);
   }
-  // GET /api/games (temp)
+  // GET /api/games (debug)
   static getGames(req, res) {
     res.status(200).json(activeGames);
   }
