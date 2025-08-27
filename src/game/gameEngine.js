@@ -50,6 +50,16 @@ class GameEngine {
       };
     }
 
+    // Generate spectate pin if not specified
+    if (!spectatePin) {
+      do {
+        spectatePin = this.randomPin(5);
+      } while (
+        Object.values(waitingRooms).some(r => r.spectatePin === spectatePin) ||
+        Object.values(activeGames).some(g => g.spectatePin === spectatePin)
+        );
+    }
+
     // ---------- Build runtime ships ---------- //
     const runtimeShips = [];
     for (const s of ships) {
@@ -357,7 +367,11 @@ class GameEngine {
     } while (waitingRooms[gamePin])
     do {
       spectatePin = this.randomPin(5);
-    } while (Object.values(waitingRooms).some(r => r.spectatePin === spectatePin))
+    } while (
+      Object.values(waitingRooms).some(r => r.spectatePin === spectatePin) ||
+      Object.values(activeGames).some(g => g.spectatePin === spectatePin)
+      );
+
 
     let waitingRoom = {
       gamePin, // also used as the room ID
@@ -628,7 +642,13 @@ class GameEngine {
     console.log(`Turn ${game.turn - 1}: ${logMessage}`);
     console.log(`Turn completed. Next turn: ${game.turn}`);
 
-    return game;
+    // Create a sanitized copy to send to clients (remove any sensitive token info)
+    // Shallow clone is fine here because we don't modify nested objects for sanitization,
+    // but ensure playerTokens is removed.
+    const sanitizedGame = Object.assign({}, game);
+    if (sanitizedGame.playerTokens) delete sanitizedGame.playerTokens;
+
+    return sanitizedGame;
   }
 
   // ======== CPU Turn ======== \\

@@ -1,6 +1,11 @@
 const socket = io(); // Connect to server
 let gameId = null;
 
+function getQueryParam(name) {
+  const url = new URL(window.location.href);
+  return url.searchParams.get(name);
+}
+
 /**
  * Generate a cryptographically-secure random token (hex).
  * length: number of random bytes (default 32 bytes => 64 hex chars)
@@ -43,7 +48,9 @@ document.getElementById('battle-btn').addEventListener('click', () => {
         { ship_id: selectedShips.player1.ship_id, pilot: "P1", is_boss: false },
         { ship_id: selectedShips.player2.ship_id, pilot: "COM1", is_boss: false }
       ],
-      playerToken: playerToken
+      playerToken: playerToken,
+      spectatePin: null,
+      spectateRequiresPin: getQueryParam("spectateVis") === "PRIVATE"
     };
 
     socket.emit('createGame', setup, (response) => {

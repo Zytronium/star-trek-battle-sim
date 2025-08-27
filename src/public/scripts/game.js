@@ -110,11 +110,6 @@ function updateSidePanel(prefix, data, gameOver = false) {
 
   if (header) header.textContent = `${shipName} ${pilotLabel}`;
 
-  console.log(data);
-  console.log(shipName);
-  console.log(`${shipName} ${pilotLabel}`)
-  console.log(header);
-
   qs(`#${prefix}-class`).textContent = data?.baseStats?.class ?? '—';
   qs(`#${prefix}-owner`).textContent = data?.baseStats?.owner ?? '—';
   qs(`#${prefix}-registry`).textContent = data?.baseStats?.registry ?? '—';
@@ -315,26 +310,31 @@ function renderWeaponButtons(playerShip, onClick, disableAll = false) {
 // ================ Main live page logic ================ \\
 
 let gameId = null;
-let playerToken = null; // if/when you enforce tokens, you can thread it in here
+let playerToken = null;
+let spectatePin = null;
 
 // If this page is opened with `?gameId=...`, treat it as spectate/join.
 // Otherwise, you can programmatically navigate from the selection page.
 document.addEventListener('DOMContentLoaded', async () => {
   gameId = getQueryParam('gameId');
-  if (!gameId) {
-    // For spectate links using `/spectate?id=`, support that too:
-    gameId = getQueryParam('id');
+  spectatePin = getQueryParam('pin');
+
+  // If we only have a spectate pin, don't try to join yet.
+  // We'll wait until the first gameUpdate tells us the gameId.
+  if (gameId) {
+    socket.emit('joinGame', gameId);
+    socket._joinedGame = true;
   }
 
   // Spectate link copy
   const copyBtn = qs('#copy-spectate');
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
-      if (!gameId) {
-        alert('Unable to generate spectate link: No game ID found');
+      if (!spectatePin) {
+        alert('Unable to generate spectate link: No spectate pin found');
         return;
       }
-      const url = `${window.location.origin}/game/spectate?id=${gameId}`;
+      const url = `${window.location.origin}/game/spectate?pin=${spectatePin}`;
       try {
         navigator.clipboard.writeText(url).then(() => {
           alert("Spectate link copied to clipboard.");
@@ -369,12 +369,55 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Join the Socket.IO room as soon as possible
   if (gameId) {
     socket.emit('joinGame', gameId);
+    socket._joinedGame = true;
+  } else if (spectatePin) {
+    // Ask the server to resolve the pin and join the corresponding game room.
+    // If server knows the pin it should add us to that room (so we get subsequent gameUpdate),
+    // and ideally send an immediate gameUpdate to this socket so we see initial state.
+    socket.emit('joinByPin', { pin: spectatePin });
+    socket._joinedByPin = true;
   }
+
+  // Listen for server ack when joining by pin (optional, but helpful)
+  socket.on('joinByPinResult', (res) => {
+    // res: { success: boolean, gameId?: string, message?: string, gameState?: {...} }
+    if (res && res.success) {
+      if (!gameId && res.gameId) {
+        gameId = res.gameId;
+      }
+      // server may include an immediate snapshot:
+      if (res.gameState) {
+        // server sent initial state directly — process it as normal
+        // emulate the same path as a pushed gameUpdate (so UI updates)
+        socket.emit && socket.emit('noop'); // noop to keep some old code paths happy; not required
+        // optionally call your gameUpdate handler directly if you expose it; or simply let the server
+        // also send a 'gameUpdate' event after joining (recommended).
+      }
+    } else {
+      alert(res && res.message ? `Spectate failed: ${res.message}` : 'Spectate pin not found.');
+    }
+  });
 
   // Listen for server pushes
   socket.on('gameUpdate', (gameState) => {
     // update latest snapshot references first (so render/send use newest data)
     latestGameState = gameState;
+
+    // If we came in with only a pin, fill in gameId when we see it in gameState.
+    if (!gameId && gameState.gameId) {
+      gameId = gameState.gameId;
+      if (!socket._joinedGame) {
+        socket.emit('joinGame', gameId);
+        socket._joinedGame = true;
+      }
+    }
+
+    // Always track the current spectatePin from server
+    if (!spectatePin && gameState.spectatePin) {
+      spectatePin = gameState.spectatePin;
+    }
+
+    console.debug("[DEBUG] gameState:", gameState);
 
     // --- Determine which pilot is this client (P1 or P2) ---
     // Preferred (and reliable) source: sessionStorage marker set by the waiting-room tab when it redirected to /game.

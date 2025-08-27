@@ -336,22 +336,96 @@ module.exports = function registerSockets(io) {
       }
     });
 
-    // Player joins a game (or spectates)
+    // Player joins a game
     socket.on('joinGame', (gameId) => {
       console.log(`Socket ${socket.id} joining game ${gameId}`);
       socket.join(`game-${gameId}`);
 
+      const game = GameEngine.getGame(gameId);
+
       // Send current state if game exists
-      if (activeGames[gameId]) {
-        socket.emit('gameUpdate', activeGames[gameId]);
+      if (game) {
+        const sanitizedGame = Object.assign({}, game);
+        if (sanitizedGame.playerTokens) delete sanitizedGame.playerTokens;
+        socket.emit('gameUpdate', sanitizedGame);
       }
     });
+    // Helper: find active game by spectatePin (returns the actual game object or null)
+    function findActiveGameBySpectatePin(pin) {
+      if (!pin) return null;
+      return Object.values(activeGames).find(g => String(g.spectatePin) === String(pin)) || null;
+    }
+
+    // Helper: find waiting room by spectatePin (returns the waitingRooms entry or null)
+    function findWaitingRoomBySpectatePin(pin) {
+      if (!pin) return null;
+      return Object.values(waitingRooms).find(r => String(r.spectatePin) === String(pin)) || null;
+    }
+
+    // Spectator joins a game room
+    socket.on('joinByPin', ({ pin }) => {
+      if (!pin) {
+        socket.emit('joinByPinResult', { success: false, message: 'No pin provided' });
+        return;
+      }
+
+      // Try to find an active game with this spectate pin
+      const activeGame = findActiveGameBySpectatePin(pin);
+      if (activeGame) {
+        // Determine canonical gameId property
+        const gameId = activeGame.gameId;
+        if (!gameId) {
+          socket.emit('joinByPinResult', { success: false, message: 'Matched game missing id' });
+          return;
+        }
+
+        // join the game room so future broadcasts reach this socket
+        socket.join(`game-${gameId}`);
+
+        // store metadata for this socket if you want
+        socket._spectatingPin = pin;
+        socket._spectatingGameId = gameId;
+
+        // prepare sanitized copy of game state (remove any secrets like player tokens)
+        const sanitizedGame = Object.assign({}, activeGame);
+        if (sanitizedGame.playerTokens) delete sanitizedGame.playerTokens;
+
+        // ack client and send an immediate snapshot
+        socket.emit('joinByPinResult', { success: true, gameId });
+        socket.emit('gameUpdate', sanitizedGame);
+        return;
+      }
+
+      // Fallback: check waiting rooms (game not started yet)
+      const waitingRoom = findWaitingRoomBySpectatePin(pin);
+      if (waitingRoom) {
+        // join the waiting-room socket room so they receive waitingRoomUpdated events
+        const sockRoom = `waiting-${waitingRoom.gamePin}`;
+        socket.join(sockRoom);
+
+        // store metadata on socket
+        socket._spectatingPin = pin;
+        socket._spectatingGamePin = waitingRoom.gamePin;
+
+        // send ack with waiting room info (sanitized)
+        const publicRoom = sanitizeWaitingRoom(waitingRoom);
+        socket.emit('joinByPinResult', { success: true, waitingRoom: publicRoom });
+
+        // push the current waiting-room snapshot immediately
+        socket.emit('waitingRoomUpdated', publicRoom);
+        return;
+      }
+
+      // Not found
+      socket.emit('joinByPinResult', { success: false, message: 'No active game or waiting room found for that pin' });
+    });
+
 
     // Create a new game
     socket.on('createGame', async (setup, callback) => {
       try {
         console.log("Creating new game...");
-        const result = await GameEngine.createGame(setup.type, setup.ships, { "P1": setup.playerToken });
+        const result = await GameEngine.createGame(setup.type, setup.ships, { "P1": setup.playerToken }, setup.spectatePin, setup.spectateRequiresPin);
 
         if (!result.error) {
           console.log("Game created.");
