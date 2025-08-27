@@ -273,10 +273,30 @@ function renderWeaponButtons(playerShip, onClick, disableAll = false) {
               return;
             }
 
-            // Normal unlock path
+            // Re-evaluate turn-lock at unlock time (so we don't accidentally re-enable when it's not our turn)
+            const sessionPilot = sessionStorage.getItem(`playerPilot-${gameId}`) || null;
+            const storedP1TokenNow = localStorage.getItem(`playerToken-${gameId}-P1`);
+            const storedP2TokenNow = localStorage.getItem(`playerToken-${gameId}-P2`);
+            let myPilotNow = null;
+            if (sessionPilot === 'P1' || sessionPilot === 'P2') {
+              myPilotNow = sessionPilot;
+            } else {
+              myPilotNow = storedP2TokenNow ? 'P2' : (storedP1TokenNow ? 'P1' : null);
+            }
+
+            // keep socket._lastKnownPlayerTurn up-to-date if playerTurn appeared meanwhile
+            const playerTurnRawNow = (latestGameState?.playerTurn || '').toString().trim().toUpperCase();
+            if (playerTurnRawNow) socket._lastKnownPlayerTurn = playerTurnRawNow;
+            const effectivePlayerTurnNow = socket._lastKnownPlayerTurn || '';
+
+            const serverReportedErrorNow = !!(latestGameState && latestGameState.error);
+            const isMyTurnNow = effectivePlayerTurnNow ? (effectivePlayerTurnNow === String(myPilotNow).toUpperCase()) : true;
+            const disableDueToTurnNow = effectivePlayerTurnNow && !isMyTurnNow && !serverReportedErrorNow;
+
+            // Normal unlock path (but account for turn lock)
             weaponButtonsLockedUntil = 0;
             // re-render using the latest snapshot so cooldown labels reflect server state
-            renderWeaponButtons(latestPlayerShip || playerShip, onClick, false);
+            renderWeaponButtons(latestPlayerShip || playerShip, onClick, (latestGameState && latestGameState.winner) || disableDueToTurnNow);
           }, remaining);
         }
         // re-render immediately to reflect the locked UI using the latest snapshot
@@ -458,7 +478,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       weaponButtonsLockedUntil = Infinity;
     }
 
-    renderWeaponButtons(myShip, sendIntentUsingLatest, gameOver);
+    // --- Robust turn-checking (persist last known playerTurn to avoid transient missing fields)
+    // prefer the most recent non-empty playerTurn; if absent in this update, keep previous
+    const playerTurnRaw = (gameState.playerTurn || '').toString().trim().toUpperCase();
+    if (typeof socket._lastKnownPlayerTurn === 'undefined' || socket._lastKnownPlayerTurn === null) socket._lastKnownPlayerTurn = '';
+    if (playerTurnRaw) socket._lastKnownPlayerTurn = playerTurnRaw;
+    // If the game ended, clear the last known turn (so future games won't reuse it)
+    if (gameState.winner) socket._lastKnownPlayerTurn = '';
+    const effectivePlayerTurn = socket._lastKnownPlayerTurn || '';
+
+    // If server included an explicit error in gameState, do not disable weapons due to turn (best-effort)
+    const serverReportedError = !!(gameState.error);
+
+    const isMyTurn = effectivePlayerTurn ? (effectivePlayerTurn === String(myPilot).toUpperCase()) : true;
+    const disableDueToTurn = effectivePlayerTurn && !isMyTurn && !serverReportedError;
+
+    console.debug('[debug] turn-check', { playerTurnRaw, effectivePlayerTurn, serverReportedError, myPilot, isMyTurn, disableDueToTurn });
 
     // We'll update side panels when the explosion/bounce is played.
     // If no animation will play, update them now.
@@ -611,6 +646,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       } catch (e) {}
 
     }
+
+    // Re-render weapon buttons once, using the turn-check result (preserve gameOver locking)
+    renderWeaponButtons(myShip, sendIntentUsingLatest, gameOver || disableDueToTurn);
   });
 
   socket.on('errorMessage', (errorMessage) => {
