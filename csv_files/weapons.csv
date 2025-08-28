@@ -1,6 +1,6 @@
 weapon_id,name,description,damage,shields_multiplier,hull_multiplier,special_effects,usage_limit
 0,Photon Torpedoes,Standard matter/antimatter torpedoes of the 23rd–24th century; solid against both shields and hull.,80,1,1.625,,80
-1,Quantum Torpedoes,Advanced torpedo with zero-point energy warhead; much more effective against hull than shields.,120,1,1.75,,15
+1,Quantum Torpedoes,Advanced torpedo with zero-point energy warhead; much more effective against hull than shields.,115,1,1.75,,15
 2,Torpedoes (standard),General-purpose projectile used by multiple factions; balanced performance.,50,1,1.5,,200
 3,Phaser Array,Long-range beam weapon; good sustained damage against shields.,50,1.25,1,,99999
 4,Phaser Cannons,High-intensity phasers for close-range combat; fast recharge but short range.,75,1.25,1,,99999
