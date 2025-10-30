@@ -159,9 +159,9 @@ npm run update-db
 
 ## Authors
 
-Daniel Stelljes | [GitHub](https://github.com/Zytronium)  
-John Wilson     | [GitHub](https://github.com/Paintballskaguy)  
-Tristian Davis  | [GitHub](https://github.com/TebariousBag)
+[Redacted for privacy] | [GitHub](https://github.com/Zytronium)  
+[Redacted for privacy] | [GitHub](https://github.com/Paintballskaguy)  
+[Redacted for privacy] | [GitHub](https://github.com/TebariousBag)
 
 ----
 
