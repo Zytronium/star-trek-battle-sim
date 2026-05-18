@@ -93,13 +93,30 @@ function sendIntentUsingLatest(weaponOrId) {
 }
 
 
+function showInfoPopup(content) {
+  const popup = qs('#info-popup');
+  const body = qs('#popup-body');
+  if (popup && body) {
+    body.innerHTML = content;
+    popup.classList.remove('hidden');
+  }
+}
+
+function closeInfoPopup() {
+  const popup = qs('#info-popup');
+  if (popup) {
+    popup.classList.add('hidden');
+  }
+}
+
 // ================ UI Updaters ================ \\
 
 // Update a side panel (stats + bars)
 // prefix: 'p' or 'c', data: runtime game ship object (contains baseStats & state)
 function updateSidePanel(prefix, data, gameOver = false) {
   // header: show ship name with pilot suffix on H2
-  const header = qs(`#${prefix === 'p' ? 'player-panel' : 'cpu-panel'} h2`);
+  const panelId = prefix === 'p' ? 'player-panel' : 'cpu-panel';
+  const header = qs(`#${panelId} h2`);
   const shipName = data?.baseStats?.name ?? `Ship ${data?.ship_id ?? '?'}`;
   const pilotId = String(data?.pilot ?? '').toUpperCase();
   let pilotLabel = '';
@@ -108,7 +125,24 @@ function updateSidePanel(prefix, data, gameOver = false) {
   else if (pilotId.startsWith('COM')) pilotLabel = '(CPU)';
   else pilotLabel = `(${pilotId || '??'})`;
 
-  if (header) header.textContent = `${shipName} ${pilotLabel}`;
+  if (header) {
+    header.textContent = `${shipName} ${pilotLabel}`;
+    // Add info button for mobile
+    let infoBtn = header.querySelector('.ship-info-btn');
+    if (!infoBtn) {
+      infoBtn = document.createElement('button');
+      infoBtn.className = 'ship-info-btn mobile-only';
+      infoBtn.innerHTML = 'ⓘ';
+      header.appendChild(infoBtn);
+      infoBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const statsHtml = qs(`#${prefix}-stats`).innerHTML;
+        const imgUrl = qs(`#${prefix}-image`).src;
+        const imgHtml = imgUrl ? `<div class="popup-ship-img"><img src="${imgUrl}" alt="${shipName}" style="width:100%; border-radius:10px; margin-bottom:15px; border:1px solid var(--cyan-dim);"></div>` : '';
+        showInfoPopup(`<h3>${shipName} ${pilotLabel}</h3>${imgHtml}<div class="popup-stats">${statsHtml}</div>`);
+      });
+    }
+  }
 
   qs(`#${prefix}-class`).textContent = data?.baseStats?.class ?? '—';
   qs(`#${prefix}-owner`).textContent = data?.baseStats?.owner ?? '—';
@@ -153,6 +187,12 @@ function renderWeaponButtons(playerShip, onClick, disableAll = false) {
 
   if (!playerShip || !playerShip.baseStats) return;
 
+  if (playerShip.baseStats.weapons && playerShip.baseStats.weapons.length >= 4) {
+    bar.classList.add('weapon-grid');
+  } else {
+    bar.classList.remove('weapon-grid');
+  }
+
   // Build map of weapon state by weapon_id for quick lookup
   const weaponStateMap = {};
   (playerShip.state?.weapons || []).forEach(ws => {
@@ -184,14 +224,39 @@ function renderWeaponButtons(playerShip, onClick, disableAll = false) {
 
     btn.dataset.tooltip = tooltipParts.join('\n');
 
+    // Create a container for the mini info button
+    const miniInfoBtn = document.createElement('div');
+    miniInfoBtn.className = 'mini-info-btn mobile-only';
+    miniInfoBtn.innerHTML = 'ⓘ';
+    miniInfoBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const infoHtml = `
+        <h3>${w.name ?? `Weapon ${w.weapon_id}`}</h3>
+        <p>${w.description || 'No description available.'}</p>
+        ${w.special_effects ? `<p><strong>Special:</strong> ${w.special_effects}</p>` : ''}
+        <div class="weapon-popup-meta">
+          <div class="pill">Uses: ${(maxUsage !== Infinity ? `${usesLeft} / ${maxUsage}` : '∞')}</div>
+          <div class="pill">CD: ${cooldownLeft}/${cooldownTurns}</div>
+        </div>
+        <div style="margin-top: 10px;">
+          <strong>Damage Info:</strong><br>
+          Base: ${fmt((w.damage ?? 0) * (w.damage_multiplier ?? 1))}<br>
+          Shields: ×${fmt(w.shields_multiplier ?? 1)} • Hull: ×${fmt(w.hull_multiplier ?? 1)}
+        </div>
+      `;
+      showInfoPopup(infoHtml);
+    });
+    btn.appendChild(miniInfoBtn);
+
     // top line: weapon name
     const nameLine = document.createElement('div');
+    nameLine.className = 'weapon-name';
     nameLine.style.fontWeight = 700;
     nameLine.textContent = w.name ?? `Weapon ${w.weapon_id}`;
 
     // meta row with uses/cooldown/damage
     const metaRow = document.createElement('div');
-    metaRow.className = 'weapon-meta';
+    metaRow.className = 'weapon-meta mobile-meta';
 
     const leftMeta = document.createElement('div');
     leftMeta.innerHTML = `<span class="pill">Uses: ${(maxUsage !== Infinity ? `${usesLeft} / ${maxUsage}` : '∞')}</span>`;
@@ -228,17 +293,23 @@ function renderWeaponButtons(playerShip, onClick, disableAll = false) {
 
     if (disableAll || clientLocked || noUses || onCooldown || serverGameOver) {
       btn.disabled = true;
-      // small indicator (append a pill)
-      const statusPill = document.createElement('span');
-      statusPill.className = 'pill';
 
-      if (serverGameOver) statusPill.textContent = 'Game over';
-      else if (noUses) statusPill.textContent = 'No uses';
-      else if (onCooldown) statusPill.textContent = `Cooldown: ${state.cooldown_left}`;
-      else if (clientLocked) statusPill.textContent = 'Waiting...';
-      else statusPill.textContent = 'Locked';
-      statusPill.style.marginTop = '6px';
-      btn.appendChild(statusPill);
+      // Small indicator (append a pill) - Skip on mobile for locked/cooldown per request
+      const isMobile = window.innerWidth <= 768;
+      const shouldShowPill = !isMobile || serverGameOver || noUses;
+      
+      if (shouldShowPill) {
+        const statusPill = document.createElement('span');
+        statusPill.className = 'pill';
+
+        if (serverGameOver) statusPill.textContent = 'Game over';
+        else if (noUses) statusPill.textContent = 'No uses';
+        else if (onCooldown) statusPill.textContent = `Cooldown: ${state.cooldown_left}`;
+        else if (clientLocked) statusPill.textContent = 'Waiting...';
+        else statusPill.textContent = 'Locked';
+        statusPill.style.marginTop = '6px';
+        btn.appendChild(statusPill);
+      }
     }
 
     // When clicked: set the client lock immediately, re-render to show disabled state,
@@ -378,6 +449,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     socket._joinedByPin = true;
   }
 
+  // Popup close logic
+  const closeBtn = qs('#close-popup');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeInfoPopup);
+  }
+  window.addEventListener('click', (e) => {
+    const popup = qs('#info-popup');
+    if (e.target === popup) closeInfoPopup();
+  });
+
+  // Toggle weapons grid logic
+  const toggleWeaponsBtn = qs('#toggle-weapons');
+  const weaponButtonsBar = qs('#weapon-buttons');
+  if (toggleWeaponsBtn && weaponButtonsBar) {
+    toggleWeaponsBtn.addEventListener('click', () => {
+      weaponButtonsBar.classList.toggle('mobile-hidden');
+      if (weaponButtonsBar.classList.contains('mobile-hidden')) {
+        toggleWeaponsBtn.textContent = 'Show Weapons';
+      } else {
+        toggleWeaponsBtn.textContent = 'Hide Weapons';
+      }
+    });
+  }
+
   // Listen for server ack when joining by pin (optional, but helpful)
   socket.on('joinByPinResult', (res) => {
     // res: { success: boolean, gameId?: string, message?: string, gameState?: {...} }
@@ -402,6 +497,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   socket.on('gameUpdate', (gameState) => {
     // update latest snapshot references first (so render/send use newest data)
     latestGameState = gameState;
+
+    // ... (logic to identify clientRole, etc)
+    // then redraw:
+    // updateTopBar(gameState);
+    // updateSidePanel('p', playerShip);
+    // updateSidePanel('c', cpuShip);
+    // renderWeaponButtons(playerShip, (wID) => sendIntent('attack', { weaponId: wID }));
+    // ...
 
     // If we came in with only a pin, fill in gameId when we see it in gameState.
     if (!gameId && gameState.gameId) {

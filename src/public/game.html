@@ -46,7 +46,7 @@
           <img id="p-image" alt="Player Ship" />
         </div>
       </div>
-      <div class="ship-stats" id="player-stats">
+      <div class="ship-stats" id="p-stats">
         <div class="stat-line"><span class="label">Class:</span> <span id="p-class">--</span></div>
         <div class="stat-line"><span class="label">Owner:</span> <span id="p-owner">--</span></div>
         <div class="stat-line"><span class="label">Registry:</span> <span id="p-registry">--</span></div>
@@ -87,7 +87,7 @@
           <img id="c-image" alt="CPU Ship" />
         </div>
       </div>
-      <div class="ship-stats" id="cpu-stats">
+      <div class="ship-stats" id="c-stats">
         <div class="stat-line"><span class="label">Class:</span> <span id="c-class">--</span></div>
         <div class="stat-line"><span class="label">Owner:</span> <span id="c-owner">--</span></div>
         <div class="stat-line"><span class="label">Registry:</span> <span id="c-registry">--</span></div>
@@ -110,7 +110,18 @@
   </div>
 
   <!-- Bottom weapons bar -->
-  <div class="bottom-bar" id="weapon-buttons"></div>
+  <div class="weapons-container">
+    <button id="toggle-weapons" class="mobile-toggle-btn">Toggle Weapons</button>
+    <div class="bottom-bar" id="weapon-buttons"></div>
+  </div>
+</div>
+
+<!-- Info Popup -->
+<div id="info-popup" class="popup hidden">
+  <div class="popup-content">
+    <button id="close-popup" class="close-btn">&times;</button>
+    <div id="popup-body"></div>
+  </div>
 </div>
 
 <!-- Use CDN to avoid /socket.io path issues -->
